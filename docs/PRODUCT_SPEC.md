@@ -1,6 +1,6 @@
 # Product specification
 
-Revised 2026-10-12. Confirmed: zero budget; Android and iPhone must work independently; laptop support; device downloads only. A native app direction is proposed, pending per-platform proof. No Mac/iPhone is currently available. See IMPLEMENTATION_PLAN.md and ARCHITECTURE.md.
+Revised 2026-10-12. Confirmed: zero budget; Android and iPhone must work independently; laptop support; device downloads only. Flutter is selected for the native foundation; media execution remains subject to per-platform proof. No Mac/iPhone is currently available. See IMPLEMENTATION_PLAN.md and ARCHITECTURE.md.
 
 ## Required journey
 
@@ -45,4 +45,4 @@ Professional restrained lavenderblush palette, white surfaces and near-black acc
 
 ## Explicitly unresolved/deferred
 
-Native extraction/conversion/export on both phones, iOS build/device/distribution access, final framework selection, public-store release costs and laptop packaging remain feasibility gates. No cloud library, shared developer AI key, video downloads, automatic sync, paid infrastructure or phone-on-LAN substitution is included.
+Native extraction/conversion/export on both phones, iOS build/device/distribution access, final native media-adapter selection, public-store release costs and laptop packaging remain feasibility gates. No cloud library, shared developer AI key, video downloads, automatic sync, paid infrastructure or phone-on-LAN substitution is included.

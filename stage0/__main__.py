@@ -69,7 +69,10 @@ class Metrics:
         self.peak_rss = 0
         self.peak_disk = 0
         self.samples = 0
-        self.process_cpu: dict[int, float] = {}
+        self.process_cpu: dict[tuple[int, float], float] = {}
+        import psutil
+        cpu = psutil.Process().cpu_times()
+        self.initial_cpu = cpu.user + cpu.system
         self.started = time.monotonic()
         self.thread = threading.Thread(target=self.sample, daemon=True)
         self.thread.start()
@@ -87,7 +90,9 @@ class Metrics:
                 try:
                     memory += process.memory_info().rss
                     cpu = process.cpu_times()
-                    self.process_cpu[process.pid] = max(self.process_cpu.get(process.pid, 0), cpu.user + cpu.system)
+                    identity = (process.pid, process.create_time())
+                    baseline = self.initial_cpu if process.pid == current.pid else 0.0
+                    self.process_cpu[identity] = max(self.process_cpu.get(identity, 0), cpu.user + cpu.system - baseline)
                 except psutil.Error:
                     pass
             self.peak_rss = max(self.peak_rss, memory)
@@ -123,8 +128,16 @@ def skip(report: dict, name: str, reason: str):
     report["checks"].append({"name": name, "status": "not_run", "reason": reason})
 
 
-def require_runtime(live: bool):
-    names = list(MODULES) if live else ["mutagen", "Pillow", "jsonschema", "psutil"]
+def require_runtime(live: bool, *, with_ai: bool = False, with_artwork: bool = False, with_storage: bool = False):
+    names = ["mutagen", "Pillow", "jsonschema", "psutil"]
+    if live:
+        names += ["yt-dlp", "yt-dlp-ejs"]
+    if with_ai:
+        names += ["groq"]
+    if with_artwork:
+        names += ["requests"]
+    if with_storage:
+        names += ["boto3", "requests"]
     state = preflight()
     missing = [name for name in names if not state["packages"][name]]
     missing += [name for name in (["ffmpeg", "ffprobe", "deno"] if live else ["ffmpeg", "ffprobe"]) if not state["tools"][name]["available"]]
@@ -163,7 +176,7 @@ def live_inputs(url: str, root: Path, report: dict) -> tuple[list[dict], dict[st
     tracks = []
     files = {}
     for index, entry in enumerate(entries):
-        if not isinstance(entry, dict) or not re.fullmatch(r"[A-Za-z0-9_-]{11}", entry.get("id", "")):
+        if not isinstance(entry, dict) or not isinstance(entry.get("id"), str) or not re.fullmatch(r"[A-Za-z0-9_-]{11}", entry["id"]):
             report["checks"].append({"name": "source_entry_" + str(index + 1), "status": "failed", "code": "SOURCE_UNAVAILABLE", "message": "Playlist item has no accessible video identity."})
             continue
         video = entry["id"]
@@ -183,8 +196,12 @@ def live_inputs(url: str, root: Path, report: dict) -> tuple[list[dict], dict[st
         evidence = check(report, "source_" + video, acquire)
         if evidence:
             files[video] = path
+            title = entry.get("title")
+            title = title.strip()[:500] if isinstance(title, str) and title.strip() else "Unknown title"
+            uploader = entry.get("uploader")
+            uploader = uploader[:200] if isinstance(uploader, str) else ""
             tracks.append({"track_id": video, "video_id": video, "playlist_index": index + 1,
-                           "title": (entry.get("title") or "Unknown title")[:500], "uploader": (entry.get("uploader") or "")[:200], "duration": evidence["duration_seconds"]})
+                           "title": title, "uploader": uploader, "duration": evidence["duration_seconds"]})
     if len(tracks) < 3:
         raise CheckError("SOURCE_MINIMUM_FAILED", "Fewer than three distinct tracks downloaded and decoded.")
     return tracks, files
@@ -228,61 +245,66 @@ def run(args) -> Path:
     report = {"run_id": identity, "created_at": datetime.now(timezone.utc).isoformat(), "mode": mode,
               "host": {"label": args.host_label, "region": args.host_region, "evidence": "operator-supplied; not independently verified"},
               "stage0_complete": False, "checks": [], "device_tests": {"phone": "not_run", "laptop": "not_run"}}
-    runtime = check(report, "runtime", lambda: require_runtime(mode == "live"))
+    runtime = check(report, "runtime", lambda: require_runtime(mode == "live",
+        with_ai=getattr(args, "with_ai", False), with_artwork=getattr(args, "with_artwork", False),
+        with_storage=args.with_storage))
     metrics = Metrics(root) if runtime else None
-    if runtime:
-        if mode == "synthetic":
-            generated = check(report, "synthetic_sources", lambda: synthetic_inputs(root))
-            # Generated result contains Paths/bytes, so replace its report evidence with safe facts.
-            if generated:
-                report["checks"][-1]["evidence"] = {"count": 3, "provider": "local synthetic tones and generated image; no AI or online artwork"}
-                tracks, files, metadata, cover = generated
-                covers = {track["track_id"]: cover for track in tracks}
-        else:
-            generated = check(report, "playlist_acquisition", lambda: live_inputs(canonical_playlist(args.playlist), root, report))
-            if generated:
-                tracks, files = generated
-                report["checks"][-1]["evidence"] = {"distinct_tracks": len(tracks), "mode": "actual YouTube acquisition"}
-                metadata = {track["track_id"]: fallback_metadata(track) for track in tracks}
-                covers = {}
-                if args.with_ai:
-                    from .providers import format_with_groq
-                    result = check(report, "groq_metadata", lambda: format_with_groq(tracks))
-                    if result:
-                        metadata, usage = result
-                        report["checks"][-1]["evidence"] = usage
-                else:
-                    skip(report, "groq_metadata", "Not requested; source-title fallback is not a live AI pass.")
-                if args.with_artwork:
-                    from .providers import ArtworkClient
-                    client_result = check(report, "artwork_client", ArtworkClient)
-                    if client_result:
-                        report["checks"][-1]["evidence"] = {"rate_limit_requests_per_second": 1}
-                        for track in tracks:
-                            meta = metadata[track["track_id"]]
-                            if meta["needs_review"]:
-                                skip(report, "artwork_" + track["track_id"], "Uncertain identity; automatic cover assignment withheld.")
-                                continue
-                            result = check(report, "artwork_" + track["track_id"], lambda meta=meta: client_result.lookup(song_title(meta), meta["artists"], meta["album"]))
-                            if result:
-                                cover, provenance = result
-                                covers[track["track_id"]] = cover
-                                report["checks"][-1]["evidence"] = {**provenance, "normalized_image_bytes": len(cover)}
-                        report["artwork_payload_received_bytes"] = client_result.received_bytes
-                        report["artwork_requests"] = client_result.requests
-                else:
-                    skip(report, "artwork", "Not requested; no online cover-matching pass.")
-        if generated:
-            report["source_records"] = tracks
-            exported = check(report, "tagged_export", lambda: export_tracks(root, tracks, files, metadata, covers, mode))
-            if exported and args.with_storage:
-                from .providers import upload_and_verify
-                artifacts = [root / "playlist.zip"] + [root / "export" / track["filename"] for track in exported["tracks"]]
-                check(report, "storage_delivery", lambda: upload_and_verify(artifacts, identity, root))
+    try:
+        if runtime:
+            if mode == "synthetic":
+                generated = check(report, "synthetic_sources", lambda: synthetic_inputs(root))
+                # Generated result contains Paths/bytes, so replace its report evidence with safe facts.
+                if generated:
+                    report["checks"][-1]["evidence"] = {"count": 3, "provider": "local synthetic tones and generated image; no AI or online artwork"}
+                    tracks, files, metadata, cover = generated
+                    covers = {track["track_id"]: cover for track in tracks}
             else:
-                skip(report, "storage_delivery", "Not requested or export did not succeed; local ZIP is not hosted delivery evidence.")
-    if metrics:
-        report["metrics"] = metrics.finish()
+                generated = check(report, "playlist_acquisition", lambda: live_inputs(canonical_playlist(args.playlist), root, report))
+                if generated:
+                    tracks, files = generated
+                    report["checks"][-1]["evidence"] = {"distinct_tracks": len(tracks), "mode": "actual YouTube acquisition"}
+                    metadata = {track["track_id"]: fallback_metadata(track) for track in tracks}
+                    covers = {}
+                    if args.with_ai:
+                        from .providers import format_with_groq
+                        result = check(report, "groq_metadata", lambda: format_with_groq(tracks))
+                        if result:
+                            metadata, usage = result
+                            report["checks"][-1]["evidence"] = usage
+                    else:
+                        skip(report, "groq_metadata", "Not requested; source-title fallback is not a live AI pass.")
+                    if args.with_artwork:
+                        from .providers import ArtworkClient
+                        client_result = check(report, "artwork_client", ArtworkClient)
+                        if client_result:
+                            report["checks"][-1]["evidence"] = {"rate_limit_requests_per_second": 1}
+                            with client_result:
+                                for track in tracks:
+                                    meta = metadata[track["track_id"]]
+                                    if meta["needs_review"]:
+                                        skip(report, "artwork_" + track["track_id"], "Uncertain identity; automatic cover assignment withheld.")
+                                        continue
+                                    result = check(report, "artwork_" + track["track_id"], lambda meta=meta: client_result.lookup(song_title(meta), meta["artists"], meta["album"], featured_artists=meta["featured_artists"]))
+                                    if result:
+                                        cover, provenance = result
+                                        covers[track["track_id"]] = cover
+                                        report["checks"][-1]["evidence"] = {**provenance, "normalized_image_bytes": len(cover)}
+                                report["artwork_payload_received_bytes"] = client_result.received_bytes
+                                report["artwork_requests"] = client_result.requests
+                    else:
+                        skip(report, "artwork", "Not requested; no online cover-matching pass.")
+            if generated:
+                report["source_records"] = tracks
+                exported = check(report, "tagged_export", lambda: export_tracks(root, tracks, files, metadata, covers, mode))
+                if exported and args.with_storage:
+                    from .providers import upload_and_verify
+                    artifacts = [root / "playlist.zip"] + [root / "export" / track["filename"] for track in exported["tracks"]]
+                    check(report, "storage_delivery", lambda: upload_and_verify(artifacts, identity, root))
+                else:
+                    skip(report, "storage_delivery", "Not requested or export did not succeed; local ZIP is not hosted delivery evidence.")
+    finally:
+        if metrics:
+            report["metrics"] = metrics.finish()
     report["checks_passed"] = all(item["status"] != "failed" for item in report["checks"])
     report["completion_note"] = "Stage 0 also requires live AI, a known online cover match, independent native Android/iPhone/laptop execution and save evidence, and a viable zero-budget distribution route. Hosted storage is optional."
     path = root / "report.json"
@@ -359,10 +381,10 @@ def main() -> int:
             root.mkdir(parents=True, exist_ok=False)
             report = {"mode": "live_known_cover", "stage0_complete": False, "checks": []}
             def known_cover():
-                client = ArtworkClient()
-                image, provenance = client.lookup(args.title, [args.artist], args.album)
-                (root / "cover.jpg").write_bytes(image)
-                return {**provenance, "received_payload_bytes": client.received_bytes, "requests": client.requests, "cover_sha256": checksum(root / "cover.jpg")}
+                with ArtworkClient() as client:
+                    image, provenance = client.lookup(args.title, [args.artist], args.album)
+                    (root / "cover.jpg").write_bytes(image)
+                    return {**provenance, "received_payload_bytes": client.received_bytes, "requests": client.requests, "cover_sha256": checksum(root / "cover.jpg")}
             check(report, "known_cover_match", known_cover)
             (root / "report.json").write_text(json.dumps(report, indent=2) + "\n")
             print(json.dumps({"report": str(root / "report.json"), "status": report["checks"][0]["status"]}))

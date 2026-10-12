@@ -2,15 +2,17 @@
 
 A successor to DOT.: playlist downloads, AI song naming, automatic covers, snippets and editable review, then full tagged MP3/ZIP save to your device.
 
-**Current state:** Stage 0 CLI implemented; local core tests and three real playlist runs passed. The native application is not implemented. Independent Android/iPhone execution remains unproven.
+**Current state:** Stage 1 native foundation implemented: private playlist drafts, SQLite recovery/revisions, secure personal-key settings and a minimal lavenderblush UI. Linux builds and native-plugin tests passed; Windows setup/CI is prepared but execution remains pending. Downloads, naming, covers, playback and device exports are later app stages. Stage 0 phone/provider gates remain open.
 
 ## Confirmed direction
 
-Zero budget, independent Android and iPhone use, laptop support, device-only saves, and professional lavenderblush UI. No Mac/iPhone is currently available for testing. Native UI/platform adapters are proposed; the former hosted-web plan is superseded. Do not silently replace the phone requirement with a laptop companion.
+Zero budget, independent Android and iPhone use, laptop support, device-only saves, and professional lavenderblush UI. No Mac/iPhone is currently available for testing. Flutter is selected for the foundation; media adapters remain provisional; the former hosted-web plan is superseded. Do not silently replace the phone requirement with a laptop companion.
 
 ## Start here
 
+- [Native app setup and Stage 1 contracts](docs/STAGE1_GUIDE.md)
 - [Stage 0 setup and commands](docs/STAGE0_GUIDE.md)
+- [Stage 0/1 code review and fixes](docs/CODE_REVIEW_STAGE01.md)
 - [Current results and missing gates](docs/PROJECT_STATUS.md)
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)
@@ -19,7 +21,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 - [Verification strategy](docs/TEST_STRATEGY.md)
 - [Zero-budget platform decision](docs/decisions/0001-stage0-feasibility.md)
 
-`.env` was created with an empty `GROQ_API_KEY` and `GROQ_MODEL=openai/gpt-oss-120b`. Paste your own Groq key there; never commit it or share it in chat. The CLI loads only this project's .env. Future native users supply their own key through secure device settings; developer keys do not ship in binaries.
+`.env` was created with an empty `GROQ_API_KEY` and `GROQ_MODEL=openai/gpt-oss-120b`. Paste your own Groq key there; never commit it or share it in chat. The CLI loads only this project's .env. Native users supply their own key through secure device settings; developer keys do not ship in binaries.
 
 ```bash
 python -m stage0 preflight

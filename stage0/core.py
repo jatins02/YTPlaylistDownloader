@@ -3,11 +3,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
 import signal
 import subprocess
+import tempfile
 import time
 import unicodedata
 from urllib.parse import parse_qs, urlsplit
@@ -27,7 +29,7 @@ def canonical_playlist(value: str) -> str:
     except ValueError:
         raise CheckError("INVALID_PLAYLIST", "Malformed playlist URL.") from None
     allowed = {"youtube.com", "www.youtube.com", "music.youtube.com", "m.youtube.com"}
-    lists = parse_qs(url.query).get("list", [])
+    lists = parse_qs(url.query, keep_blank_values=True).get("list", [])
     if (url.scheme != "https" or url.hostname not in allowed or port not in (None, 443)
             or url.username or url.password or url.path not in ("/playlist", "/watch")
             or len(lists) != 1 or not re.fullmatch(r"[A-Za-z0-9_-]{10,100}", lists[0])
@@ -66,6 +68,10 @@ def validate_metadata(payload: dict, expected_ids: list[str]) -> dict[str, dict]
     for record in records:
         if not record["title"].strip() or any(not name.strip() for name in record["artists"] + record["featured_artists"]):
             raise CheckError("AI_FIELDS_INVALID", "Metadata contains blank semantic fields.")
+        fields = [record["title"], *record["artists"], *record["featured_artists"],
+                  *(record[key] for key in ("album", "version", "reason") if record[key] is not None)]
+        if any(re.search(r"[\x00-\x1f\x7f]", value) or not value.strip() for value in fields):
+            raise CheckError("AI_FIELDS_INVALID", "Metadata contains blank or invalid text fields.")
         if not record["artists"] and not record["needs_review"]:
             raise CheckError("AI_UNCERTAINTY_INVALID", "Unknown artists must be marked for review.")
     return {item["track_id"]: item for item in records}
@@ -140,7 +146,6 @@ def disk_bytes(root: Path) -> int:
 def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
             max_bytes: int = 512 * 1024 * 1024) -> bytes:
     """Drain output into temporary files, kill the process group on timeout/quota."""
-    import tempfile
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
         process = subprocess.Popen(args, stdout=output, stderr=errors, start_new_session=os.name != "nt")
         start = time.monotonic()
@@ -160,7 +165,15 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
         finally:
             if process.poll() is None:
                 if os.name == "nt":
-                    process.kill()
+                    # yt-dlp can have a codec child. Killing only its parent
+                    # leaves that child writing after cancellation/quota failure.
+                    try:
+                        subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                       timeout=10, check=False)
+                    finally:
+                        if process.poll() is None:
+                            process.kill()
                 else:
                     try:
                         os.killpg(process.pid, signal.SIGKILL)
@@ -169,6 +182,10 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
                 process.wait()
         if failure:
             raise failure
+        # A fast command can finish between polls; apply the same bounds to its
+        # final output rather than silently returning a truncated JSON payload.
+        if os.fstat(output.fileno()).st_size > 2 * 1024 * 1024 or os.fstat(errors.fileno()).st_size > 2 * 1024 * 1024:
+            raise CheckError("TOOL_OUTPUT_LIMIT", "Tool produced excessive diagnostic output.")
         if scratch and disk_bytes(scratch) > max_bytes:
             raise CheckError("DISK_LIMIT", "Feasibility scratch-data limit exceeded.")
         if process.returncode:
@@ -189,9 +206,9 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
 def probe_and_decode(path: Path, ffmpeg: str, ffprobe: str) -> float:
     data = json.loads(command([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)]))
     duration = float(data["format"]["duration"])
-    if duration <= 0 or duration > 601:
+    if not math.isfinite(duration) or duration <= 0 or duration > 601:
         raise CheckError("AUDIO_DURATION_INVALID", "Stage 0 accepts positive audio durations up to 10 minutes.")
-    command([ffmpeg, "-nostdin", "-v", "error", "-i", str(path), "-f", "null", "-"], timeout=120)
+    command([ffmpeg, "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"], timeout=120)
     return duration
 
 
@@ -225,30 +242,61 @@ def tag_and_verify(path: Path, metadata: dict, cover: bytes | None, source_id: s
     return {"id3_version": list(actual.version), "cover_embedded": bool(cover), "tags_verified": True}
 
 
-def build_archive(root: Path, records: list[dict]) -> Path:
-    """Write privately, verify manifest and every entry, then publish by rename."""
-    partial = root / "playlist.zip.partial"
+def build_archive(root: Path, records: list[dict], *, max_bytes: int = 512 * 1024 * 1024) -> Path:
+    """Verify in a unique private temporary file, then publish without overwrite."""
     final = root / "playlist.zip"
-    if final.exists():
+    if final.exists() or final.is_symlink():
         raise CheckError("EXPORT_EXISTS", "Refusing to overwrite a published export.")
-    manifest = json.dumps({"synthetic_or_live": records[0]["source_mode"], "tracks": records}, ensure_ascii=False, indent=2)
-    with zipfile.ZipFile(partial, "w", zipfile.ZIP_STORED) as archive:
-        for record in records:
-            name = record["filename"]
-            if Path(name).name != name or "/" in name or "\\" in name:
-                raise CheckError("UNSAFE_ARCHIVE_NAME", "Archive entry is not a portable filename.")
-            archive.write(root / "export" / name, arcname=name)
-        archive.writestr("playlist.json", manifest)
-    with zipfile.ZipFile(partial) as archive:
-        names = archive.namelist()
-        if len(names) != len(set(name.casefold() for name in names)) or archive.testzip():
-            raise CheckError("ZIP_VERIFY_FAILED", "Archive is corrupt or has colliding entries.")
-        for record in records:
-            digest = hashlib.sha256()
-            with archive.open(record["filename"]) as handle:
-                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                    digest.update(chunk)
-            if digest.hexdigest() != record["sha256"]:
-                raise CheckError("ZIP_VERIFY_FAILED", "Archive entry checksum differs from the export manifest.")
-    partial.replace(final)
-    return final
+    if not records:
+        raise CheckError("EXPORT_EMPTY", "An export must contain at least one track.")
+    names = [record["filename"] for record in records]
+    if any(not name or Path(name).name != name or "/" in name or "\\" in name for name in names):
+        raise CheckError("UNSAFE_ARCHIVE_NAME", "Archive entry is not a portable filename.")
+    keys = [unicodedata.normalize("NFC", name).casefold() for name in [*names, "playlist.json"]]
+    if len(keys) != len(set(keys)):
+        raise CheckError("ZIP_VERIFY_FAILED", "Archive contains colliding entry names.")
+    paths = [root / "export" / name for name in names]
+    if any(path.is_symlink() or not path.is_file() for path in paths):
+        raise CheckError("UNSAFE_ARCHIVE_NAME", "Export inputs must be regular private files.")
+    manifest = json.dumps({"synthetic_or_live": records[0]["source_mode"], "tracks": records}, ensure_ascii=False, indent=2, allow_nan=False)
+    # ZIP_STORED duplicates the input bytes. Include a conservative allowance for
+    # entry headers so conversion passing its quota cannot yield an oversized ZIP.
+    projected = disk_bytes(root) + sum(path.stat().st_size for path in paths) + len(manifest.encode("utf-8"))
+    projected += 4096 + sum(2 * len(name.encode("utf-8")) + 128 for name in [*names, "playlist.json"])
+    if projected > max_bytes:
+        raise CheckError("DISK_LIMIT", "Feasibility scratch-data limit exceeded by the archive.")
+    descriptor, name = tempfile.mkstemp(prefix="playlist-", suffix=".zip.partial", dir=root)
+    os.close(descriptor)
+    partial = Path(name)
+    try:
+        with zipfile.ZipFile(partial, "w", zipfile.ZIP_STORED) as archive:
+            for record, path in zip(records, paths, strict=True):
+                archive.write(path, arcname=record["filename"])
+                if disk_bytes(root) > max_bytes:
+                    raise CheckError("DISK_LIMIT", "Feasibility scratch-data limit exceeded.")
+            archive.writestr("playlist.json", manifest)
+        if disk_bytes(root) > max_bytes:
+            raise CheckError("DISK_LIMIT", "Feasibility scratch-data limit exceeded.")
+        with zipfile.ZipFile(partial) as archive:
+            if archive.namelist() != [*names, "playlist.json"] or archive.testzip():
+                raise CheckError("ZIP_VERIFY_FAILED", "Archive entries or checksums are invalid.")
+            if archive.read("playlist.json").decode("utf-8") != manifest:
+                raise CheckError("ZIP_VERIFY_FAILED", "Archive manifest differs from the frozen records.")
+            for record in records:
+                digest = hashlib.sha256()
+                with archive.open(record["filename"]) as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                if digest.hexdigest() != record["sha256"]:
+                    raise CheckError("ZIP_VERIFY_FAILED", "Archive entry checksum differs from the export manifest.")
+        try:
+            # Same-directory hard linking is atomic and never replaces an existing
+            # destination. rename/replace would overwrite a concurrent winner.
+            os.link(partial, final)
+        except FileExistsError:
+            raise CheckError("EXPORT_EXISTS", "Refusing to overwrite a published export.") from None
+        except OSError:
+            raise CheckError("EXPORT_PUBLISH_FAILED", "Verified export could not be published. Check storage permissions and use a filesystem supporting private hard links.") from None
+        return final
+    finally:
+        partial.unlink(missing_ok=True)

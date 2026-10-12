@@ -8,7 +8,7 @@ The previous hosted-web topology is superseded as the default. See [the decision
 
 Playlist import → on-device acquisition/conversion → AI metadata and automatic covers → snippet preview and editable names → final tagged MP3/ZIP save to the device. UI remains professional lavenderblush with white/black accents and responsive layouts.
 
-Proposed direction: shared native UI/domain code (Flutter is a candidate), platform-specific media adapters, private local files and SQLite state. Framework and adapters remain provisional until native execution is proven. No hosted worker, cloud database/object store or required user account is part of the zero-budget baseline. AI/source/artwork services still need internet and have quotas. Each user supplies their own AI key; never bundle the owner's .env in a released app.
+Proposed direction: shared native UI/domain code (Flutter selected for the Stage 1 foundation), platform-specific media adapters, private local files and SQLite state. The Flutter foundation has Linux execution evidence; media adapters remain provisional until their native execution is proven. No hosted worker, cloud database/object store or required user account is part of the zero-budget baseline. AI/source/artwork services still need internet and have quotas. Each user supplies their own AI key; never bundle the owner's .env in a released app.
 
 ## Sequence
 
@@ -48,6 +48,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 **Work:** Validate UI-to-native integration; store phases, original metadata, effective fields, revisions/checkpoints and exports. Use maintained OS secure-storage adapters and explicit per-user key settings. Keep processing outside the UI thread.
 
 **Done when:** documented clean builds work; a fixture draft survives restart; migrations initialize empty storage; credentials are absent from source/binaries/logs; local jobs remain isolated; adapter failures have structured errors. Only platforms with evidence can be called supported.
+
+**Implementation record (2026-10-12):** Foundation deliverables are implemented in apps/native with exact pins, setup helpers and baseline CI. Linux acceptance checks passed: persistent drafts, migrations, keyring integration, isolated state, structured errors and clean debug/release builds. Windows runner/setup/CI is implemented but execution is pending; Android/iOS templates remain unverified. Stage 1 is accepted for the proven Linux foundation only; no pending platform or media gate is marked passed. See [Stage 1 guide](docs/STAGE1_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
 
 ## Stage 2 — Design system and fixture journey
 

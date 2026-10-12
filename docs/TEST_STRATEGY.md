@@ -37,3 +37,15 @@ Record devices/OS/runtime versions, commands, revisions, sample durations/bytes 
 CLI reports contain per-phase times, sampled process-tree RSS/CPU and scratch peaks. Payload-byte counts exclude protocol/retry overhead where stated; unknown values remain null. Short synthetic clips are not a production capacity estimate. Measure on-device CPU/memory/storage/battery and background behavior before setting final limits.
 
 Keep downloaded media, private links, credentials and runtime reports ignored. Commit sanitized evidence summaries only when desired. Live API calls never run automatically in ordinary CI. Type/build tests for the future native project begin once its framework/toolchain is selected; no native CI is claimed yet.
+
+## Stage 1 foundation checks
+
+Run `dart format --output=none --set-exit-if-changed lib test integration_test`, `flutter analyze --no-pub` and `flutter test --no-pub` from apps/native. The real SQLite suite covers v1-to-v2 upgrades, persisted revisions/overrides, source occurrences, ID-based ownership, interrupted generations, fenced asset registration and frozen exports. Widget checks exercise actual controller/database draft saving, invalid input and a 320px layout at 2x text scale. Secure-storage failure tests sanitize native exceptions.
+
+The native integration test uses registered path-provider/secure-storage plugins, a temporary database and a unique synthetic key, then checks draft persistence after close/reopen. Use `python scripts/test_linux_native.py` for an isolated Linux display/keyring or `flutter test integration_test/foundation_test.dart -d windows` on Windows. Tests never replace the user's stored key or access DOT. Both debug and release compilation are required. Keep Windows/phone results pending until actual execution; GitHub workflow authorship is not a passing run.
+
+## Stage 0/1 review regressions
+
+`tests/test_review_regressions.py` covers fast subprocess output, nonfinite/corrupt audio, duplicate empty query parameters, archive quota/concurrent publication, prompt allowlisting, featured-credit/ambiguous cover matching, provider deadlines, client cleanup/rollback, CPU baselines and optional provider dependencies. Providers and object storage are mocked; these checks authorize no real upload/deletion.
+
+`apps/native/test/review_regression_test.dart` covers original metadata and v2 migration, cancelled/stale attempts, checkpoint ownership, preserved playable peers, per-job recovery revisions, obsolete export checkpoints, stale/corrupt/ambiguous snapshots and asynchronous draft/key races. `startup_widget_test.dart` exercises Retry and large-text landscape failures. Exact current results are in PROJECT_STATUS.md.
