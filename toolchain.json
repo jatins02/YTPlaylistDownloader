@@ -1,0 +1,8 @@
+{
+  "flutter_version": "3.47.5",
+  "flutter_revision": "6a19cca56475dbfba1478ee68d7bd0c2ef891da1",
+  "dart_version": "3.13.4",
+  "foundation_platforms": ["linux", "windows"],
+  "phone_platforms_pending_proof": ["android", "ios"],
+  "sqlite_schema_version": 3
+}
