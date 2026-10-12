@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+!.env.stage0.example
+.venv*
+__pycache__
+*.pyc
+stage0-runs
+docs
+.agents

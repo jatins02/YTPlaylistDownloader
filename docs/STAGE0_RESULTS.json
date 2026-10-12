@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-12",
+  "stage0_complete": false,
+  "scope": "Local Linux development-environment evidence only; not Android/iPhone/hosted proof.",
+  "tests": {
+    "command": "python -m unittest discover -s tests -v",
+    "count": 15,
+    "passed": 15,
+    "skipped": 0
+  },
+  "synthetic_runs": {
+    "count": 3,
+    "all_passed": true,
+    "content": "Generated tones, fictional metadata, generated cover"
+  },
+  "live_runs": [
+    {
+      "run_id": "0f139c940a054b2ab9fc4955c44eb65f",
+      "mode": "live",
+      "host": {
+        "label": "development-environment",
+        "region": "unspecified",
+        "evidence": "operator-supplied; not independently verified"
+      },
+      "checks_passed": true,
+      "tracks": 3,
+      "durations_seconds": [
+        140.004729,
+        292.799146,
+        319.077021
+      ],
+      "zip_bytes": 30118649,
+      "zip_sha256": "6e9a1ca1294cfb6b03d608cd43a3f1c37452bf37637b3f15a926bef2207daaaa",
+      "metrics": {
+        "wall_seconds": 20.524,
+        "sampled_peak_process_tree_rss_bytes": 142032896,
+        "sampled_peak_scratch_bytes": 91758715,
+        "sampled_process_tree_cpu_seconds": 18.79,
+        "samples": 191,
+        "sampling_interval_seconds": 0.1,
+        "limits": "Sampled CPU/RSS may miss short-lived children; payload byte counts exclude protocol overhead."
+      },
+      "provider_status": {
+        "groq_metadata": "not_run",
+        "artwork": "not_run",
+        "storage_delivery": "not_run"
+      }
+    },
+    {
+      "run_id": "cd2a2398e2164fd0b955e9bd70f9a191",
+      "mode": "live",
+      "host": {
+        "label": "development-environment",
+        "region": "unspecified",
+        "evidence": "operator-supplied; not independently verified"
+      },
+      "checks_passed": true,
+      "tracks": 3,
+      "durations_seconds": [
+        140.004729,
+        292.799146,
+        319.077021
+      ],
+      "zip_bytes": 30118649,
+      "zip_sha256": "1c8a3afbb05197f7d6d5e36136f1137d4c0be3ad7ca2f11c0a318d0360cbd048",
+      "metrics": {
+        "wall_seconds": 19.434,
+        "sampled_peak_process_tree_rss_bytes": 137121792,
+        "sampled_peak_scratch_bytes": 91758715,
+        "sampled_process_tree_cpu_seconds": 16.94,
+        "samples": 181,
+        "sampling_interval_seconds": 0.1,
+        "limits": "Sampled CPU/RSS may miss short-lived children; payload byte counts exclude protocol overhead."
+      },
+      "provider_status": {
+        "groq_metadata": "not_run",
+        "artwork": "not_run",
+        "storage_delivery": "not_run"
+      }
+    },
+    {
+      "run_id": "d449500c0cbc45f9bc3eb294480514ee",
+      "mode": "live",
+      "host": {
+        "label": "development-environment",
+        "region": "unspecified",
+        "evidence": "operator-supplied; not independently verified"
+      },
+      "checks_passed": true,
+      "tracks": 3,
+      "durations_seconds": [
+        140.004729,
+        292.799146,
+        319.077021
+      ],
+      "zip_bytes": 30118649,
+      "zip_sha256": "a92cfa831091731499d6556c4de6bd179bb2e74354eca7519250bea44a89aac6",
+      "metrics": {
+        "wall_seconds": 20.089,
+        "sampled_peak_process_tree_rss_bytes": 137396224,
+        "sampled_peak_scratch_bytes": 91758715,
+        "sampled_process_tree_cpu_seconds": 16.85,
+        "samples": 187,
+        "sampling_interval_seconds": 0.1,
+        "limits": "Sampled CPU/RSS may miss short-lived children; payload byte counts exclude protocol overhead."
+      },
+      "provider_status": {
+        "groq_metadata": "not_run",
+        "artwork": "not_run",
+        "storage_delivery": "not_run"
+      }
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+# Credentials and machine-specific configuration
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.private.json
+*.private.html
+*.keystore
+*.jks
+*.p12
+*.pfx
+**/android/key.properties
+**/android/local.properties
+
+# Python environments, caches and packaging output
+.venv*/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Test coverage and logs
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+*.log
+
+# Stage 0 tools, private reports and generated media
+/.tools-stage0/
+/stage0-runs/
+/downloads/
+/exports/
+/artifacts/
+/tmp/
+
+# Flutter and Dart generated state (keep pubspec.lock for this application)
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Android and Apple generated build state
+.gradle/
+.cxx/
+.externalNativeBuild/
+**/ios/Pods/
+**/macos/Pods/
+**/ios/.symlinks/
+**/macos/.symlinks/
+**/ios/Flutter/ephemeral/
+**/macos/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/flutter_export_environment.sh
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Optional JavaScript tooling / deployment caches
+node_modules/
+.next/
+.vercel/
+
+# Personal editor settings and temporary files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Track source, docs, agent skills, plans, dependency lockfiles,
+# .gitignore, .gitattributes and .editorconfig normally.

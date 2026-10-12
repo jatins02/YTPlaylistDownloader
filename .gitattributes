@@ -1,0 +1,20 @@
+# Normalize text to LF in commits and working trees on every platform.
+* text=auto eol=lf
+
+# Windows command scripts need CRLF in the working tree.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets must never undergo line-ending conversion.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.mp4 binary
+*.zip binary
+*.pdf binary

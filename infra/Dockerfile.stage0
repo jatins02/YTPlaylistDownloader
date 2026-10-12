@@ -1,0 +1,18 @@
+# Stage 0 CLI image only. Runtime versions are recorded by each preflight report.
+FROM denoland/deno:bin-2.5.4 AS deno
+FROM python:3.14-slim-bookworm
+
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY --from=deno /deno /usr/local/bin/deno
+WORKDIR /work
+COPY requirements-stage0.lock ./
+RUN pip install --no-cache-dir -r requirements-stage0.lock \
+    && useradd --uid 10001 --create-home stage0 \
+    && mkdir /work/stage0-runs && chown stage0:stage0 /work/stage0-runs
+COPY stage0 ./stage0
+COPY tests ./tests
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 AWS_EC2_METADATA_DISABLED=true
+USER stage0
+ENTRYPOINT ["python", "-m", "stage0"]
+CMD ["preflight"]
