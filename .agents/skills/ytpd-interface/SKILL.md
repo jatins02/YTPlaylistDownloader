@@ -5,7 +5,7 @@ description: Build or review YTPlaylistDownloader responsive lavenderblush nativ
 
 # Native review and save UX
 
-Read docs/DESIGN_SYSTEM.md and docs/PRODUCT_SPEC.md. Native independent-device operation is the current direction; do not introduce a mandatory hosted backend, cloud Library destination or laptop companion. Framework choice remains provisional until platform media proof.
+Read docs/DESIGN_SYSTEM.md and docs/PRODUCT_SPEC.md. Native independent-device operation is the current direction; do not introduce a mandatory hosted backend, cloud Library destination or laptop companion. Use the pinned Flutter foundation selected in decision 0002; native media adapters remain provisional until platform proof.
 
 Use import → progress → review → save, restrained lavenderblush/white/near-black styling, visible failures/counts and touch-accessible controls. Keep stable IDs for play/edit actions. One actual bounded snippet plays after a gesture; switching stops the old one. Preserve version details and expose original titles/uncertain art.
 

@@ -8,3 +8,14 @@ __pycache__
 stage0-runs
 docs
 .agents
+
+# Local tools and native build caches are not part of the Stage 0 CLI image.
+.tools-stage0
+.tools-stage1
+stage1-runs
+**/build
+**/.dart_tool
+**/ephemeral
+**/.gradle
+**/Pods
+**/.idea

@@ -1,0 +1,85 @@
+name: Foundation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: foundation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native:
+    name: Native foundation (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: linux
+            bundle: apps/native/build/linux/x64/release/bundle
+          - os: windows-2022
+            target: windows
+            bundle: apps/native/build/windows/x64/runner/Release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: apps/native
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14.4'
+      - name: Linux native build and test dependencies
+        if: matrix.target == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev libsecret-1-dev libsqlite3-dev libglu1-mesa xvfb xauth dbus-x11 gnome-keyring fuse3
+      - name: Bootstrap exact official Flutter revision
+        working-directory: .
+        run: python scripts/bootstrap_flutter.py
+      - name: Add Flutter to PATH (Linux)
+        if: matrix.target == 'linux'
+        run: echo "$GITHUB_WORKSPACE/.tools-stage1/flutter/bin" >> "$GITHUB_PATH"
+      - name: Add Flutter to PATH (Windows)
+        if: matrix.target == 'windows'
+        run: Add-Content -Path $env:GITHUB_PATH -Value "$env:GITHUB_WORKSPACE\.tools-stage1\flutter\bin"
+      - run: flutter pub get --enforce-lockfile
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+      - run: flutter analyze --no-pub
+      - run: flutter test --no-pub
+      - name: Native Linux plugin and restart test
+        if: matrix.target == 'linux'
+        working-directory: .
+        run: python scripts/test_linux_native.py
+      - name: Native Windows plugin and restart test
+        if: matrix.target == 'windows'
+        run: flutter test integration_test/foundation_test.dart -d windows
+      - run: flutter build ${{ matrix.target }} --release
+      - name: Check release assets and literal keys
+        working-directory: .
+        run: python scripts/check_native_bundle.py ${{ matrix.bundle }}
+
+  stage0:
+    name: Existing media contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14.4'
+      - run: sudo apt-get update
+      - run: sudo apt-get install -y ffmpeg
+      - run: python3 -m venv .venv-ci
+      - run: .venv-ci/bin/python -m pip install -r requirements-stage0.lock
+      - run: .venv-ci/bin/python -m unittest discover -s tests -v

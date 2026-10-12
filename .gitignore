@@ -37,6 +37,8 @@ coverage/
 
 # Stage 0 tools, private reports and generated media
 /.tools-stage0/
+/.tools-stage1/
+/stage1-runs/
 /stage0-runs/
 /downloads/
 /exports/
@@ -46,6 +48,8 @@ coverage/
 # Flutter and Dart generated state (keep pubspec.lock for this application)
 .dart_tool/
 .packages
+.fvm/
+*.iml
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
