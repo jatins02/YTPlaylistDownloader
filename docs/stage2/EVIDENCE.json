@@ -1,0 +1,139 @@
+{
+  "recorded": "2026-10-13",
+  "flutter": "3.47.5",
+  "dart": "3.13.4",
+  "renderer": "Flutter widget-test engine on Linux; not real phones",
+  "content": "Fictional fixtures only; no audio, network requests or saved music",
+  "fonts": [
+    "SDK Roboto",
+    "SDK MaterialIcons",
+    "Installed NotoSansCJK-Regular.ttc for widget-test glyphs"
+  ],
+  "behavior_suite": {
+    "native_tests": 80,
+    "python_tests": 30,
+    "native_integration_tests": 1
+  },
+  "viewports": [
+    [
+      320,
+      720
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      1024,
+      768
+    ],
+    [
+      1440,
+      900
+    ],
+    [
+      844,
+      390
+    ]
+  ],
+  "text_scales": [
+    1,
+    2
+  ],
+  "screens": [
+    {
+      "file": "laptop-review.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d0ec1e326225a151622ed76483b13d3c82254fd6d55366a18aaea8da8a812f6f"
+    },
+    {
+      "file": "phone-complete.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "934c3ead180ec3624e50f6bc4ffdb56a8b2d1a7ae157280257bbac32038b033f"
+    },
+    {
+      "file": "phone-editor.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "a9d29a7401f1e12eb3003df38d17fd1e4a8f41e1ecc9dd8e63ec672f81ba15e4"
+    },
+    {
+      "file": "phone-empty.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6b95f17f893ef89c69218b33e062805f8c6ebd2fab7b6f87919c5acc31612568"
+    },
+    {
+      "file": "phone-expired.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "39ae6d4dbd13340a1f15e8eb13ae3e5eb0c3275d53f1033aa4e22b45c93ac752"
+    },
+    {
+      "file": "phone-import.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "955094a1f5dc14ed62a1977f58b526bea3ff56d6ccf4c03d62c748c70c3de0c5"
+    },
+    {
+      "file": "phone-large-text.png",
+      "width": 320,
+      "height": 720,
+      "sha256": "5c473b186f68af98b02eab3305ff652d388d17c20e3c7ab4d082af29c92f3ed2"
+    },
+    {
+      "file": "phone-offline.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d75924146303062cf63da4e2506b7c57a783e630e4b2fe18a9decb22079da639"
+    },
+    {
+      "file": "phone-player.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "7852d3867e595cdbe25d29ca93862085461fc77af4dcc74bfa344e4c5d9f5c60"
+    },
+    {
+      "file": "phone-progress.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fcb72de69ef65d773f1156a0a5b9d3d31755023bd6c81ce571bf8470546c65b8"
+    },
+    {
+      "file": "phone-review.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "fde6749e507c6ba2d31adaee4e77621bbbe10a4dc78941244087be577cb55d2a"
+    },
+    {
+      "file": "phone-save-error.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "4a7d4a913eb2b0038ec409c8ba48ef34372ab8f9ad8c466f9d12c9984e63dd71"
+    },
+    {
+      "file": "phone-save.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "d0ab04fe7fad29f7945aa13d581014efe1efe6190767c282a7cd2ae5f4a16260"
+    },
+    {
+      "file": "phone-unicode-review.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "57bf4838bae57586f636397ddd944ef22e72dfcf6e5b883a63b4b64adebf4ef0"
+    },
+    {
+      "file": "tablet-review.png",
+      "width": 768,
+      "height": 1024,
+      "sha256": "dedb5ea93ad5937bbdff55d2e787180b51a727ccb8370e4447ad1f5778b2c09f"
+    }
+  ]
+}

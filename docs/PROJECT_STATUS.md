@@ -1,16 +1,16 @@
 # Project status
 
-Updated: 2026-10-12.
+Updated: 2026-10-13.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is implemented and accepted on the proven Linux platform; Windows build execution remains pending. The full downloader/review/export application is not implemented and no cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is implemented and accepted on the proven Linux platform; Windows build execution remains pending. Stage 2’s fictional interface journey is complete. The real downloader/review/export application is not implemented and no cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
 | 0 — Feasibility | In progress | 30 tests pass; 3 synthetic runs and 3 live local playlist runs pass; native/provider gates open |
 | 1 — Native foundation | Implemented; Linux accepted, Windows verification pending | 48 behavior tests, static analysis, debug/release Linux builds and 1 native plugin/restart integration test pass |
-| 2 — Design/fixture flow | Not started | Written design requirements |
+| 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Not started | Desktop CLI proof only |
 | 4 — AI/artwork | Not started | Provider adapters written; real key/match checks pending |
 | 5 — Review/edit | Not started | Written behavior |
@@ -102,6 +102,16 @@ Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAG
 
 ## Next actions
 
-Run the prepared Windows native/build checks or GitHub CI and record actual results. Continue Stage 2 only within the verified foundation scope; keep mobile media gates open. Populate this project's .env with the new Groq key (never paste it in chat), then run one live stable-ID naming check against the retained sample. Supply an identifying MusicBrainz contact for a known-cover test. Continue the Android native execution spike when a toolchain/device is available; retain iOS as explicitly unresolved until it can be built/tested.
+Run the prepared Windows native/build checks or GitHub CI and record actual results. Stage 2 fixture work is complete; begin Stage 3 only after the relevant native media proof, and keep mobile gates open. Populate this project's .env with the new Groq key (never paste it in chat), then run one live stable-ID naming check against the retained sample. Supply an identifying MusicBrainz contact for a known-cover test. Continue the Android native execution spike when a toolchain/device is available; retain iOS as explicitly unresolved until it can be built/tested.
 
 For future updates, record stage, implementation revision, commands/results, observed limits and next action. Do not mark a platform or stage done without its stated evidence.
+
+## Stage 2 implementation and acceptance (2026-10-13)
+
+The separate fictional demo demonstrates validated import, explicit progress steps, cancellation/retry, partial/empty/expired/offline states, selected/excluded/failed counts, stable-ID silent preview controls, metadata editing with original titles/versions, explicit Save/Cancel and frozen ZIP/MP3 filename previews. Demo edit/destination failures preserve user input and review. Durable drafts and OS credentials are unchanged. No source/provider request, real playback or device file save is simulated as success.
+
+Shared lavenderblush tokens, white surfaces, 48 px controls and focus treatments are implemented. The full native suite passes **80 tests, zero skipped**, including **32 new regressions**. The layout matrix covers 320/390/768/1024/1440 px and landscape at 100%/200% text; keyboard-inset editing, focus restoration, semantic routes, Flutter target/label/contrast guidelines and palette ratios pass. Rendered fictional screens were reviewed and recorded in docs/stage2/screens. See [Stage 2 guide](STAGE2_GUIDE.md) for entry points and reproducible commands.
+
+`dart format --output=none --set-exit-if-changed lib test integration_test` and `flutter analyze --no-pub` pass. `python3 scripts/test_linux_native.py` passes **1 actual Linux plugin/keyring/SQLite/restart test**, now including the fixture route. `flutter build linux --release` passes; the release scan finds no dotenv/literal Groq key. The unchanged Stage 0 Python suite passes **30 tests, zero skipped** with the project's FFmpeg/ffprobe. Official Linux prerequisites were extracted into /tmp for these checks; no system packages or DOT. files were modified. Flutter/package pins and SQLite schema remain unchanged.
+
+Stage 2 is accepted for its fixture scope. This evidence does not certify actual phone screen readers/keyboards, Windows builds, native acquisition/playback/export, AI identification or online covers. Those gates remain open. No GitHub workflow, external provider call, deployment, commit or push was performed. Stage 3 is next, dependent on the relevant native media proof.

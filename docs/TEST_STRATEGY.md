@@ -36,7 +36,7 @@ Record devices/OS/runtime versions, commands, revisions, sample durations/bytes 
 
 CLI reports contain per-phase times, sampled process-tree RSS/CPU and scratch peaks. Payload-byte counts exclude protocol/retry overhead where stated; unknown values remain null. Short synthetic clips are not a production capacity estimate. Measure on-device CPU/memory/storage/battery and background behavior before setting final limits.
 
-Keep downloaded media, private links, credentials and runtime reports ignored. Commit sanitized evidence summaries only when desired. Live API calls never run automatically in ordinary CI. Type/build tests for the future native project begin once its framework/toolchain is selected; no native CI is claimed yet.
+Keep downloaded media, private links, credentials and runtime reports ignored. Commit sanitized evidence summaries only when desired. Live API calls never run automatically in ordinary CI. The pinned native project has local checks and a baseline Linux/Windows CI workflow. Workflow authorship does not establish an executed CI result.
 
 ## Stage 1 foundation checks
 
@@ -49,3 +49,9 @@ The native integration test uses registered path-provider/secure-storage plugins
 `tests/test_review_regressions.py` covers fast subprocess output, nonfinite/corrupt audio, duplicate empty query parameters, archive quota/concurrent publication, prompt allowlisting, featured-credit/ambiguous cover matching, provider deadlines, client cleanup/rollback, CPU baselines and optional provider dependencies. Providers and object storage are mocked; these checks authorize no real upload/deletion.
 
 `apps/native/test/review_regression_test.dart` covers original metadata and v2 migration, cancelled/stale attempts, checkpoint ownership, preserved playable peers, per-job recovery revisions, obsolete export checkpoints, stale/corrupt/ambiguous snapshots and asynchronous draft/key races. `startup_widget_test.dart` exercises Retry and large-text landscape failures. Exact current results are in PROJECT_STATUS.md.
+
+## Stage 2 fixture checks
+
+`fixture_journey_test.dart` exercises deterministic phases, identities/occurrences, recovery, failed selection, revision-checked edits, preserved source titles/versions, immutable save previews, duplicate-name distinction and one bounded silent preview. `fixture_widget_test.dart` uses actual Flutter controls across six viewport sizes at 1x/2x text, keyboard insets, Tab/Enter/Escape and semantic/contrast/target guidelines. `foundation_widget_test.dart` verifies demo actions leave the actual temporary SQLite store and personal-key state untouched. The native integration test also opens/closes the fixture route through the real app.
+
+Ordinary tests make no network/provider requests and generate no screenshot artifacts. Opt-in `--dart-define=STAGE2_PREVIEWS=true --plain-name 'rendered evidence'` generates reviewable PNGs with SDK fonts in ignored build output. Reviewed fictional screenshots and the scope of automated accessibility evidence are in [STAGE2_GUIDE.md](STAGE2_GUIDE.md). Actual TalkBack/VoiceOver and device keyboard/export checks remain outstanding.

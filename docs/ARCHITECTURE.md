@@ -71,3 +71,7 @@ stage0/core.py implements contracts, bounded commands, tags and ZIP verification
 apps/native contains the Stage 1 Flutter foundation with actual SQLite/secure-storage adapters, private job folders, restart recovery, revision-safe metadata and immutable export snapshots. Native media capability remains unavailable. See STAGE1_GUIDE.md and decision 0002 for boundaries. Stage 0 remains in progress until actual target-platform proofs and provider/device checks pass. See IMPLEMENTATION_PLAN.md and PROJECT_STATUS.md.
 
 The Stage 0/1 review added SQLite migration v3 for original structured metadata; legacy originals remain unknown rather than being inferred from edited fields. Cancellation, recovery and export reuse now fence stale work explicitly. See [review findings and verification](CODE_REVIEW_STAGE01.md).
+
+## Stage 2 fixture boundary
+
+`FixtureJourney` is a disposable in-memory controller, separate from `DraftsController`, `JobRepository`, `MediaPort`, `CredentialVault` and filesystem publication. Its immutable fictional records/save previews are not production `TrackRecord`/`ExportSnapshot` assets. Shared theme/widgets and a separate fixture screen/editor demonstrate the journey without creating database rows or bytes. Stage 3–6 controllers must expose real durable phases and verified capabilities; never enable media adapters or mark exports complete based on this demo.
