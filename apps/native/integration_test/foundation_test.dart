@@ -49,6 +49,20 @@ void main() {
       await tester.pumpAndSettle();
       final id = controller.drafts.single.id;
 
+      // The real native route can open/close the fixture journey without
+      // creating simulated jobs or requesting credentials/media capability.
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('open-fixture-journey')),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('open-fixture-journey')));
+      await tester.pumpAndSettle();
+      expect(find.text('Fictional demo · Stage 2'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect((await runtime.jobs.listJobs()).single.id, id);
+
       // Synthetic credential only. Its key name is unique, and cleanup is scoped.
       final key = ApiKey.parse('gsk_${const Uuid().v4().replaceAll('-', '')}');
       await vault.saveGroqKey(key);

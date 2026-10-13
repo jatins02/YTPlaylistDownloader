@@ -70,6 +70,35 @@ void main() {
   });
 
   testWidgets(
+    'demo route leaves durable drafts and personal key state untouched',
+    (tester) async {
+      await tester.pumpWidget(FoundationApp(controller: controller));
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('open-fixture-journey')),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('open-fixture-journey')));
+      await tester.pumpAndSettle();
+      expect(find.text('Fictional demo · Stage 2'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('start-demo')),
+        150,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('start-demo')));
+      await tester.pump();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Playlist drafts'), findsOneWidget);
+      expect(controller.drafts, isEmpty);
+      expect(await tester.runAsync(fixture.jobs.listJobs), isEmpty);
+      expect(controller.hasKey, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'narrow layout and large text keep draft/settings controls usable',
     (tester) async {
       tester.view.physicalSize = const Size(320, 720);

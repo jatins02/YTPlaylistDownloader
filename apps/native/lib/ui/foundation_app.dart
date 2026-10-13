@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../application/drafts_controller.dart';
+import 'fixture_screen.dart';
 import 'theme.dart';
 
 class FoundationApp extends StatelessWidget {
@@ -134,6 +135,20 @@ class _DraftsScreenState extends State<DraftsScreen> {
                   const Text(
                     'Downloads and previews are not enabled in this foundation build.',
                     style: TextStyle(color: mutedInk),
+                  ),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      key: const Key('open-fixture-journey'),
+                      onPressed: () => Navigator.of(context).push<void>(
+                        MaterialPageRoute(
+                          builder: (_) => const FixtureScreen(),
+                        ),
+                      ),
+                      icon: const Icon(Icons.science_outlined),
+                      label: const Text('Explore the fictional demo'),
+                    ),
                   ),
                   if (widget.recoveredAttempts > 0)
                     Padding(
