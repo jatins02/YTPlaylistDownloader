@@ -2,7 +2,7 @@
 
 A successor to DOT.: playlist downloads, AI song naming, automatic covers, snippets and editable review, then full tagged MP3/ZIP save to your device.
 
-**Current state:** Stage 1 native foundation implemented: private playlist drafts, SQLite recovery/revisions, secure personal-key settings and a minimal lavenderblush UI. Linux builds and native-plugin tests passed; Windows setup/CI is prepared but execution remains pending. Downloads, naming, covers, playback and device exports are later app stages. Stage 0 phone/provider gates remain open.
+**Current state:** Stages 1 and 2 provide private durable playlist drafts, secure personal-key settings and a responsive lavenderblush fictional import → progress → review/edit → save demo. Choose **Explore the fictional demo** in the app. Linux foundation/fixture tests and release builds pass. Real downloads, AI naming, covers, playback and device exports are later app stages; Windows execution and Stage 0 phone/provider gates remain open.
 
 ## Confirmed direction
 
@@ -10,6 +10,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 
 ## Start here
 
+- [Stage 2 demo, verification and screenshots](docs/STAGE2_GUIDE.md)
 - [Native app setup and Stage 1 contracts](docs/STAGE1_GUIDE.md)
 - [Stage 0 setup and commands](docs/STAGE0_GUIDE.md)
 - [Stage 0/1 code review and fixes](docs/CODE_REVIEW_STAGE01.md)

@@ -4,7 +4,7 @@
 
 Work in YTPlaylistDownloader. The sibling DOT. is reference-only; never modify its files, import its .env, reuse its environment or copy its downloaded media.
 
-Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI and a Stage 1 native foundation in apps/native. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Media processing and full review/export are not implemented in the native app. Explicit owner instructions override documents.
+Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Media processing and full review/export are not implemented in the native app. Explicit owner instructions override documents.
 
 The owner confirmed zero budget, independent Android and iPhone operation, laptop support and device-only saves. No Mac/iPhone is available for testing. Do not replace independent phones with a laptop/LAN companion, provision paid hosting or silently drop iOS. The old hosted topology is superseded. Flutter 3.47.5 is selected for the foundation (decision 0002); media adapters remain candidates pending platform proof. Windows and Linux are the prioritized desktop targets; Windows execution is pending, while Linux foundation checks passed.
 
@@ -31,7 +31,7 @@ Read task-relevant skills under .agents/skills/: ytpd-media-pipeline for media/t
 
 ## Working conventions
 
-Use exact dependency pins and recorded platform/runtime versions. Write meaningful behavior tests with synthetic audio/fictional metadata; live provider/source calls are opt-in. Keep changes in the requested stage and update PROJECT_STATUS.md with actual commands/results, unresolved gates and next actions. Do not start a polished full UI before the relevant native media spike passes.
+Use exact dependency pins and recorded platform/runtime versions. Write meaningful behavior tests with synthetic audio/fictional metadata; live provider/source calls are opt-in. Keep changes in the requested stage and update PROJECT_STATUS.md with actual commands/results, unresolved gates and next actions. Stage 2 fixture UI is complete and explicitly isolated from real processing. Do not claim production media UI capabilities before the relevant native media spike passes; keep fixture actions labeled and outside durable jobs/files.
 
 No independent agents, purchases, deployment or extra approval steps are implied by this file. Continue routine authorized local work; ask only for material missing decisions. agent.md remains a pointer to this canonical file.
 

@@ -61,6 +61,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** the fixture flow works at narrow, landscape, tablet and laptop widths without clipped controls; keyboard/screen-reader routes, large text, focus and contrast pass; rendered screens are reviewed. Fictional fixtures are clearly labeled.
 
+**Implementation record (2026-10-13):** Stage 2 fixture interface is complete. Separate in-memory import/progress/review/editor/silent-player/save flows, settings and recoverable error/expiry states are implemented. Layout, large-text, keyboard, semantics/contrast checks and rendered-screen review pass; the full native suite has 80 passing tests. Linux native integration/release checks pass. Real source/media/export and actual phone/Windows verification remain separate gates. See [Stage 2 guide](docs/STAGE2_GUIDE.md).
+
 ## Stage 3 — On-device playlist and audio pipeline
 
 **Goal:** Real accessible playlists become isolated playable tracks with truthful progress and recoverable local state.
