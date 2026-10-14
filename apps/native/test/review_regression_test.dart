@@ -50,6 +50,25 @@ final class DelayedDraftStore implements DraftStore {
       delegate.createDraft(playlist, identity: identity);
 }
 
+final class SequencedPresenceVault implements CredentialVault {
+  final started = List.generate(2, (_) => Completer<void>());
+  final presence = List.generate(2, (_) => Completer<bool>());
+  int calls = 0;
+  @override
+  Future<bool> hasGroqKey() {
+    final index = calls++;
+    started[index].complete();
+    return presence[index].future;
+  }
+
+  @override
+  Future<void> saveGroqKey(ApiKey key) async {}
+  @override
+  Future<void> removeGroqKey() async {}
+  @override
+  Future<ApiKey?> readGroqKey() async => null;
+}
+
 Matcher conflict = isA<AppFailure>().having(
   (error) => error.code,
   'code',
@@ -64,6 +83,34 @@ void main() {
   tearDown(() async {
     await fixture.close();
   });
+
+  test(
+    'a stale key-presence failure cannot overwrite a later successful load',
+    () async {
+      final vault = SequencedPresenceVault();
+      final controller = DraftsController(
+        jobs: fixture.jobs,
+        workspace: fixture.workspace,
+        vault: vault,
+      );
+      try {
+        final old = controller.load();
+        await vault.started[0].future;
+        final recent = controller.load();
+        await vault.started[1].future;
+        vault.presence[1].complete(true);
+        await recent;
+        vault.presence[0].completeError(
+          const AppFailure(FailureCode.storageUnavailable, 'Old failure'),
+        );
+        await old;
+        expect(controller.hasKey, isTrue);
+        expect(controller.credentialFailure, isNull);
+      } finally {
+        controller.dispose();
+      }
+    },
+  );
 
   test('new tracks retain original metadata after human edits', () async {
     final track = await fixture.track(await fixture.draft());
@@ -240,7 +287,11 @@ void main() {
       trackId: track.id,
       stage: TaskStage.conversion,
     );
-    final asset = (await fixture.db.query('assets')).single;
+    final asset = (await fixture.db.query(
+      'assets',
+      where: 'kind = ?',
+      whereArgs: [AssetKind.audio.name],
+    )).single;
     await expectLater(
       fixture.jobs.saveCheckpoint(
         token,

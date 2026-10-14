@@ -82,7 +82,10 @@ final class AppRuntime {
           try {
             final guardBytes = await rootBundle.load('assets/process_guard.py');
             final guard = await workspace.installProcessGuard(
-              guardBytes.buffer.asUint8List(),
+              guardBytes.buffer.asUint8List(
+                guardBytes.offsetInBytes,
+                guardBytes.lengthInBytes,
+              ),
             );
             final tools = await DesktopTools.load(manifest, guard.path);
             final desktop = DesktopMediaPort(
@@ -94,6 +97,9 @@ final class AppRuntime {
             media = desktop;
           } on AppFailure {
             // Drafts and secure settings remain usable after a bad local runtime.
+            media = UnavailableMediaPort(platform);
+          } on FileSystemException {
+            // A media-directory failure must not disable durable drafts/settings.
             media = UnavailableMediaPort(platform);
           }
         }

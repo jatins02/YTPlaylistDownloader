@@ -211,6 +211,68 @@ void main() {
     );
   });
 
+  test('replacement audio atomically invalidates its previous snippet across restart', () async {
+    final token = await processing();
+    await store.trackPhase(token, TrackPhase.downloading);
+    await store.trackPhase(token, TrackPhase.converting);
+    await store.publish(
+      token,
+      asset(token, AssetKind.audio),
+      CheckpointStep.converted,
+    );
+    final oldPreview = asset(token, AssetKind.preview);
+    await store.publish(token, oldPreview, CheckpointStep.converted);
+    final replacement = asset(token, AssetKind.audio);
+    await store.publish(token, replacement, CheckpointStep.converted);
+    await fixture.jobs.recoverInterruptedAttempts();
+    final active = await store.assets(job.id, trackId: token.trackId);
+    expect(active.map((a) => a.id), [replacement.id]);
+    expect(
+      await store.assets(job.id, trackId: token.trackId, activeOnly: false),
+      hasLength(3),
+    );
+    expect(
+      (await fixture.jobs.getTrack(token.trackId!)).phase,
+      TrackPhase.queued,
+    );
+  });
+
+  test(
+    'wrong stage cannot mutate track phases or retire another attempts audio',
+    () async {
+      final token = await processing();
+      final audio = asset(token, AssetKind.audio);
+      await store.publish(token, audio, CheckpointStep.converted);
+      final wrong = await fixture.jobs.beginAttempt(
+        jobId: job.id,
+        trackId: token.trackId,
+        stage: TaskStage.enrichment,
+      );
+      await expectLater(
+        store.trackPhase(wrong, TrackPhase.downloading),
+        throwsA(failed(FailureCode.invalidTransition)),
+      );
+      await expectLater(
+        store.retire(wrong, AssetKind.audio),
+        throwsA(failed(FailureCode.invalidTransition)),
+      );
+      expect((await store.assets(job.id)).single.id, audio.id);
+    },
+  );
+
+  test('publication rejects inconsistent checkpoints without changing active audio', () async {
+    final token = await processing();
+    await expectLater(
+      store.publish(
+        token,
+        asset(token, AssetKind.audio),
+        CheckpointStep.acquired,
+      ),
+      throwsA(failed(FailureCode.invalidTransition)),
+    );
+    expect(await store.assets(job.id), isEmpty);
+  });
+
   test(
     'pause and retry fence stale workers while preserving verified assets',
     () async {

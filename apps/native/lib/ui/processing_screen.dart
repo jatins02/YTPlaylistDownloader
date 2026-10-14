@@ -52,9 +52,22 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (job == null)
-                    const CircularProgressIndicator(
-                      semanticsLabel: 'Loading this playlist',
-                    )
+                    if (state.failure != null) ...[
+                      WorkspaceNotice(
+                        icon: Icons.error_outline,
+                        title: 'Playlist could not be opened',
+                        message: state.failure!.message,
+                        error: true,
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () => state.refresh(force: true),
+                        child: const Text('Retry loading playlist'),
+                      ),
+                    ] else
+                      const CircularProgressIndicator(
+                        semanticsLabel: 'Loading this playlist',
+                      )
                   else ...[
                     WorkspaceHeading(
                       'Prepare your tracks',
@@ -108,6 +121,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                             key: const Key('start-processing'),
                             onPressed:
                                 state.commanding ||
+                                    state.cancelling ||
                                     state.capability?.canAcquire != true
                                 ? null
                                 : state.start,
@@ -122,7 +136,10 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                             state.failedCount > 0)
                           FilledButton.icon(
                             key: const Key('retry-processing'),
-                            onPressed: state.commanding
+                            onPressed:
+                                state.commanding ||
+                                    state.cancelling ||
+                                    state.capability?.canAcquire != true
                                 ? null
                                 : () => state.start(retryFailed: true),
                             icon: const Icon(Icons.refresh),
@@ -222,12 +239,11 @@ class _EntryCard extends StatelessWidget {
           ),
           if (track?.durationSeconds != null)
             Text('${track!.durationSeconds!.toStringAsFixed(1)} seconds'),
-          if (track?.failure != null ||
-              (track == null && entry.failure != null))
+          for (final failure in {?entry.failure, ?track?.failure})
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                mediaFailureMessage(track?.failure ?? entry.failure),
+                mediaFailureMessage(failure),
                 style: const TextStyle(color: errorInk),
               ),
             ),

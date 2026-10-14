@@ -248,7 +248,13 @@ void main() {
           .where((t) => t.phase == TrackPhase.ready),
       hasLength(1),
     );
+    await Future.wait([
+      media.discardPrivateMedia(job.id),
+      media.discardPrivateMedia(job.id),
+    ]);
+    final cleaned = await fixture.jobs.getJob(job.id);
     await media.discardPrivateMedia(job.id);
+    expect((await fixture.jobs.getJob(job.id)).revision, cleaned.revision);
     expect(await PipelineRepository(fixture.jobs).assets(job.id), isEmpty);
     expect(await external.length(), expectedLength);
     expect(
@@ -289,6 +295,157 @@ void main() {
     expect((await fixture.jobs.getJob(job.id)).revision, expired.revision);
     expect(await directory.exists(), isFalse);
   });
+
+  test('unexpected source exceptions fence the job and keep completed peers resumable', () async {
+    final job = await draft();
+    source.throwVideo = '12345678901';
+    await expectLater(
+      run(job),
+      throwsA(
+        isA<AppFailure>().having(
+          (e) => e.code,
+          'code',
+          FailureCode.toolUnavailable,
+        ),
+      ),
+    );
+    final stopped = await fixture.jobs.processingSnapshot(job.id);
+    expect(stopped.$1.phase, JobPhase.failed);
+    expect(stopped.$2.first.phase, TrackPhase.ready);
+    expect(stopped.$2[1].phase, TrackPhase.queued);
+    expect(
+      await fixture.db.query(
+        'attempts',
+        where: 'status = ?',
+        whereArgs: ['running'],
+      ),
+      isEmpty,
+    );
+    source.throwVideo = null;
+    await run(stopped.$1);
+    expect(source.enumerations, 1);
+    expect(source.downloads['abcdefghijk'], 1);
+    expect((await fixture.jobs.getJob(job.id)).phase, JobPhase.reviewReady);
+  });
+
+  test(
+    'closing waits for queued private cleanup before storage can be released',
+    () async {
+      final job = await draft();
+      await run(job);
+      await media.cancel(job.id);
+      final entered = Completer<void>(), release = Completer<void>();
+      final lock = fixture.db.transaction((tx) async {
+        entered.complete();
+        await release.future;
+      });
+      await entered.future;
+      var finished = false;
+      final discard = media.discardPrivateMedia(job.id);
+      final closing = media.close().then((_) {
+        finished = true;
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(finished, isFalse);
+      release.complete();
+      await lock;
+      await Future.wait([discard, closing]);
+      expect(finished, isTrue);
+      expect(await PipelineRepository(fixture.jobs).assets(job.id), isEmpty);
+      expect(
+        await Directory('${fixture.workspace.root.path}/jobs/${job.id}')
+            .exists(),
+        isFalse,
+      );
+    },
+  );
+
+  test('cleanup and acquisition cannot race an expiration sweep', () async {
+    final job = await draft();
+    final cleanup = media.expireOldMedia();
+    await expectLater(
+      run(job),
+      throwsA(
+        isA<AppFailure>().having((e) => e.code, 'code', FailureCode.conflict),
+      ),
+    );
+    await cleanup;
+    expect((await fixture.jobs.getJob(job.id)).phase, JobPhase.draft);
+    await run(job);
+    expect((await fixture.jobs.getJob(job.id)).phase, JobPhase.reviewReady);
+  });
+
+  test(
+    'a retained but truncated snippet is retired and rebuilt on explicit retry',
+    () async {
+      final job = await draft();
+      await run(job);
+      final store = PipelineRepository(fixture.jobs);
+      final before = await store.assets(job.id);
+      final preview = before.firstWhere((a) => a.kind == AssetKind.preview);
+      final full = before.singleWhere(
+        (a) => a.trackId == preview.trackId && a.kind == AssetKind.audio,
+      );
+      final directory = await Directory('${fixture.root.path}/short-snippet')
+          .create();
+      final scope = tools.scope();
+      try {
+        final file = await media.files.file(preview);
+        await file.delete();
+        await scope.run(tools.ffmpeg, [
+          '-v',
+          'error',
+          '-f',
+          'lavfi',
+          '-i',
+          'sine=frequency=440:duration=0.1',
+          '-c:a',
+          'libmp3lame',
+          file.path,
+        ], directory: directory);
+        await fixture.db.update(
+          'assets',
+          {
+            'sha256': await media.files.digest(file.path),
+            'bytes': await file.length(),
+          },
+          where: 'id = ?',
+          whereArgs: [preview.id],
+        );
+        // Represent a pre-upgrade interrupted track with a hash-valid but short
+        // preview; full audio is kept as the verified conversion boundary.
+        await fixture.db.update(
+          'tracks',
+          {'phase': 'queued'},
+          where: 'id = ?',
+          whereArgs: [preview.trackId],
+        );
+        await store.retryFailedTracks(job.id);
+        await run(await fixture.jobs.getJob(job.id));
+        expect(
+          (await fixture.jobs.getTrack(preview.trackId!)).failure,
+          FailureCode.audioInvalid,
+        );
+        expect(
+          (await store.assets(job.id)).any((a) => a.id == preview.id),
+          isFalse,
+        );
+        await store.retryFailedTracks(job.id);
+        await run(await fixture.jobs.getJob(job.id));
+        expect(
+          (await fixture.jobs.getTrack(preview.trackId!)).phase,
+          TrackPhase.ready,
+        );
+        expect(
+          (await store.assets(job.id)).any((a) => a.id == full.id),
+          isTrue,
+        );
+        expect(source.downloads['abcdefghijk'], 1);
+      } finally {
+        scope.cancel();
+      }
+    },
+  );
 }
 
 final class CountingSource implements PlaylistSource {
@@ -297,6 +454,7 @@ final class CountingSource implements PlaylistSource {
   int enumerations = 0;
   final Map<String, int> downloads = {};
   String? blockVideo;
+  String? throwVideo;
   Completer<void>? gate;
   final blocked = Completer<void>();
   @override
@@ -320,6 +478,7 @@ final class CountingSource implements PlaylistSource {
     Future<void> Function() monitor,
   ) async {
     downloads.update(videoId, (n) => n + 1, ifAbsent: () => 1);
+    if (videoId == throwVideo) throw StateError('Private provider diagnostic');
     if (videoId == blockVideo) {
       if (!blocked.isCompleted) blocked.complete();
       await gate!.future;

@@ -77,6 +77,7 @@ final class PipelineRepository {
     PipelineLimits limits,
   ) => _write((tx) async {
     await _token(tx, token);
+    limits.validate();
     if (token.trackId != null || token.stage != TaskStage.acquisition) {
       throw const AppFailure(
         FailureCode.invalidTransition,
@@ -176,24 +177,7 @@ final class PipelineRepository {
     await _touch(tx, token.jobId);
   });
 
-  Future<List<StoredEntry>> entries(String jobId) async =>
-      (await db.query(
-            'playlist_entries',
-            where: 'job_id = ?',
-            whereArgs: [jobId],
-            orderBy: 'position',
-          ))
-          .map(
-            (row) => StoredEntry(
-              position: row['position']! as int,
-              title: row['source_title'] as String? ?? 'Unavailable source',
-              trackId: row['track_id'] as String?,
-              failure: row['error_code'] == null
-                  ? null
-                  : FailureCode.values.byName(row['error_code']! as String),
-            ),
-          )
-          .toList(growable: false);
+  Future<List<StoredEntry>> entries(String jobId) => jobs.listEntries(jobId);
 
   Future<void> trackPhase(
     AttemptToken token,
@@ -202,6 +186,12 @@ final class PipelineRepository {
     FailureCode? failure,
   }) => _write((tx) async {
     await _token(tx, token);
+    if (token.trackId == null || token.stage != TaskStage.conversion) {
+      throw const AppFailure(
+        FailureCode.invalidTransition,
+        'A track conversion attempt is required.',
+      );
+    }
     final rows = await tx.query(
       'tracks',
       where: 'id = ?',
@@ -314,6 +304,30 @@ final class PipelineRepository {
         'The verified asset does not belong to this track.',
       );
     }
+    final expectedStep = asset.kind == AssetKind.source
+        ? CheckpointStep.acquired
+        : CheckpointStep.converted;
+    if (step != expectedStep) {
+      throw const AppFailure(
+        FailureCode.invalidTransition,
+        'The checkpoint does not match the prepared media.',
+      );
+    }
+    // A crash after publishing replacement audio must not retain a preview
+    // from the previous conversion. Replacement sources invalidate derivatives.
+    final obsolete = switch (asset.kind) {
+      AssetKind.source => [AssetKind.audio, AssetKind.preview],
+      AssetKind.audio => [AssetKind.preview],
+      _ => <AssetKind>[],
+    };
+    for (final kind in obsolete) {
+      await tx.update(
+        'assets',
+        {'active': 0},
+        where: 'job_id = ? AND track_id = ? AND kind = ?',
+        whereArgs: [asset.jobId, asset.trackId, kind.name],
+      );
+    }
     await tx.update(
       'assets',
       {'active': 0},
@@ -347,12 +361,25 @@ final class PipelineRepository {
 
   Future<void> retire(AttemptToken token, AssetKind kind) => _write((tx) async {
     await _token(tx, token);
+    if (token.trackId == null ||
+        token.stage != TaskStage.conversion ||
+        ![
+          AssetKind.source,
+          AssetKind.audio,
+          AssetKind.preview,
+        ].contains(kind)) {
+      throw const AppFailure(
+        FailureCode.invalidTransition,
+        'Only a track conversion attempt can retire prepared media.',
+      );
+    }
     await tx.update(
       'assets',
       {'active': 0},
       where: 'job_id = ? AND track_id = ? AND kind = ?',
       whereArgs: [token.jobId, token.trackId, kind.name],
     );
+    await _touch(tx, token.jobId);
   });
 
   /// Pause/fail the job, fencing all workers in the same transaction. Ready

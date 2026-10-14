@@ -15,6 +15,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 - [Native app setup and Stage 1 contracts](docs/STAGE1_GUIDE.md)
 - [Stage 0 setup and commands](docs/STAGE0_GUIDE.md)
 - [Stage 0/1 code review and fixes](docs/CODE_REVIEW_STAGE01.md)
+- [Review of all implemented Stages 0–3](docs/CODE_REVIEW_STAGE03.md)
 - [Current results and missing gates](docs/PROJECT_STATUS.md)
 - [Implementation plan](IMPLEMENTATION_PLAN.md)
 - [Architecture](docs/ARCHITECTURE.md)

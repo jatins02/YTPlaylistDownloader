@@ -8,10 +8,10 @@ Updated: 2026-10-14.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
-| 0 — Feasibility | In progress | 30 tests pass; 3 synthetic runs and 3 live local playlist runs pass; native/provider gates open |
+| 0 — Feasibility | In progress | 41 Python tests pass; 3 fresh review synthetic runs and 3 historical live local playlist runs pass; native/provider gates open |
 | 1 — Native foundation | Implemented; Linux accepted, Windows verification pending | 48 behavior tests, static analysis, debug/release Linux builds and 1 native plugin/restart integration test pass |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
-| 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, live sample, recovery/quotas/cleanup, 110 native and 32 Python tests |
+| 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
 | 4 — AI/artwork | Not started | Provider adapters written; real key/match checks pending |
 | 5 — Review/edit | Not started | Written behavior |
 | 6 — Device save | Not started | CLI ZIP verified; native picker/export untested |
@@ -125,3 +125,50 @@ Pause, close/restart and explicit retry reuse only verified source/audio boundar
 Actual checks: **110 Flutter tests pass, zero skipped** (104 ordinary + 6 opt-in real-codec cases), **32 Python tests pass, zero skipped**, Linux formatting/analysis/release scan/builds pass, and both foundation and new actual native pipeline/UI/restart integration tests pass in disposable Linux sessions. The live sample first retained two successful peers while one source failed; explicit retry completed all three without reacquiring those peers. Sanitized records are in [STAGE3_RESULTS.json](STAGE3_RESULTS.json); setup/contracts are in [STAGE3_GUIDE.md](STAGE3_GUIDE.md). Native CPU/RAM/battery capacity has not been measured; configured limits are conservative desktop development bounds, not phone capacity claims.
 
 **Linux Stage 3 is accepted. Full multi-platform acceptance remains open.** The owner confirmed an Android phone available by USB; no USB device filesystem, JDK, SDK or ADB is exposed here. No Mac/iPhone is available. Windows process-tree/build/media execution is unverified. No phone adapter, real player, online metadata/artwork or native file-destination save was marked supported, and no paid host, deployment, commit or push was performed. Stage 4 can continue on proven Linux while these platform spikes are pursued separately.
+
+## Review of implemented Stages 0–3 (2026-10-14)
+
+Reviewed the implemented native/CLI source, domain/repositories, controller/UI,
+media/process/file lifecycle, provider probes, tests and setup/platform/CI
+configuration against the plan and skills. Existing uncommitted work was kept;
+dependency pins and historical migrations remain unchanged. See
+[findings and regression evidence](CODE_REVIEW_STAGE03.md).
+
+Corrections close readiness and frozen-state bypasses, atomically invalidate
+snippets when audio is replaced, recover jobs/export snapshots without surviving
+attempts, retain legacy/duplicate occurrence titles and errors, fence starts
+after pause/cancel, serialize refresh/retention/cleanup, drain work before
+shutdown and retire invalid retained media before explicit retry. Unexpected
+errors remain structured and verified peers survive. Startup media filesystem
+errors preserve drafts/settings; old credential reads cannot overwrite newer
+state.
+
+The CLI now isolates child environments/process groups, caches and extractor loading,
+starts short-track snippets correctly and enforces their duration/filename
+bounds. Artwork cannot guess among matching release editions. AI missing known
+version/clip markers retains original-title fallback and a review flag; naming
+requires original source records. Its prompt is `stage0-v2`. The optional image
+includes the supervisor asset needed by its copied tests; it was not built.
+
+Final commands/results: **132 Flutter tests pass, zero skipped** (122 ordinary
+and 10 opt-in real-codec tests); **41 Python tests pass, zero skipped**;
+`dart format --output=none --set-exit-if-changed lib test integration_test tool`
+and `flutter analyze --no-pub` pass. Linux debug/release builds pass; the release
+scan checks **16 files** without dotenv/literal Groq keys. Both
+`python3 scripts/test_linux_native.py` and the opt-in `--test pipeline_test.dart`
+pass one actual native test each in disposable sessions. Three fresh
+`python -m stage0 synthetic --runs 3` runs pass, each verifying three distinct
+fictional MP3s, tags/embedded cover, snippets and ZIP manifests/checksums.
+`git diff --check` passes.
+
+The socket-restricted sandbox required scoped execution access for Flutter and
+native tests. Missing Linux prerequisites were restored by extracting Ubuntu
+packages under `/tmp`; no system installation or sibling-project access occurred.
+The tests use the existing pinned runtime, clang 21.1.8, CMake 4.2.3 and Ninja
+1.13.2. No live source/provider/storage requests, phone/Windows execution,
+Docker build, GitHub CI run, deployment, commit or push was performed.
+
+Next actions remain the Android toolchain/device spike, Windows execution and
+the unresolved iOS gate; Stage 4 can proceed on proven Linux with the owner's
+securely configured key and identifying artwork contact. This review adds no
+Stage 4–9 completion claim.

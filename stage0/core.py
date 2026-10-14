@@ -106,6 +106,8 @@ def truncate_utf8(value: str, budget: int) -> str:
 
 
 def allocate_filename(metadata: dict, used: set[str], budget: int = 180) -> str:
+    if type(budget) is not int or not 32 <= budget <= 255:
+        raise CheckError("FILENAME_BUDGET_INVALID", "Filename byte budget must be between 32 and 255.")
     base = unicodedata.normalize("NFC", display_name(metadata))
     base = "".join("-" if c in '/\\:<>"|?*' else c for c in base if not unicodedata.category(c).startswith("C"))
     base = base.strip(" .") or "Untitled"
@@ -114,7 +116,8 @@ def allocate_filename(metadata: dict, used: set[str], budget: int = 180) -> str:
     suffix = ""
     number = 0
     while True:
-        name = truncate_utf8(base, budget - len(suffix.encode()) - 4) + suffix + ".mp3"
+        stem = truncate_utf8(base, budget - len(suffix.encode()) - 4) or "Untitled"
+        name = stem + suffix + ".mp3"
         key = unicodedata.normalize("NFC", name).casefold()
         if key not in used:
             used.add(key)
@@ -147,7 +150,15 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
             max_bytes: int = 512 * 1024 * 1024) -> bytes:
     """Drain output into temporary files, kill the process group on timeout/quota."""
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
-        process = subprocess.Popen(args, stdout=output, stderr=errors, start_new_session=os.name != "nt")
+        environment = {key: os.environ[key] for key in (
+            'PATH', 'HOME', 'LANG', 'LC_ALL', 'SSL_CERT_FILE', 'SSL_CERT_DIR',
+            'SYSTEMROOT', 'WINDIR', 'TEMP', 'TMP', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA',
+        ) if key in os.environ}
+        if scratch is not None:
+            environment['TMPDIR'] = str(scratch.resolve())
+            environment['DENO_DIR'] = str(scratch.resolve() / '.deno-cache')
+        process = subprocess.Popen(args, stdout=output, stderr=errors,
+                                   start_new_session=os.name != "nt", env=environment)
         start = time.monotonic()
         failure = None
         try:
@@ -163,8 +174,8 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
                     break
                 time.sleep(0.05)
         finally:
-            if process.poll() is None:
-                if os.name == "nt":
+            if os.name == "nt":
+                if process.poll() is None:
                     # yt-dlp can have a codec child. Killing only its parent
                     # leaves that child writing after cancellation/quota failure.
                     try:
@@ -174,11 +185,14 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
                     finally:
                         if process.poll() is None:
                             process.kill()
-                else:
-                    try:
-                        os.killpg(process.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
+            else:
+                # A successful parent can still leave descendants writing to
+                # scratch or the diagnostic files. Retire the group on every exit.
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            if process.poll() is None:
                 process.wait()
         if failure:
             raise failure

@@ -47,6 +47,12 @@ final class ProcessScope {
     Future<void> Function()? monitor,
   }) async {
     check();
+    if (timeout <= Duration.zero || maxOutputBytes <= 0) {
+      throw const AppFailure(
+        FailureCode.limitExceeded,
+        'Invalid media operation limits.',
+      );
+    }
     Process? process;
     StreamSubscription<List<int>>? stdout, stderr;
     Timer? deadline, polling;
@@ -115,6 +121,7 @@ final class ProcessScope {
           );
           outDone.complete();
         },
+        cancelOnError: true,
       );
       stderr = process.stderr.listen(
         (bytes) {
@@ -142,6 +149,7 @@ final class ProcessScope {
           );
           errDone.complete();
         },
+        cancelOnError: true,
       );
       deadline = Timer(
         timeout,
@@ -156,7 +164,7 @@ final class ProcessScope {
       if (monitor != null) {
         polling = Timer.periodic(const Duration(milliseconds: 100), (_) {
           if (pendingMonitor != null) return;
-          pendingMonitor = monitor()
+          pendingMonitor = Future<void>.sync(monitor)
               .catchError((Object error) {
                 abort(
                   error is AppFailure
@@ -222,8 +230,12 @@ final class ProcessScope {
       await stderr?.cancel();
       if (process != null) {
         process.kill(ProcessSignal.sigterm);
+        // Cleanup must not race the supervisor's final descendant termination.
+        await process.exitCode;
         _processes.remove(process);
       }
+      final pending = pendingMonitor;
+      if (pending != null) await pending;
     }
   }
 }

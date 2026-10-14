@@ -80,6 +80,7 @@ final class DesktopTools {
     'yt_dlp',
     '--ignore-config',
     '--no-config-locations',
+    '--no-cache-dir',
     '--no-plugin-dirs',
     '--no-remote-components',
     '--no-js-runtimes',

@@ -200,6 +200,30 @@ final class JobRepository implements DraftStore {
     )).map(_track).toList(growable: false);
   });
 
+  Future<List<StoredEntry>> listEntries(String jobId) =>
+      _guard(() => _entries(db, jobId));
+
+  Future<List<StoredEntry>> _entries(DatabaseExecutor tx, String jobId) async =>
+      (await tx.rawQuery(
+            """SELECT e.position, e.track_id, e.error_code,
+        COALESCE(e.source_title, t.source_title, 'Unavailable source') AS source_title
+        FROM playlist_entries e LEFT JOIN tracks t
+        ON t.id = e.track_id AND t.job_id = e.job_id
+        WHERE e.job_id = ? ORDER BY e.position""",
+            [jobId],
+          ))
+          .map(
+            (row) => StoredEntry(
+              position: row['position']! as int,
+              title: row['source_title']! as String,
+              trackId: row['track_id'] as String?,
+              failure: row['error_code'] == null
+                  ? null
+                  : FailureCode.values.byName(row['error_code']! as String),
+            ),
+          )
+          .toList(growable: false);
+
   Future<(JobRecord, List<TrackRecord>, List<StoredEntry>)> processingSnapshot(
     String jobId,
   ) => _guard(
@@ -209,24 +233,7 @@ final class JobRepository implements DraftStore {
         'SELECT t.* FROM tracks t LEFT JOIN playlist_entries e ON e.track_id = t.id AND e.job_id = t.job_id WHERE t.job_id = ? GROUP BY t.id ORDER BY MIN(e.position), t.id',
         [jobId],
       )).map(_track).toList(growable: false);
-      final entries =
-          (await tx.query(
-                'playlist_entries',
-                where: 'job_id = ?',
-                whereArgs: [jobId],
-                orderBy: 'position',
-              ))
-              .map(
-                (row) => StoredEntry(
-                  position: row['position']! as int,
-                  title: row['source_title'] as String? ?? 'Unavailable source',
-                  trackId: row['track_id'] as String?,
-                  failure: row['error_code'] == null
-                      ? null
-                      : FailureCode.values.byName(row['error_code']! as String),
-                ),
-              )
-              .toList(growable: false);
+      final entries = await _entries(tx, jobId);
       return (job, tracks, entries);
     }),
   );
@@ -341,6 +348,7 @@ final class JobRepository implements DraftStore {
         'job_id': jobId,
         'position': position,
         'track_id': id,
+        'source_title': sourceTitle,
       });
       await _touch(tx, jobId);
       return _requireTrack(tx, id);
@@ -425,16 +433,18 @@ final class JobRepository implements DraftStore {
         );
       }
       if (phase == TrackPhase.ready) {
-        final audio = await tx.query(
-          'assets',
-          where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
-          whereArgs: [track.jobId, id, AssetKind.audio.name],
-        );
-        if (audio.isEmpty) {
-          throw const AppFailure(
-            FailureCode.invalidTransition,
-            'A verified audio asset is required before marking a track ready.',
+        for (final kind in [AssetKind.audio, AssetKind.preview]) {
+          final assets = await tx.query(
+            'assets',
+            where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
+            whereArgs: [track.jobId, id, kind.name],
           );
+          if (assets.length != 1) {
+            throw const AppFailure(
+              FailureCode.invalidTransition,
+              'Exactly one verified audio asset and snippet are required before marking a track ready.',
+            );
+          }
         }
       }
       await tx.update(
@@ -470,6 +480,12 @@ final class JobRepository implements DraftStore {
         }
       } else {
         await _editable(tx, jobId);
+        if (job.phase == JobPhase.exportReady) {
+          throw const AppFailure(
+            FailureCode.invalidTransition,
+            'Return to review before starting processing again.',
+          );
+        }
         if (job.phase == JobPhase.failed) {
           throw const AppFailure(
             FailureCode.invalidTransition,
@@ -590,6 +606,8 @@ final class JobRepository implements DraftStore {
       throw const AppFailure(FailureCode.conflict, 'This job was cancelled.');
     }
     if (job.phase == JobPhase.failed ||
+        (token.stage != TaskStage.export &&
+            [JobPhase.exporting, JobPhase.exportReady].contains(job.phase)) ||
         (token.stage == TaskStage.export && job.phase != JobPhase.exporting)) {
       throw const AppFailure(
         FailureCode.conflict,
@@ -665,16 +683,66 @@ final class JobRepository implements DraftStore {
               .add(row['stage']! as String);
         }
       }
+      // A crash can land between a phase/snapshot transaction and creation of
+      // its attempt, or after enumeration completed but before the next phase.
+      // Recover those jobs too; otherwise an exporting draft stays locked forever.
+      var orphanJobs = 0;
+      final activeJobs = await tx.query(
+        'jobs',
+        where: 'phase IN (?,?,?)',
+        whereArgs: [
+          JobPhase.enumerating.name,
+          JobPhase.processing.name,
+          JobPhase.exporting.name,
+        ],
+      );
+      for (final row in activeJobs) {
+        final job = _job(row);
+        if (!affectedJobs.containsKey(job.id)) {
+          affectedJobs[job.id] = job;
+          orphanJobs++;
+        }
+      }
+      for (final job in affectedJobs.values) {
+        if ([JobPhase.cancelled, JobPhase.failed].contains(job.phase)) continue;
+        final activeTracks = await tx.query(
+          'tracks',
+          where: 'job_id = ? AND phase IN (?,?,?)',
+          whereArgs: [
+            job.id,
+            TrackPhase.downloading.name,
+            TrackPhase.converting.name,
+            TrackPhase.enriching.name,
+          ],
+        );
+        for (final row in activeTracks) {
+          final track = _track(row);
+          if (!affectedTracks.containsKey(track.id)) {
+            affectedTracks[track.id] = track;
+            interruptedStages[track.id] = {
+              track.phase == TrackPhase.enriching
+                  ? TaskStage.enrichment.name
+                  : TaskStage.conversion.name,
+            };
+          }
+        }
+      }
       for (final track in affectedTracks.values) {
         final audio = await tx.query(
           'assets',
           where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
           whereArgs: [track.jobId, track.id, AssetKind.audio.name],
         );
+        final preview = await tx.query(
+          'assets',
+          where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
+          whereArgs: [track.jobId, track.id, AssetKind.preview.name],
+        );
         // A failed naming retry must not destroy already acquired playable
         // audio. Keep peers and original metadata; only unfinished work queues.
         final phase =
             (audio.length == 1 &&
+                preview.length == 1 &&
                 (track.phase == TrackPhase.ready ||
                     interruptedStages[track.id]!.every(
                       (stage) => stage == TaskStage.enrichment.name,
@@ -733,7 +801,7 @@ final class JobRepository implements DraftStore {
           );
         }
       }
-      return interrupted.length;
+      return interrupted.length + orphanJobs;
     }),
   );
 

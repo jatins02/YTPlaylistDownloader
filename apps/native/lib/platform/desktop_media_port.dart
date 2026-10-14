@@ -40,10 +40,18 @@ final class DesktopMediaPort implements ManagedMediaPort {
   Future<void>? _task;
   Timer? _retentionTimer;
   Future<void>? _retentionWork;
+  final Map<String, Future<void>> _discardTasks = {};
   bool _closed = false;
   bool _initialized = false;
 
   Future<void> initialize() async {
+    if (_closed) {
+      throw const AppFailure(
+        FailureCode.mediaUnavailable,
+        'The media adapter is closed.',
+      );
+    }
+    if (_initialized) return;
     if (!Platform.isLinux) {
       throw const AppFailure(
         FailureCode.mediaUnavailable,
@@ -65,17 +73,22 @@ final class DesktopMediaPort implements ManagedMediaPort {
     _initialized = true;
     _retentionTimer = Timer.periodic(const Duration(minutes: 5), (_) {
       if (_retentionWork != null || _closed) return;
-      _retentionWork = expireOldMedia()
-          .catchError((Object _) {
-            /* Safe to retry at next startup; never erase exports. */
-          })
-          .whenComplete(() {
-            _retentionWork = null;
-          });
+      unawaited(
+        expireOldMedia().catchError((Object _) {
+          /* Safe to retry at next startup; never erase exports. */
+        }),
+      );
     });
   }
 
-  Future<void> expireOldMedia() async {
+  Future<void> expireOldMedia() {
+    if (_closed) return Future.value();
+    return _retentionWork ??= _expireOldMedia().whenComplete(() {
+      _retentionWork = null;
+    });
+  }
+
+  Future<void> _expireOldMedia() async {
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 48));
     for (final job in await jobs.listJobs()) {
       if (job.id == _activeJob ||
@@ -120,11 +133,11 @@ final class DesktopMediaPort implements ManagedMediaPort {
         ),
       );
     }
-    if (_closed || _activeJob != null) {
+    if (_closed || _activeJob != null || _retentionWork != null) {
       return Future.error(
         const AppFailure(
           FailureCode.conflict,
-          'Only one playlist can process at a time. Pause or finish the active playlist first.',
+          'Another playlist or storage cleanup is active. Wait for it to finish before processing.',
         ),
       );
     }
@@ -191,6 +204,7 @@ final class DesktopMediaPort implements ManagedMediaPort {
     String jobId,
     ProcessScope scope,
   ) async {
+    var started = false;
     try {
       var job = await jobs.getJob(jobId);
       if (job.sourceUrl != playlist.canonical ||
@@ -204,6 +218,7 @@ final class DesktopMediaPort implements ManagedMediaPort {
           'This playlist cannot start in its current phase.',
         );
       }
+      started = true;
       if (job.phase != JobPhase.queued) {
         job = await _transition(jobId, JobPhase.queued);
       }
@@ -278,7 +293,16 @@ final class DesktopMediaPort implements ManagedMediaPort {
     } on AppFailure catch (failure) {
       if (failure.code == FailureCode.operationCancelled) return;
       // An invalid start must not mutate a review/exporting/cancelled job.
-      if (failure.code != FailureCode.invalidTransition &&
+      if (started && failure.code == FailureCode.conflict) {
+        final current = await jobs.getJob(jobId);
+        if ([
+          JobPhase.queued,
+          JobPhase.enumerating,
+          JobPhase.processing,
+        ].contains(current.phase)) {
+          await store.stop(jobId, failure: failure.code);
+        }
+      } else if (failure.code != FailureCode.invalidTransition &&
           failure.code != FailureCode.conflict) {
         await store.stop(jobId, failure: failure.code);
       }
@@ -288,6 +312,13 @@ final class DesktopMediaPort implements ManagedMediaPort {
       throw const AppFailure(
         FailureCode.storageUnavailable,
         'Media storage failed. Check free space and permissions.',
+        retryable: true,
+      );
+    } on Object {
+      await store.stop(jobId, failure: FailureCode.toolUnavailable);
+      throw const AppFailure(
+        FailureCode.toolUnavailable,
+        'The media operation could not finish safely. Verified work is preserved; retry after checking the runtime.',
         retryable: true,
       );
     } finally {
@@ -353,13 +384,22 @@ final class DesktopMediaPort implements ManagedMediaPort {
                 monitor,
               )
             : await files.file(sourceAsset);
-        original = await codec.verify(
-          input,
-          scope,
-          work,
-          monitor,
-          expected: initial.durationSeconds,
-        );
+        original = sourceAsset == null
+            ? await codec.verify(
+                input,
+                scope,
+                work,
+                monitor,
+                expected: initial.durationSeconds,
+              )
+            : await _verifyStored(
+                token,
+                sourceAsset,
+                scope,
+                work,
+                monitor,
+                expected: initial.durationSeconds,
+              );
         scope.check();
         if (sourceAsset == null) {
           sourceAsset = await files.stage(
@@ -393,19 +433,18 @@ final class DesktopMediaPort implements ManagedMediaPort {
           AssetKind.audio,
         );
         await store.publish(token, audioAsset, CheckpointStep.converted);
-        // A preview from an older conversion is never paired with new audio.
-        if (previewAsset != null) {
-          await store.retire(token, AssetKind.preview);
-          previewAsset = null;
-        }
+        // Publication already retired the older preview atomically.
+        previewAsset = null;
       }
       final audioFile = await files.file(audioAsset);
-      final verified = await codec.verify(
-        audioFile,
+      final verified = await _verifyStored(
+        token,
+        audioAsset,
         scope,
         work,
         monitor,
         mp3: true,
+        expected: initial.durationSeconds,
       );
       if (previewAsset == null) {
         final preview = await codec.snippet(
@@ -422,6 +461,7 @@ final class DesktopMediaPort implements ManagedMediaPort {
           monitor,
           mp3: true,
           preview: true,
+          expected: NativeCodec.snippetSeconds(verified.durationSeconds),
         );
         scope.check();
         previewAsset = await files.stage(
@@ -433,13 +473,15 @@ final class DesktopMediaPort implements ManagedMediaPort {
         );
         await store.publish(token, previewAsset, CheckpointStep.converted);
       } else {
-        await codec.verify(
-          await files.file(previewAsset),
+        await _verifyStored(
+          token,
+          previewAsset,
           scope,
           work,
           monitor,
           mp3: true,
           preview: true,
+          expected: NativeCodec.snippetSeconds(verified.durationSeconds),
         );
       }
       scope.check();
@@ -459,6 +501,37 @@ final class DesktopMediaPort implements ManagedMediaPort {
         rethrow;
       }
       await store.trackPhase(token, TrackPhase.failed, failure: failure.code);
+    }
+  }
+
+  Future<AudioProbe> _verifyStored(
+    AttemptToken token,
+    AssetRecord asset,
+    ProcessScope scope,
+    Directory work,
+    Future<void> Function() monitor, {
+    bool mp3 = false,
+    bool preview = false,
+    double? expected,
+  }) async {
+    try {
+      return await codec.verify(
+        await files.file(asset),
+        scope,
+        work,
+        monitor,
+        mp3: mp3,
+        preview: preview,
+        expected: expected,
+      );
+    } on AppFailure catch (failure) {
+      if (failure.code == FailureCode.audioInvalid) {
+        await store.retire(token, asset.kind);
+        if (asset.kind == AssetKind.audio) {
+          await store.retire(token, AssetKind.preview);
+        }
+      }
+      rethrow;
     }
   }
 
@@ -485,7 +558,22 @@ final class DesktopMediaPort implements ManagedMediaPort {
   @override
   Future<void> pause(String jobId) => _stop(jobId, cancel: false);
   @override
-  Future<void> discardPrivateMedia(String jobId) async {
+  Future<void> discardPrivateMedia(String jobId) {
+    if (_closed) {
+      return Future.error(
+        const AppFailure(
+          FailureCode.storageUnavailable,
+          'Private media storage is closing.',
+        ),
+      );
+    }
+    return _discardTasks[jobId] ??= _discardPrivateMedia(jobId)
+        .whenComplete(() {
+          _discardTasks.remove(jobId);
+        });
+  }
+
+  Future<void> _discardPrivateMedia(String jobId) async {
     if (_activeJob == jobId) await cancel(jobId);
     final job = await jobs.getJob(jobId);
     if (job.phase != JobPhase.cancelled) {
@@ -495,6 +583,14 @@ final class DesktopMediaPort implements ManagedMediaPort {
       );
     }
     final retained = await store.assets(jobId, activeOnly: false);
+    if (retained.isEmpty &&
+        await FileSystemEntity.type(
+              '${workspace.root.path}/jobs/$jobId',
+              followLinks: false,
+            ) ==
+            FileSystemEntityType.notFound) {
+      return;
+    }
     for (final asset in retained) {
       final file = await files.file(asset);
       if (await file.exists()) await file.delete();
@@ -516,9 +612,16 @@ final class DesktopMediaPort implements ManagedMediaPort {
     if (_closed) return;
     _closed = true;
     _retentionTimer?.cancel();
-    final retention = _retentionWork;
-    if (retention != null) await retention;
-    final id = _activeJob;
-    if (id != null) await pause(id);
+    try {
+      final retention = _retentionWork;
+      if (retention != null) await retention;
+    } finally {
+      try {
+        final id = _activeJob;
+        if (id != null) await pause(id);
+      } finally {
+        await Future.wait(_discardTasks.values.toList());
+      }
+    }
   }
 }

@@ -30,16 +30,19 @@ final class ProcessingController extends ChangeNotifier {
   bool _disposed = false, _refreshing = false;
   Timer? _polling;
   Completer<void>? _readDone;
+  AppFailure? _readFailure;
+  int _commandGeneration = 0;
+  static const _stopFailure = AppFailure(
+    FailureCode.storageUnavailable,
+    'Processing could not be stopped safely. Check storage and retry.',
+    retryable: true,
+  );
   int get unmappedCount => entries.where((e) => e.trackId == null).length;
   int get readyCount => tracks.where((t) => t.phase == TrackPhase.ready).length;
   int get failedCount =>
       tracks.where((t) => t.phase == TrackPhase.failed).length;
   bool get processing =>
-      [
-        JobPhase.enumerating,
-        JobPhase.processing,
-        JobPhase.queued,
-      ].contains(job?.phase) ||
+      [JobPhase.enumerating, JobPhase.processing].contains(job?.phase) ||
       commanding;
 
   Future<void> initialize() async {
@@ -64,7 +67,7 @@ final class ProcessingController extends ChangeNotifier {
 
   Future<void> refresh({bool force = false}) async {
     if (_disposed) return;
-    if (_refreshing) {
+    while (_refreshing) {
       if (!force) return;
       await _readDone?.future;
       if (_disposed) return;
@@ -84,8 +87,18 @@ final class ProcessingController extends ChangeNotifier {
       job = current;
       tracks = List.unmodifiable(currentTracks);
       entries = List.unmodifiable(currentEntries);
+      if (identical(failure, _readFailure)) failure = null;
+      _readFailure = null;
     } on AppFailure catch (error) {
-      if (!_disposed) failure = error;
+      if (!_disposed) failure = _readFailure = error;
+    } on Object {
+      if (!_disposed) {
+        failure = _readFailure = const AppFailure(
+          FailureCode.storageUnavailable,
+          'Processing state could not be read. Check storage and retry.',
+          retryable: true,
+        );
+      }
     } finally {
       _refreshing = false;
       done.complete();
@@ -96,6 +109,7 @@ final class ProcessingController extends ChangeNotifier {
 
   Future<void> start({bool retryFailed = false}) async {
     if (_disposed || commanding || cancelling || job == null) return;
+    final generation = ++_commandGeneration;
     commanding = true;
     failure = null;
     notifyListeners();
@@ -107,6 +121,9 @@ final class ProcessingController extends ChangeNotifier {
         );
       }
       if (retryFailed) await store.retryFailedTracks(jobId);
+      // A cancel/pause can finish while the retry transaction is awaiting I/O.
+      // Never acquire a fresh worker after that newer user action.
+      if (_disposed || cancelling || _commandGeneration != generation) return;
       await media.acquire(
         playlist: PlaylistUrl.parse(job!.sourceUrl),
         jobId: jobId,
@@ -130,11 +147,15 @@ final class ProcessingController extends ChangeNotifier {
   Future<void> cancel() async {
     if (_disposed || cancelling) return;
     cancelling = true;
+    _commandGeneration++;
+    failure = null;
     notifyListeners();
     try {
       await media.cancel(jobId);
     } on AppFailure catch (error) {
       if (!_disposed) failure = error;
+    } on Object {
+      if (!_disposed) failure = _stopFailure;
     } finally {
       await refresh(force: true);
       cancelling = false;
@@ -145,11 +166,15 @@ final class ProcessingController extends ChangeNotifier {
   Future<void> pause() async {
     if (_disposed || cancelling || media is! ManagedMediaPort) return;
     cancelling = true;
+    _commandGeneration++;
+    failure = null;
     notifyListeners();
     try {
       await (media as ManagedMediaPort).pause(jobId);
     } on AppFailure catch (error) {
       if (!_disposed) failure = error;
+    } on Object {
+      if (!_disposed) failure = _stopFailure;
     } finally {
       await refresh(force: true);
       cancelling = false;

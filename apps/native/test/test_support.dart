@@ -74,6 +74,23 @@ final class Fixture {
       ),
       attempt: attempt,
     );
+    final previewId = const Uuid().v4();
+    await jobs.registerAsset(
+      AssetRecord(
+        id: previewId,
+        jobId: initial.jobId,
+        trackId: initial.id,
+        kind: AssetKind.preview,
+        relativePath: PrivatePaths.asset(
+          initial.jobId,
+          previewId,
+          AssetKind.preview,
+        ),
+        sha256: List.filled(64, 'b').join(),
+        bytes: 20,
+      ),
+      attempt: attempt,
+    );
     await jobs.saveCheckpoint(
       attempt,
       Checkpoint(step: CheckpointStep.converted, assetId: assetId),

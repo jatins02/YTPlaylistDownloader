@@ -73,7 +73,9 @@ final class DraftsController extends ChangeNotifier {
           credentialFailure = null;
         }
       } on AppFailure catch (error) {
-        if (credentialRevision == _credentialRevision) {
+        if (!_disposed &&
+            generation == _loadGeneration &&
+            credentialRevision == _credentialRevision) {
           credentialFailure = error;
         }
       }

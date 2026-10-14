@@ -16,6 +16,8 @@ final class NativeCodec {
   const NativeCodec(this.tools, this.limits);
   final DesktopTools tools;
   final PipelineLimits limits;
+  static double snippetSeconds(double duration) =>
+      (duration - (duration > 60 ? 30 : 0)).clamp(0.1, 29.9);
 
   Future<AudioProbe> verify(
     File file,
@@ -147,7 +149,7 @@ final class NativeCodec {
   ) async {
     final start = duration > 60 ? 30 : 0;
     // Leave room for MP3 frame padding while keeping the actual file <= 30 s.
-    final seconds = (duration - start).clamp(0.1, 29.9);
+    final seconds = snippetSeconds(duration);
     final target = File('${work.path}/preview.mp3');
     await scope.run(
       tools.ffmpeg,

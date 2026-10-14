@@ -68,7 +68,7 @@ Isolate files per job; cap bytes/count/duration/concurrency/retries; handle low 
 
 stage0/core.py implements contracts, bounded commands, tags and ZIP verification; providers.py contains explicit live AI/artwork and optional future hosted-storage probes; __main__.py runs checks and reports; tests/test_stage0.py verifies contracts and actual synthetic media. The Docker recipe is an optional CLI container, not the app architecture.
 
-apps/native contains the Stage 1 Flutter foundation with actual SQLite/secure-storage adapters, private job folders, restart recovery, revision-safe metadata and immutable export snapshots. Native media capability remains unavailable. See STAGE1_GUIDE.md and decision 0002 for boundaries. Stage 0 remains in progress until actual target-platform proofs and provider/device checks pass. See IMPLEMENTATION_PLAN.md and PROJECT_STATUS.md.
+apps/native contains the Stage 1 Flutter foundation with actual SQLite/secure-storage adapters, private job folders, restart recovery, revision-safe metadata and immutable export snapshots. Stage 3 adds the verified Linux acquisition/conversion/snippet adapter described below; other-platform media, tagging and device export remain unavailable. See STAGE1_GUIDE.md and decision 0002 for foundation boundaries. Stage 0 remains in progress until actual target-platform proofs and provider/device checks pass. See IMPLEMENTATION_PLAN.md and PROJECT_STATUS.md.
 
 The Stage 0/1 review added SQLite migration v3 for original structured metadata; legacy originals remain unknown rather than being inferred from edited fields. Cancellation, recovery and export reuse now fence stale work explicitly. See [review findings and verification](CODE_REVIEW_STAGE01.md).
 
@@ -81,3 +81,9 @@ The Stage 0/1 review added SQLite migration v3 for original structured metadata;
 The production route uses ProcessingController and consistent transaction snapshots, not FixtureJourney. PipelineRepository validates every running track/conversion token inside its write transaction; schema v4 stores original source/channel evidence, durable enumeration and explicit active media. DesktopMediaPort owns one serialized Linux pipeline, while YoutubePlaylistSource, NativeCodec, ProcessScope and MediaWorkspace bound acquisition, full decoding, conversion/snippets, process groups, hashes and private publication/cleanup. The installed EJS/runtime is verified, source diagnostics are discarded and no dotenv/key enters a media process.
 
 AppRuntime selects this adapter only on Linux with a valid pinned manifest; tagging/export and other-platform media remain unavailable. Source artifacts and active derivatives have immutable IDs; ready/retried peers never resolve bytes by title. A cancelled/expired job cannot silently return to processing. Expiry/discard preserves metadata and external device copies. Stage 3 setup and precise platform evidence are in STAGE3_GUIDE.md.
+
+The Stages 0–3 review tightened shared readiness/export guards, recovery between
+phase and worker transactions, atomic derivative invalidation and shutdown/
+retention ordering. [Review evidence](CODE_REVIEW_STAGE03.md) records the
+regressions and actual Linux checks; these do not enable another platform or
+later product stage.

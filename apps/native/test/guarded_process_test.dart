@@ -74,6 +74,26 @@ void main() {
       );
     },
   );
+  test(
+    'synchronous storage-monitor errors stop the tool and become safe failures',
+    () async {
+      await expectLater(
+        scope.run(
+          python,
+          ['-I', '-c', 'import time;time.sleep(30)'],
+          directory: directory,
+          monitor: () => throw StateError('private storage diagnostic'),
+        ),
+        throwsA(
+          isA<AppFailure>().having(
+            (e) => e.code,
+            'code',
+            FailureCode.storageUnavailable,
+          ),
+        ),
+      );
+    },
+  );
   test('OS-enforced file size cap cannot leave an oversized file', () async {
     final limited = ProcessScope(
       python: python,

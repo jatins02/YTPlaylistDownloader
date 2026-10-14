@@ -56,6 +56,10 @@ The Windows workflow performs the same checks and compiles the release bundle. I
 
 ## Platform evidence
 
+This table records Stage 1 foundation acceptance. For the subsequently verified
+Linux source/conversion/snippet adapter, see [Stage 3](STAGE3_GUIDE.md) and the
+[Stages 0–3 review](CODE_REVIEW_STAGE03.md).
+
 | Platform | Foundation evidence | Media/device export |
 | --- | --- | --- |
 | Linux x64 | Local analysis, behavior tests, native debug/release compilation and actual native-plugin integration test | Adapter unavailable; Stage 0 CLI proof only |

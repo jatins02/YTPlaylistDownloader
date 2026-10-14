@@ -168,7 +168,12 @@ def synthetic_inputs(root: Path) -> tuple[list[dict], dict[str, Path], dict[str,
 
 
 def live_inputs(url: str, root: Path, report: dict) -> tuple[list[dict], dict[str, Path]]:
-    ytdlp = [sys.executable, "-m", "yt_dlp", "--ignore-config", "--quiet", "--no-warnings", "--socket-timeout", "15", "--retries", "1", "--extractor-retries", "1", "--js-runtimes", "deno:" + tool("deno")]
+    ytdlp = [sys.executable, "-I", "-m", "yt_dlp", "--ignore-config", "--no-config-locations", "--no-cache-dir",
+             "--no-plugin-dirs", "--no-remote-components", "--no-js-runtimes",
+             "--quiet", "--no-warnings", "--socket-timeout", "15", "--retries", "1",
+             "--extractor-retries", "1", "--fragment-retries", "1",
+             "--abort-on-unavailable-fragments", "--concurrent-fragments", "1",
+             "--js-runtimes", "deno:" + tool("deno")]
     playlist = json.loads(command(ytdlp + ["--flat-playlist", "--dump-single-json", "--playlist-end", "11", url], timeout=120, scratch=root))
     entries = playlist.get("entries") or []
     if not 3 <= len(entries) <= 10 or (playlist.get("playlist_count") or 0) > 10:
@@ -221,10 +226,11 @@ def export_tracks(root: Path, tracks: list[dict], files: dict[str, Path], metada
         if abs(duration - track["duration"]) > 0.2:
             raise CheckError("AUDIO_DURATION_CHANGED", "Full-length export duration differs from its acquired audio.")
         snippet = root / "previews" / (identity + ".mp3")
-        start = 30 if duration > 30 else 0
-        command([tool("ffmpeg"), "-nostdin", "-v", "error", "-ss", str(start), "-i", str(target), "-t", "30", "-c:a", "libmp3lame", "-b:a", "128k", str(snippet)], scratch=root)
+        start = 30 if duration > 60 else 0
+        seconds = min(duration - start, 29.9)
+        command([tool("ffmpeg"), "-nostdin", "-v", "error", "-xerror", "-ss", str(start), "-i", str(target), "-t", str(seconds), "-c:a", "libmp3lame", "-b:a", "128k", str(snippet)], scratch=root)
         snippet_duration = probe_and_decode(snippet, tool("ffmpeg"), tool("ffprobe"))
-        if snippet_duration > 30.2:
+        if snippet_duration > 30 or abs(snippet_duration - seconds) > 0.2:
             raise CheckError("PREVIEW_DURATION_INVALID", "Preview exceeds its 30-second bound.")
         records.append({"track_id": identity, "source_mode": mode, "filename": filename, "metadata": meta,
                         "duration_seconds": duration, "preview_seconds": snippet_duration,
@@ -358,10 +364,7 @@ def main() -> int:
             previous = json.loads(args.report.read_text())
             sources = previous.get("source_records")
             if not sources:
-                exported = next((item["evidence"] for item in previous.get("checks", []) if item["name"] == "tagged_export" and item["status"] == "passed"), None)
-                if not exported:
-                    raise CheckError("SOURCE_REPORT_INVALID", "The source report has no successful export records.")
-                sources = [{"track_id": item["track_id"], "title": item["metadata"]["title"], "duration": item["duration_seconds"]} for item in exported["tracks"]]
+                raise CheckError("SOURCE_REPORT_INVALID", "The report lacks original source records. Re-run acquisition instead of naming from edited export metadata.")
             if not 1 <= len(sources) <= 10 or any(not isinstance(item.get("track_id"), str) or not isinstance(item.get("title"), str) or len(item["title"]) > 500 for item in sources):
                 raise CheckError("SOURCE_REPORT_INVALID", "The source report exceeds the bounded naming input contract.")
             report = {"mode": "live_ai_only", "stage0_complete": False, "checks": []}
