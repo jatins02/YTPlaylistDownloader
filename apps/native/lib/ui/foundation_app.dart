@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../application/drafts_controller.dart';
+import '../application/processing_controller.dart';
+import '../data/job_repository.dart';
+import '../platform/media_port.dart';
+import 'processing_screen.dart';
 import 'fixture_screen.dart';
 import 'theme.dart';
 
@@ -9,9 +13,11 @@ class FoundationApp extends StatelessWidget {
     super.key,
     required this.controller,
     this.recoveredAttempts = 0,
+    this.media,
   });
   final DraftsController controller;
   final int recoveredAttempts;
+  final MediaPort? media;
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -20,6 +26,7 @@ class FoundationApp extends StatelessWidget {
     home: DraftsScreen(
       controller: controller,
       recoveredAttempts: recoveredAttempts,
+      media: media,
     ),
   );
 }
@@ -29,9 +36,11 @@ class DraftsScreen extends StatefulWidget {
     super.key,
     required this.controller,
     required this.recoveredAttempts,
+    this.media,
   });
   final DraftsController controller;
   final int recoveredAttempts;
+  final MediaPort? media;
   @override
   State<DraftsScreen> createState() => _DraftsScreenState();
 }
@@ -132,8 +141,10 @@ class _DraftsScreenState extends State<DraftsScreen> {
                       ),
                     ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Downloads and previews are not enabled in this foundation build.',
+                  Text(
+                    widget.media == null
+                        ? 'Downloads and previews are not enabled in this foundation build.'
+                        : 'Open a saved playlist to process it with a verified local media runtime. AI naming, playback and final save follow in later stages.',
                     style: TextStyle(color: mutedInk),
                   ),
                   const SizedBox(height: 16),
@@ -193,6 +204,29 @@ class _DraftsScreenState extends State<DraftsScreen> {
                                 'Saved draft · ${job.phase.name}',
                                 style: const TextStyle(color: mutedInk),
                               ),
+                              if (widget.media != null &&
+                                  state.jobs is JobRepository) ...[
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  key: Key('open-job-${job.id}'),
+                                  onPressed: () async {
+                                    await Navigator.of(context).push<void>(
+                                      MaterialPageRoute(
+                                        builder: (_) => ProcessingScreen(
+                                          controller: ProcessingController(
+                                            jobId: job.id,
+                                            jobs: state.jobs as JobRepository,
+                                            media: widget.media!,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                    if (mounted) await state.load();
+                                  },
+                                  icon: const Icon(Icons.folder_open),
+                                  label: const Text('Open playlist'),
+                                ),
+                              ],
                             ],
                           ),
                         ),

@@ -1,6 +1,6 @@
 # Native execution spikes
 
-Status: **not implemented/tested**. The CLI core passed, but both phones must execute independently of it.
+Status: **Linux source/conversion/snippet adapter proven in Stage 3; mobile/distribution/export gates remain open.** Both phones must execute independently. The owner has an Android phone by USB, but no USB/JDK/SDK/ADB access is exposed in this execution environment. See STAGE3_GUIDE.md for exact Linux evidence; it does not prove destination saving or packaging.
 
 ## Android proof
 

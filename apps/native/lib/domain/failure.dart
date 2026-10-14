@@ -11,6 +11,14 @@ enum FailureCode {
   corruptData,
   unsupportedPlatform,
   mediaUnavailable,
+  limitExceeded,
+  sourceUnavailable,
+  processTimeout,
+  operationCancelled,
+  toolUnavailable,
+  audioInvalid,
+  liveUnsupported,
+  expiredMedia,
 }
 
 /// Only safe, user-facing messages cross adapter boundaries.

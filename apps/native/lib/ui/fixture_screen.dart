@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../application/fixture_journey.dart';
 import 'theme.dart';
 import 'fixture_components.dart';
+import 'workspace_components.dart';
 import 'fixture_editor.dart';
 
 /// A deliberately separate, disposable fixture route. No media port is called.
@@ -99,7 +100,7 @@ class _FixtureScreenState extends State<FixtureScreen>
                 MediaQuery.sizeOf(context).width < 640 ? 16 : 24,
               ),
               children: [
-                FixtureNotice(
+                WorkspaceNotice(
                   icon: Icons.science_outlined,
                   title: 'Fictional demo · Stage 2',
                   message: journey.phase == FixturePhase.import
@@ -110,7 +111,7 @@ class _FixtureScreenState extends State<FixtureScreen>
                 FixtureStepTrail(phase: journey.phase),
                 const SizedBox(height: 24),
                 if (journey.error != null) ...[
-                  FixtureNotice(
+                  WorkspaceNotice(
                     icon: Icons.error_outline,
                     title: 'Action needed',
                     message: journey.error!,
@@ -153,12 +154,12 @@ class _FixtureScreenState extends State<FixtureScreen>
   );
 
   List<Widget> importContent(BuildContext context) => [
-    FixtureHeading(
+    WorkspaceHeading(
       'Bring your playlist',
       subtitle: 'Paste a playlist link to try the interface. This demo always uses the fictional sample.',
     ),
     const SizedBox(height: 20),
-    FixtureSurface(
+    WorkspaceSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -203,14 +204,14 @@ class _FixtureScreenState extends State<FixtureScreen>
   List<Widget> progressContent(BuildContext context) {
     final loading = journey.phase == FixturePhase.loading;
     return [
-      FixtureHeading(
+      WorkspaceHeading(
         loading ? 'Reading the demo playlist' : 'Preparing fixture tracks',
         subtitle: loading
             ? 'The real app will discover playlist entries here.'
             : '${journey.completedCount} of ${journey.tracks.length} unique tracks finished · ${journey.occurrenceCount} playlist entries',
       ),
       const SizedBox(height: 20),
-      FixtureSurface(
+      WorkspaceSurface(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -263,7 +264,7 @@ class _FixtureScreenState extends State<FixtureScreen>
         for (final track in journey.tracks)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: FixtureSurface(
+            child: WorkspaceSurface(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -300,7 +301,7 @@ class _FixtureScreenState extends State<FixtureScreen>
       );
     }
     return [
-      FixtureHeading(
+      WorkspaceHeading(
         'Make it yours',
         subtitle: 'Review names, inspect original titles and choose the tracks to keep.',
       ),
@@ -335,7 +336,7 @@ class _FixtureScreenState extends State<FixtureScreen>
             child: FixturePlayer(journey: journey),
           ),
       ],
-      FixtureSurface(
+      WorkspaceSurface(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -397,14 +398,14 @@ class _FixtureScreenState extends State<FixtureScreen>
     final preview = journey.savePreview!;
     final saved = journey.phase == FixturePhase.saved;
     return [
-      FixtureHeading(
+      WorkspaceHeading(
         saved ? 'Demo journey complete' : 'Confirm your demo save',
         subtitle: saved
             ? 'No files were written. Your fictional review is ready for another look.'
             : '${preview.items.length} selected tracks · ${journey.excludedCount} excluded · ${preview.format == FixtureExportFormat.zip ? 'ZIP with MP3 files' : 'Individual MP3 files'}',
       ),
       const SizedBox(height: 20),
-      FixtureNotice(
+      WorkspaceNotice(
         icon: saved ? Icons.check_circle_outline : Icons.folder_outlined,
         title: saved
             ? 'Simulation completed; no device download'
@@ -412,7 +413,7 @@ class _FixtureScreenState extends State<FixtureScreen>
         message: 'The real app will ask where to save verified full-length files. Closing or denying that chooser will preserve your review.',
       ),
       const SizedBox(height: 20),
-      FixtureSurface(
+      WorkspaceSurface(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -471,11 +472,11 @@ class _FixtureScreenState extends State<FixtureScreen>
     String action,
     VoidCallback callback,
   ) => [
-    FixtureSurface(
+    WorkspaceSurface(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FixtureHeading(title, subtitle: message),
+          WorkspaceHeading(title, subtitle: message),
           const SizedBox(height: 24),
           FilledButton(onPressed: callback, child: Text(action)),
         ],

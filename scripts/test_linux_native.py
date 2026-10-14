@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import argparse
 from pathlib import Path
 import shutil
 import subprocess
@@ -13,10 +14,18 @@ import tempfile
 def main() -> int:
     if sys.platform != "linux":
         raise SystemExit("This helper requires Linux. Use flutter test -d windows on Windows.")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--inside-session', action='store_true')
+    parser.add_argument('--test', default='foundation_test.dart')
+    args = parser.parse_args()
+    test_file = Path(args.test)
+    tests_root = Path(__file__).resolve().parents[1] / 'apps/native/integration_test'
+    if test_file.name != args.test or not args.test.endswith('.dart') or not (tests_root / test_file).is_file():
+        parser.error('Choose a .dart filename in apps/native/integration_test.')
     flutter = shutil.which("flutter")
     if not flutter:
         raise SystemExit("Add the pinned Flutter SDK's bin directory to PATH first.")
-    if len(sys.argv) == 2 and sys.argv[1] == "--inside-session":
+    if args.inside_session:
         subprocess.run(
             ["gnome-keyring-daemon", "--unlock", "--daemonize", "--components=secrets",
              "--control-directory", os.environ["YT_PD_TEST_CONTROL"]],
@@ -24,7 +33,7 @@ def main() -> int:
         )
         try:
             return subprocess.run(
-                ["xvfb-run", "-a", flutter, "test", "integration_test/foundation_test.dart", "-d", "linux"],
+                ["xvfb-run", "-a", flutter, "test", f"integration_test/{args.test}", "-d", "linux"],
                 cwd=Path(__file__).resolve().parents[1] / "apps/native",
                 check=False,
             ).returncode
@@ -58,7 +67,7 @@ def main() -> int:
         environment["GTK_USE_PORTAL"] = "0"
         environment["GIO_USE_VFS"] = "local"
         return subprocess.run(
-            ["dbus-run-session", "--", sys.executable, str(Path(__file__).resolve()), "--inside-session"],
+            ["dbus-run-session", "--", sys.executable, str(Path(__file__).resolve()), "--inside-session", "--test", args.test],
             env=environment, check=False,
         ).returncode
 

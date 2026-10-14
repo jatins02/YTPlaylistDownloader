@@ -148,5 +148,6 @@ class _LoadedAppState extends State<_LoadedApp> {
   Widget build(BuildContext context) => FoundationApp(
     controller: controller,
     recoveredAttempts: widget.runtime.recoveredAttempts,
+    media: widget.runtime.media,
   );
 }

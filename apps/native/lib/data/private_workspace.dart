@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
@@ -111,6 +112,25 @@ final class PrivateWorkspace {
   }
 
   String get databasePath => p.join(root.path, 'drafts.sqlite');
+
+  Future<File> installProcessGuard(Uint8List bytes) async {
+    if (_closed || bytes.length > 16384) {
+      throw const AppFailure(
+        FailureCode.storageUnavailable,
+        'The private tool supervisor could not be installed.',
+      );
+    }
+    final file = File(p.join(root.path, 'process_guard.py'));
+    if (await FileSystemEntity.type(file.path, followLinks: false) ==
+        FileSystemEntityType.link) {
+      throw const AppFailure(
+        FailureCode.invalidPath,
+        'Unsafe tool supervisor path.',
+      );
+    }
+    await file.writeAsBytes(bytes, flush: true);
+    return file;
+  }
 
   Future<void> verifyDatabasePaths() async {
     for (final suffix in ['', '-wal', '-shm']) {

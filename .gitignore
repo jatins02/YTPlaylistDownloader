@@ -38,7 +38,9 @@ coverage/
 # Stage 0 tools, private reports and generated media
 /.tools-stage0/
 /.tools-stage1/
+/.tools-stage3/
 /stage1-runs/
+/stage3-runs/
 /stage0-runs/
 /downloads/
 /exports/

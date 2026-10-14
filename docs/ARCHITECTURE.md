@@ -75,3 +75,9 @@ The Stage 0/1 review added SQLite migration v3 for original structured metadata;
 ## Stage 2 fixture boundary
 
 `FixtureJourney` is a disposable in-memory controller, separate from `DraftsController`, `JobRepository`, `MediaPort`, `CredentialVault` and filesystem publication. Its immutable fictional records/save previews are not production `TrackRecord`/`ExportSnapshot` assets. Shared theme/widgets and a separate fixture screen/editor demonstrate the journey without creating database rows or bytes. Stage 3–6 controllers must expose real durable phases and verified capabilities; never enable media adapters or mark exports complete based on this demo.
+
+## Stage 3 Linux adapter
+
+The production route uses ProcessingController and consistent transaction snapshots, not FixtureJourney. PipelineRepository validates every running track/conversion token inside its write transaction; schema v4 stores original source/channel evidence, durable enumeration and explicit active media. DesktopMediaPort owns one serialized Linux pipeline, while YoutubePlaylistSource, NativeCodec, ProcessScope and MediaWorkspace bound acquisition, full decoding, conversion/snippets, process groups, hashes and private publication/cleanup. The installed EJS/runtime is verified, source diagnostics are discarded and no dotenv/key enters a media process.
+
+AppRuntime selects this adapter only on Linux with a valid pinned manifest; tagging/export and other-platform media remain unavailable. Source artifacts and active derivatives have immutable IDs; ready/retried peers never resolve bytes by title. A cancelled/expired job cannot silently return to processing. Expiry/discard preserves metadata and external device copies. Stage 3 setup and precise platform evidence are in STAGE3_GUIDE.md.

@@ -19,3 +19,6 @@ stage1-runs
 **/.gradle
 **/Pods
 **/.idea
+
+.tools-stage3
+stage3-runs

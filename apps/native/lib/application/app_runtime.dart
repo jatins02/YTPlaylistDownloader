@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart' as mobile;
@@ -11,6 +13,8 @@ import '../data/private_workspace.dart';
 import '../domain/failure.dart';
 import '../platform/credential_vault.dart';
 import '../platform/media_port.dart';
+import '../platform/desktop_media_port.dart';
+import '../platform/desktop_tools.dart';
 
 final class AppRuntime {
   AppRuntime._({
@@ -39,6 +43,7 @@ final class AppRuntime {
   static Future<AppRuntime> open({
     Directory? supportRoot,
     CredentialVault? vault,
+    File? mediaManifest,
   }) async {
     PrivateWorkspace? workspace;
     Database? database;
@@ -65,11 +70,39 @@ final class AppRuntime {
       database = await LocalDatabase.open(factory, workspace.databasePath);
       final repository = JobRepository(database);
       final recovered = await repository.recoverInterruptedAttempts();
+      MediaPort media = UnavailableMediaPort(platform);
+      if (platform == DevicePlatform.linux) {
+        final manifest =
+            mediaManifest ??
+            File(
+              Platform.environment['YTPD_MEDIA_RUNTIME'] ??
+                  p.join(workspace.root.path, 'media-runtime.json'),
+            );
+        if (await manifest.exists()) {
+          try {
+            final guardBytes = await rootBundle.load('assets/process_guard.py');
+            final guard = await workspace.installProcessGuard(
+              guardBytes.buffer.asUint8List(),
+            );
+            final tools = await DesktopTools.load(manifest, guard.path);
+            final desktop = DesktopMediaPort(
+              jobs: repository,
+              workspace: workspace,
+              tools: tools,
+            );
+            await desktop.initialize();
+            media = desktop;
+          } on AppFailure {
+            // Drafts and secure settings remain usable after a bad local runtime.
+            media = UnavailableMediaPort(platform);
+          }
+        }
+      }
       return AppRuntime._(
         workspace: workspace,
         jobs: repository,
         vault: vault ?? SecureCredentialVault(),
-        media: UnavailableMediaPort(platform),
+        media: media,
         recoveredAttempts: recovered,
       );
     } catch (error) {
@@ -97,9 +130,13 @@ final class AppRuntime {
     if (_closed) return;
     _closed = true;
     try {
-      await jobs.db.close();
+      if (media is ManagedMediaPort) await (media as ManagedMediaPort).close();
     } finally {
-      await workspace.close();
+      try {
+        await jobs.db.close();
+      } finally {
+        await workspace.close();
+      }
     }
   }
 }

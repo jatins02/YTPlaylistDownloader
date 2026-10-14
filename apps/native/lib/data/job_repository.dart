@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../domain/failure.dart';
 import '../domain/draft_store.dart';
 import '../domain/models.dart';
+import '../domain/media_models.dart';
 import '../domain/playlist_url.dart';
 import 'private_workspace.dart';
 
@@ -42,6 +43,10 @@ final class JobRepository implements DraftStore {
   }
 
   JobRecord _job(Map<String, Object?> row) => JobRecord(
+    enumerated: row['enumerated'] == 1,
+    failure: row['error_code'] == null
+        ? null
+        : FailureCode.values.byName(row['error_code']! as String),
     id: row['id']! as String,
     playlistId: row['playlist_id']! as String,
     sourceUrl: row['source_url']! as String,
@@ -78,6 +83,11 @@ final class JobRepository implements DraftStore {
     phase: TrackPhase.values.byName(row['phase']! as String),
     revision: row['revision']! as int,
     selected: row['selected'] == 1,
+    sourceUploader: row['source_uploader'] as String?,
+    durationSeconds: (row['duration_seconds'] as num?)?.toDouble(),
+    failure: row['error_code'] == null
+        ? null
+        : FailureCode.values.byName(row['error_code']! as String),
   );
 
   Future<JobRecord> _requireJob(DatabaseExecutor tx, String id) async {
@@ -189,6 +199,37 @@ final class JobRepository implements DraftStore {
       [jobId],
     )).map(_track).toList(growable: false);
   });
+
+  Future<(JobRecord, List<TrackRecord>, List<StoredEntry>)> processingSnapshot(
+    String jobId,
+  ) => _guard(
+    () => db.transaction((tx) async {
+      final job = await _requireJob(tx, jobId);
+      final tracks = (await tx.rawQuery(
+        'SELECT t.* FROM tracks t LEFT JOIN playlist_entries e ON e.track_id = t.id AND e.job_id = t.job_id WHERE t.job_id = ? GROUP BY t.id ORDER BY MIN(e.position), t.id',
+        [jobId],
+      )).map(_track).toList(growable: false);
+      final entries =
+          (await tx.query(
+                'playlist_entries',
+                where: 'job_id = ?',
+                whereArgs: [jobId],
+                orderBy: 'position',
+              ))
+              .map(
+                (row) => StoredEntry(
+                  position: row['position']! as int,
+                  title: row['source_title'] as String? ?? 'Unavailable source',
+                  trackId: row['track_id'] as String?,
+                  failure: row['error_code'] == null
+                      ? null
+                      : FailureCode.values.byName(row['error_code']! as String),
+                ),
+              )
+              .toList(growable: false);
+      return (job, tracks, entries);
+    }),
+  );
 
   Future<JobRecord> transition(String id, int revision, JobPhase next) =>
       _guard(
@@ -386,7 +427,7 @@ final class JobRepository implements DraftStore {
       if (phase == TrackPhase.ready) {
         final audio = await tx.query(
           'assets',
-          where: 'job_id = ? AND track_id = ? AND kind = ?',
+          where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
           whereArgs: [track.jobId, id, AssetKind.audio.name],
         );
         if (audio.isEmpty) {
@@ -627,7 +668,7 @@ final class JobRepository implements DraftStore {
       for (final track in affectedTracks.values) {
         final audio = await tx.query(
           'assets',
-          where: 'job_id = ? AND track_id = ? AND kind = ?',
+          where: 'job_id = ? AND track_id = ? AND kind = ? AND active = 1',
           whereArgs: [track.jobId, track.id, AssetKind.audio.name],
         );
         // A failed naming retry must not destroy already acquired playable
@@ -733,6 +774,19 @@ final class JobRepository implements DraftStore {
           'Finish reviewing the playlist before saving.',
         );
       }
+      final unmapped = await tx.query(
+        'playlist_entries',
+        columns: ['id'],
+        where: 'job_id = ? AND track_id IS NULL AND selected = 1',
+        whereArgs: [jobId],
+        limit: 1,
+      );
+      if (unmapped.isNotEmpty) {
+        throw const AppFailure(
+          FailureCode.invalidTransition,
+          'Resolve or explicitly exclude unavailable playlist entries before saving.',
+        );
+      }
       final tracks = (await tx.rawQuery(
         '''SELECT t.* FROM tracks t JOIN playlist_entries e
       ON e.track_id = t.id AND e.job_id = t.job_id WHERE t.job_id = ? AND t.selected = 1
@@ -751,7 +805,7 @@ final class JobRepository implements DraftStore {
       }
       final assets = await tx.query(
         'assets',
-        where: 'job_id = ? AND kind = ?',
+        where: 'job_id = ? AND kind = ? AND active = 1',
         whereArgs: [jobId, AssetKind.audio.name],
         orderBy: 'id',
       );

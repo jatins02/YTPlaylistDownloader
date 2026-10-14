@@ -207,6 +207,8 @@ final class JobRecord {
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
+    this.enumerated = false,
+    this.failure,
   });
   final String id;
   final String playlistId;
@@ -216,6 +218,8 @@ final class JobRecord {
   final int revision;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool enumerated;
+  final FailureCode? failure;
 }
 
 final class TrackRecord {
@@ -230,6 +234,9 @@ final class TrackRecord {
     required this.phase,
     required this.revision,
     required this.selected,
+    this.durationSeconds,
+    this.sourceUploader,
+    this.failure,
   }) : overrides = Set.unmodifiable(overrides);
   final String id;
   final String jobId;
@@ -243,6 +250,9 @@ final class TrackRecord {
   final TrackPhase phase;
   final int revision;
   final bool selected;
+  final double? durationSeconds;
+  final String? sourceUploader;
+  final FailureCode? failure;
 }
 
 final class Checkpoint {

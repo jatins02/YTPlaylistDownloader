@@ -73,6 +73,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** the real sample works independently on every claimed platform; unavailable items do not erase peers; equal titles preserve distinct bytes; duplicate sources follow the rule; restart resumes from a valid boundary; Cancel blocks stale publication; limits stop work safely. No unlimited iOS background-processing promise.
 
+**Implementation record (2026-10-14):** Stage 3 source/conversion/snippet processing is implemented and accepted for the proven Linux x64 development app. Real sample acquisition, strict decode/duration/checksum checks, ordered/deduplicated entries, visible failures, generation-fenced pause/cancel/retry, restart reuse, quotas, expiry and private cleanup are implemented. 110 native tests (including six actual-codec cases), 32 Python tests and Linux native integration/release checks pass. Android phone availability is confirmed, but USB/toolchain access is absent here; Android/iOS/Windows media adapters remain disabled and their execution gates open. Full multi-platform completion is not claimed. See [Stage 3 guide](docs/STAGE3_GUIDE.md).
+
 ## Stage 4 — AI names, artwork and tags
 
 **Goal:** Every acquired track gets a validated naming attempt and conservative artwork lookup with explicit uncertainty.

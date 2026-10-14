@@ -9,12 +9,14 @@ final class MediaCapabilities {
     required this.platform,
     this.canAcquire = false,
     this.canConvert = false,
+    this.canPrepareSnippets = false,
     this.canTag = false,
     this.canExport = false,
   });
   final DevicePlatform platform;
   final bool canAcquire;
   final bool canConvert;
+  final bool canPrepareSnippets;
   final bool canTag;
   final bool canExport;
 }
@@ -25,6 +27,12 @@ abstract interface class MediaPort {
   Future<void> acquire({required PlaylistUrl playlist, required String jobId});
   Future<void> cancel(String jobId);
   Future<void> export(ExportSnapshot snapshot);
+}
+
+abstract interface class ManagedMediaPort implements MediaPort {
+  Future<void> close();
+  Future<void> pause(String jobId);
+  Future<void> discardPrivateMedia(String jobId);
 }
 
 /// Honest default until the corresponding Stage 0 device spike passes.

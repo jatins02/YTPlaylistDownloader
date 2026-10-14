@@ -1,0 +1,483 @@
+{
+  "record_date_local": "2026-10-14",
+  "timezone": "Asia/Kolkata",
+  "acceptance": "Linux x64 development app accepted; multi-platform Stage 3 gate remains open",
+  "runtimes": {
+    "flutter_version": "3.47.5",
+    "flutter_revision": "6a19cca56475dbfba1478ee68d7bd0c2ef891da1",
+    "dart_version": "3.13.4",
+    "foundation_platforms": [
+      "linux",
+      "windows"
+    ],
+    "phone_platforms_pending_proof": [
+      "android",
+      "ios"
+    ],
+    "sqlite_schema_version": 4,
+    "media_pipeline_platforms_verified": [
+      "linux"
+    ],
+    "media_runtime_versions": {
+      "python": "3.14.4",
+      "yt_dlp": "2026.8.19",
+      "ejs": "0.8.0",
+      "ffmpeg": "n8.1.3-17-gc389840894-20261011",
+      "ffprobe": "n8.1.3-17-gc389840894-20261011",
+      "deno": "2.5.4"
+    }
+  },
+  "verification": {
+    "flutter_behavior_widget_tests": {
+      "passed": 110,
+      "skipped": 0,
+      "ordinary": 104,
+      "opt_in_actual_codec": 6
+    },
+    "python_tests": {
+      "passed": 32,
+      "skipped": 0
+    },
+    "dart_format": "pass",
+    "flutter_analyze": "no issues",
+    "linux_native_foundation": "1 pass in disposable display/D-Bus/keyring",
+    "linux_native_pipeline_ui_restart": "1 pass in disposable display/D-Bus/keyring",
+    "linux_debug_build": "pass through native integration",
+    "linux_release_build": "pass",
+    "release_scan": {
+      "files": 15,
+      "dotenv_assets_found": 0,
+      "literal_groq_keys_found": 0
+    },
+    "git_diff_check": "pass",
+    "github_actions_executed": false
+  },
+  "retry_integrity": {
+    "same_job": true,
+    "retained_assets": 6,
+    "retained_ids_hashes_bytes_unchanged": true,
+    "ready_before": 2,
+    "ready_after": 3
+  },
+  "runs": [
+    {
+      "check": "synthetic_codec_acceptance",
+      "mode": "synthetic-real-codecs",
+      "platform": "linux",
+      "started_utc": "2026-10-13T18:49:33.360751Z",
+      "elapsed_seconds": 4.8,
+      "success": true,
+      "job_id": "eb3cd2f3-15ff-4660-af75-d2b80863cdc2",
+      "phase": "reviewReady",
+      "entries": 6,
+      "unique_tracks": 4,
+      "ready": 3,
+      "tracks": [
+        {
+          "id": "4ed49f5d-831b-456f-963c-7ca10e81b427",
+          "phase": "ready",
+          "duration_seconds": 2.4,
+          "failure": null
+        },
+        {
+          "id": "cc7cb20a-a1d0-4e42-b53c-fd3bc4468168",
+          "phase": "ready",
+          "duration_seconds": 2.4,
+          "failure": null
+        },
+        {
+          "id": "1e5bc52e-c880-4369-924b-3e45a1d51ac3",
+          "phase": "failed",
+          "duration_seconds": null,
+          "failure": "sourceUnavailable"
+        },
+        {
+          "id": "801700e1-6ddf-4f93-857a-e255354dd779",
+          "phase": "ready",
+          "duration_seconds": 2.4,
+          "failure": null
+        }
+      ],
+      "assets": [
+        {
+          "id": "a6470739-1c08-4d27-b0af-302c122aef80",
+          "track_id": "4ed49f5d-831b-456f-963c-7ca10e81b427",
+          "kind": "source",
+          "bytes": 211758,
+          "sha256": "2c6be5c8c8472f5978976273e5957504bb4769363c3b21fa7fbcac7b6c91078f"
+        },
+        {
+          "id": "c035df50-70dd-4f75-b213-317897918299",
+          "track_id": "4ed49f5d-831b-456f-963c-7ca10e81b427",
+          "kind": "audio",
+          "bytes": 98264,
+          "sha256": "7820b620979c28fde6909b5d2bbcd4bca943e454b7a401b82507e8c9bcbe3b80"
+        },
+        {
+          "id": "cad5fa70-211c-49a9-b685-867b2c1b9666",
+          "track_id": "4ed49f5d-831b-456f-963c-7ca10e81b427",
+          "kind": "preview",
+          "bytes": 58976,
+          "sha256": "34ee23a2b9e62668a8ea89bbb427871505764f7990491ed2ecad89f3bcdf472d"
+        },
+        {
+          "id": "5d63ab13-977f-408c-8587-62d77ff68559",
+          "track_id": "cc7cb20a-a1d0-4e42-b53c-fd3bc4468168",
+          "kind": "source",
+          "bytes": 211758,
+          "sha256": "1c83888a1e774fe2f036744d3516ae22b267bb360e18f46ade8f23f92e22d1e4"
+        },
+        {
+          "id": "66d4c934-a27d-4e5f-b4a1-dc46ea10933a",
+          "track_id": "cc7cb20a-a1d0-4e42-b53c-fd3bc4468168",
+          "kind": "audio",
+          "bytes": 98264,
+          "sha256": "1d1f11d35e4f1443794f89c92043b27e72da99a869403251bf502e1c40c610d6"
+        },
+        {
+          "id": "3125a95c-6589-4bb0-b34a-c6005a2222ad",
+          "track_id": "cc7cb20a-a1d0-4e42-b53c-fd3bc4468168",
+          "kind": "preview",
+          "bytes": 58976,
+          "sha256": "47a81d4297d939ddc09c706e42bbdbbb6ee5ab5b1db995361d3cff5f86b294c2"
+        },
+        {
+          "id": "a9b708e6-eb9c-4736-8335-a91c8929dece",
+          "track_id": "801700e1-6ddf-4f93-857a-e255354dd779",
+          "kind": "source",
+          "bytes": 211758,
+          "sha256": "c420c4452545b17bfab53544af76e0f00524842d47ecc7e5b018e6430557e404"
+        },
+        {
+          "id": "17f2c7ff-30d1-4d3a-8fc8-dd97c76ca3a4",
+          "track_id": "801700e1-6ddf-4f93-857a-e255354dd779",
+          "kind": "audio",
+          "bytes": 98264,
+          "sha256": "c04cadfa5bf0c84e1cd8f13c629f0f3d6f1a097a2f733b636e0d226a86a98c2b"
+        },
+        {
+          "id": "f72bf8ac-c830-4647-a923-d3a077a47ae3",
+          "track_id": "801700e1-6ddf-4f93-857a-e255354dd779",
+          "kind": "preview",
+          "bytes": 58976,
+          "sha256": "a571bfa9299cbb1831af448ecb33d94dfa22e3d62a3c692e28c2a47bd48a02f7"
+        }
+      ],
+      "resumed": false
+    },
+    {
+      "check": "live_initial_partial",
+      "mode": "live-public-playlist",
+      "platform": "linux",
+      "started_utc": "2026-10-13T18:51:53.349596Z",
+      "elapsed_seconds": 18.293,
+      "success": false,
+      "job_id": "ce5b38fc-526c-4371-bf91-182b77b0ef70",
+      "phase": "reviewReady",
+      "entries": 3,
+      "unique_tracks": 3,
+      "ready": 2,
+      "tracks": [
+        {
+          "id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "phase": "ready",
+          "duration_seconds": 140.004729,
+          "failure": null
+        },
+        {
+          "id": "11db896d-16c9-405e-98c5-eb292e2725e6",
+          "phase": "failed",
+          "duration_seconds": 293.0,
+          "failure": "sourceUnavailable"
+        },
+        {
+          "id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "phase": "ready",
+          "duration_seconds": 319.077021,
+          "failure": null
+        }
+      ],
+      "assets": [
+        {
+          "id": "9f1e6208-579e-4b04-a180-c785bec35f56",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "source",
+          "bytes": 2272613,
+          "sha256": "bbaa289ff67cc65aefb28e24ab9e0d114cfef14eae8f5ac7c1daeb4a82e3b3d3"
+        },
+        {
+          "id": "8e8935bb-7f70-44d2-941f-79ec51c879c3",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "audio",
+          "bytes": 5602605,
+          "sha256": "809387dbf0193946dc0d36d969f98df5879a4475625a6a5a2177b278510e734d"
+        },
+        {
+          "id": "31e61a38-e53a-401b-b80d-69559701e648",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "f3b3c567a9a2b6b345ed571525dda3b7f62d2e76c3f3ef13221e7b77c3de8f3f"
+        },
+        {
+          "id": "5736b51a-60c8-4f3b-a6ae-c11b2426a4d2",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "source",
+          "bytes": 5159053,
+          "sha256": "dd07d277c5857d5008cb0811bcc9dd08e81afa74234849e96116c5ea1bb370d5"
+        },
+        {
+          "id": "f0787521-e40b-4c93-b302-e233b05c8dfc",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "audio",
+          "bytes": 12765165,
+          "sha256": "fa481cbeb82573f071457c0c876fcb68fc09542f07079127836820cf3b965f99"
+        },
+        {
+          "id": "5a87b2b1-3fd9-47ef-bf1b-0abff4b6a9fb",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "dbe1e483086b273d7fca42cc156e84c3bb56cf9675b2419e3442316e58705f99"
+        }
+      ],
+      "resumed": false
+    },
+    {
+      "check": "live_explicit_retry_after_restart",
+      "mode": "live-public-playlist",
+      "platform": "linux",
+      "started_utc": "2026-10-13T18:54:37.972417Z",
+      "elapsed_seconds": 9.233,
+      "success": true,
+      "job_id": "ce5b38fc-526c-4371-bf91-182b77b0ef70",
+      "phase": "reviewReady",
+      "entries": 3,
+      "unique_tracks": 3,
+      "ready": 3,
+      "tracks": [
+        {
+          "id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "phase": "ready",
+          "duration_seconds": 140.004729,
+          "failure": null
+        },
+        {
+          "id": "11db896d-16c9-405e-98c5-eb292e2725e6",
+          "phase": "ready",
+          "duration_seconds": 292.799146,
+          "failure": null
+        },
+        {
+          "id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "phase": "ready",
+          "duration_seconds": 319.077021,
+          "failure": null
+        }
+      ],
+      "assets": [
+        {
+          "id": "9f1e6208-579e-4b04-a180-c785bec35f56",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "source",
+          "bytes": 2272613,
+          "sha256": "bbaa289ff67cc65aefb28e24ab9e0d114cfef14eae8f5ac7c1daeb4a82e3b3d3"
+        },
+        {
+          "id": "8e8935bb-7f70-44d2-941f-79ec51c879c3",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "audio",
+          "bytes": 5602605,
+          "sha256": "809387dbf0193946dc0d36d969f98df5879a4475625a6a5a2177b278510e734d"
+        },
+        {
+          "id": "31e61a38-e53a-401b-b80d-69559701e648",
+          "track_id": "01fb3dba-7d28-4403-abff-a268d68af193",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "f3b3c567a9a2b6b345ed571525dda3b7f62d2e76c3f3ef13221e7b77c3de8f3f"
+        },
+        {
+          "id": "5736b51a-60c8-4f3b-a6ae-c11b2426a4d2",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "source",
+          "bytes": 5159053,
+          "sha256": "dd07d277c5857d5008cb0811bcc9dd08e81afa74234849e96116c5ea1bb370d5"
+        },
+        {
+          "id": "f0787521-e40b-4c93-b302-e233b05c8dfc",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "audio",
+          "bytes": 12765165,
+          "sha256": "fa481cbeb82573f071457c0c876fcb68fc09542f07079127836820cf3b965f99"
+        },
+        {
+          "id": "5a87b2b1-3fd9-47ef-bf1b-0abff4b6a9fb",
+          "track_id": "5e815bc8-b10c-45aa-9de2-1653879fce4f",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "dbe1e483086b273d7fca42cc156e84c3bb56cf9675b2419e3442316e58705f99"
+        },
+        {
+          "id": "bdce84c2-5d44-4112-858e-a9ecb05d704d",
+          "track_id": "11db896d-16c9-405e-98c5-eb292e2725e6",
+          "kind": "source",
+          "bytes": 4875727,
+          "sha256": "9cfc05e26dfa3eda64ef9b4d00e5de170fa117ee69b983fcfcdfdedfea66dcb4"
+        },
+        {
+          "id": "9be640aa-bcda-43af-a597-4dcaeb9043d6",
+          "track_id": "11db896d-16c9-405e-98c5-eb292e2725e6",
+          "kind": "audio",
+          "bytes": 11713965,
+          "sha256": "4cc6cd4b2c9f2027098d53bff8ccef535bab57e58cbe2a5589533fad28cfdf15"
+        },
+        {
+          "id": "87f0b267-5110-444f-9dc2-f5bbfdcee9fd",
+          "track_id": "11db896d-16c9-405e-98c5-eb292e2725e6",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "20cf3d277905d507eb89c9dd8c65ede08babec166c4517c68ed51a9dac09e2bc"
+        }
+      ],
+      "resumed": true
+    },
+    {
+      "check": "live_fresh_saved_checkout",
+      "mode": "live-public-playlist",
+      "platform": "linux",
+      "started_utc": "2026-10-13T19:56:37.957450Z",
+      "elapsed_seconds": 29.37,
+      "success": true,
+      "job_id": "f1081df5-f3f6-4acb-8bc6-76e3b407894b",
+      "phase": "reviewReady",
+      "entries": 3,
+      "unique_tracks": 3,
+      "ready": 3,
+      "tracks": [
+        {
+          "id": "fe28504c-f38b-4a0b-94c1-e29a95ccc7e2",
+          "phase": "ready",
+          "duration_seconds": 140.004729,
+          "failure": null
+        },
+        {
+          "id": "6c0755a9-62f0-450c-9581-1925a02480fc",
+          "phase": "ready",
+          "duration_seconds": 292.799146,
+          "failure": null
+        },
+        {
+          "id": "70a45e48-6766-4def-a893-430c2d876d7c",
+          "phase": "ready",
+          "duration_seconds": 319.077021,
+          "failure": null
+        }
+      ],
+      "assets": [
+        {
+          "id": "59b71e62-9ea1-4337-bfdf-1ae173516026",
+          "track_id": "fe28504c-f38b-4a0b-94c1-e29a95ccc7e2",
+          "kind": "source",
+          "bytes": 2272613,
+          "sha256": "bbaa289ff67cc65aefb28e24ab9e0d114cfef14eae8f5ac7c1daeb4a82e3b3d3"
+        },
+        {
+          "id": "84456e24-7fbb-4a5b-9c4b-f0b728048168",
+          "track_id": "fe28504c-f38b-4a0b-94c1-e29a95ccc7e2",
+          "kind": "audio",
+          "bytes": 5602605,
+          "sha256": "809387dbf0193946dc0d36d969f98df5879a4475625a6a5a2177b278510e734d"
+        },
+        {
+          "id": "1bafb1f0-17d3-4f7a-82fe-2b1118fbede9",
+          "track_id": "fe28504c-f38b-4a0b-94c1-e29a95ccc7e2",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "f3b3c567a9a2b6b345ed571525dda3b7f62d2e76c3f3ef13221e7b77c3de8f3f",
+          "verified_duration_seconds": 29.9
+        },
+        {
+          "id": "4629164f-56bc-4b80-8c56-bd9f0f676164",
+          "track_id": "6c0755a9-62f0-450c-9581-1925a02480fc",
+          "kind": "source",
+          "bytes": 4875727,
+          "sha256": "9cfc05e26dfa3eda64ef9b4d00e5de170fa117ee69b983fcfcdfdedfea66dcb4"
+        },
+        {
+          "id": "6c8133c9-f69c-4a67-88a6-4b3cecabb004",
+          "track_id": "6c0755a9-62f0-450c-9581-1925a02480fc",
+          "kind": "audio",
+          "bytes": 11713965,
+          "sha256": "4cc6cd4b2c9f2027098d53bff8ccef535bab57e58cbe2a5589533fad28cfdf15"
+        },
+        {
+          "id": "c54bf6cd-a8ef-40f9-9d1c-745bf77ab62c",
+          "track_id": "6c0755a9-62f0-450c-9581-1925a02480fc",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "20cf3d277905d507eb89c9dd8c65ede08babec166c4517c68ed51a9dac09e2bc",
+          "verified_duration_seconds": 29.9
+        },
+        {
+          "id": "407e6a28-be66-4206-ab53-ab2d224b9344",
+          "track_id": "70a45e48-6766-4def-a893-430c2d876d7c",
+          "kind": "source",
+          "bytes": 5159053,
+          "sha256": "dd07d277c5857d5008cb0811bcc9dd08e81afa74234849e96116c5ea1bb370d5"
+        },
+        {
+          "id": "54969f89-7174-4b50-ae57-9ee0731c2938",
+          "track_id": "70a45e48-6766-4def-a893-430c2d876d7c",
+          "kind": "audio",
+          "bytes": 12765165,
+          "sha256": "fa481cbeb82573f071457c0c876fcb68fc09542f07079127836820cf3b965f99"
+        },
+        {
+          "id": "50b903dc-84b1-4cb4-9aff-9b837e8b0dd6",
+          "track_id": "70a45e48-6766-4def-a893-430c2d876d7c",
+          "kind": "preview",
+          "bytes": 718893,
+          "sha256": "dbe1e483086b273d7fca42cc156e84c3bb56cf9675b2419e3442316e58705f99",
+          "verified_duration_seconds": 29.9
+        }
+      ],
+      "resumed": false
+    }
+  ],
+  "bounds": {
+    "playlist_entries": 100,
+    "unique_sources": 10,
+    "source_duration_seconds": 600,
+    "media_file_bytes": 52428800,
+    "job_bytes": 536870912,
+    "workspace_media_bytes": 1073741824,
+    "free_reserve_bytes": 67108864,
+    "concurrent_jobs": 1,
+    "concurrent_tracks": 1,
+    "operation_seconds": 300,
+    "processing_invocation_seconds": 1200,
+    "media_retention_hours": 48
+  },
+  "platform_evidence": {
+    "linux": "actual native/tool execution",
+    "windows": "unverified; adapter unavailable",
+    "android": "owner has USB phone; session has no USB/JDK/SDK/ADB; adapter unavailable",
+    "ios": "no Mac/iPhone; adapter unavailable"
+  },
+  "not_verified": [
+    "Native CPU/RAM/battery capacity",
+    "Windows/phone compilation or actual device media execution",
+    "Interactive listening or audio output",
+    "Online naming/artwork, final tags or device export",
+    "Portable installer packaging/distribution"
+  ],
+  "privacy": "Sanitized IDs, durations, byte counts and checksums only. Raw diagnostics, signed URLs, credentials and media are not tracked.",
+  "notes": [
+    "Synthetic sources are generated audio with two equal titles, a repeated source, Unicode and visible unavailable entries; these are not live platform-source proof.",
+    "The first live run had one transient sourceUnavailable track; explicit retry retained peers and completed all three.",
+    "The final fresh run used the actual saved checkout and prepared all three on its first attempt.",
+    "Processing uses full strict decoding before ready; fresh snippets were separately measured at 29.9 seconds.",
+    "Times are local observations under concurrent test load, not performance commitments."
+  ]
+}

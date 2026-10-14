@@ -14,3 +14,5 @@ Download unique sources once per job while preserving occurrence positions. Part
 Save freezes selection/metadata. Produce new full-length tagged files, read tags/cover back, check duration/decoding, allocate portable collision-safe names, and verify all ZIP entries/checksums before marking output complete. Native picker cancellation/permission denial keeps recovery. Cleanup must not delete user-exported external copies.
 
 Test distinguishable synthetic files, duplicate titles, restart/cancel races, storage limits, stale generations and corrupt exports. Use actual media tools/adapters for integration; record real device evidence separately. Optional S3/container probes are experiments, not required production dependencies.
+
+Stage 3 Linux is implemented: read docs/STAGE3_GUIDE.md and docs/PROJECT_STATUS.md. Use schema v4/PipelineRepository, explicit active manifests and the verified runtime manifest. Keep phone/Windows media unavailable pending their actual execution proof. Never use fixture state for real files, bypass token-checked publication or interpret ordinary tests as the opt-in real-codec/native/live checks.

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../application/fixture_journey.dart';
 import 'theme.dart';
+import 'workspace_components.dart';
 
 class FixtureStepTrail extends StatelessWidget {
   const FixtureStepTrail({super.key, required this.phase});
@@ -36,83 +37,6 @@ class FixtureStepTrail extends StatelessWidget {
   }
 }
 
-class FixtureHeading extends StatelessWidget {
-  const FixtureHeading(this.title, {super.key, required this.subtitle});
-  final String title;
-  final String subtitle;
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Semantics(
-        header: true,
-        liveRegion: true,
-        child: Text(title, style: Theme.of(context).textTheme.headlineMedium),
-      ),
-      const SizedBox(height: 8),
-      Text(subtitle, style: const TextStyle(color: mutedInk)),
-    ],
-  );
-}
-
-class FixtureSurface extends StatelessWidget {
-  const FixtureSurface({super.key, required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) => Card(
-    margin: EdgeInsets.zero,
-    child: Padding(padding: const EdgeInsets.all(16), child: child),
-  );
-}
-
-class FixtureNotice extends StatelessWidget {
-  const FixtureNotice({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.message,
-    this.error = false,
-  });
-  final IconData icon;
-  final String title;
-  final String message;
-  final bool error;
-  @override
-  Widget build(BuildContext context) => Semantics(
-    liveRegion: error,
-    child: Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: surfaceMuted,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: error ? errorInk : ink),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: error ? errorInk : ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(message, style: const TextStyle(color: mutedInk)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
 String fixtureTrackStateLabel(FixtureTrackState state) => switch (state) {
   FixtureTrackState.waiting => 'Waiting',
   FixtureTrackState.ready => 'Ready for review',
@@ -130,7 +54,7 @@ class FixtureTrackCard extends StatelessWidget {
   final FixtureJourney journey;
   final VoidCallback onEdit;
   @override
-  Widget build(BuildContext context) => FixtureSurface(
+  Widget build(BuildContext context) => WorkspaceSurface(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -316,7 +240,7 @@ class FixturePlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final track = journey.track(journey.activeTrackId!);
-    return FixtureSurface(
+    return WorkspaceSurface(
       key: const Key('demo-player'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

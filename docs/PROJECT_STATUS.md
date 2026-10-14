@@ -1,17 +1,17 @@
 # Project status
 
-Updated: 2026-10-13.
+Updated: 2026-10-14.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is implemented and accepted on the proven Linux platform; Windows build execution remains pending. Stage 2’s fictional interface journey is complete. The real downloader/review/export application is not implemented and no cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is implemented and accepted on the proven Linux platform; Windows build execution remains pending. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery are implemented; enrichment, real interactive review and device export are not implemented and no cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
 | 0 — Feasibility | In progress | 30 tests pass; 3 synthetic runs and 3 live local playlist runs pass; native/provider gates open |
 | 1 — Native foundation | Implemented; Linux accepted, Windows verification pending | 48 behavior tests, static analysis, debug/release Linux builds and 1 native plugin/restart integration test pass |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
-| 3 — Device pipeline | Not started | Desktop CLI proof only |
+| 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, live sample, recovery/quotas/cleanup, 110 native and 32 Python tests |
 | 4 — AI/artwork | Not started | Provider adapters written; real key/match checks pending |
 | 5 — Review/edit | Not started | Written behavior |
 | 6 — Device save | Not started | CLI ZIP verified; native picker/export untested |
@@ -102,7 +102,7 @@ Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAG
 
 ## Next actions
 
-Run the prepared Windows native/build checks or GitHub CI and record actual results. Stage 2 fixture work is complete; begin Stage 3 only after the relevant native media proof, and keep mobile gates open. Populate this project's .env with the new Groq key (never paste it in chat), then run one live stable-ID naming check against the retained sample. Supply an identifying MusicBrainz contact for a known-cover test. Continue the Android native execution spike when a toolchain/device is available; retain iOS as explicitly unresolved until it can be built/tested.
+Run the prepared Windows native/build checks or GitHub CI and record actual results. Stage 3 Linux is accepted; expose an Android SDK/JDK/ADB/device path for its native spike, execute Windows checks and retain the iOS gate. Populate this project's .env with the new Groq key (never paste it in chat), then run one live stable-ID naming check against the retained sample. Supply an identifying MusicBrainz contact for a known-cover test. Continue the Android native execution spike when a toolchain/device is available; retain iOS as explicitly unresolved until it can be built/tested.
 
 For future updates, record stage, implementation revision, commands/results, observed limits and next action. Do not mark a platform or stage done without its stated evidence.
 
@@ -114,4 +114,14 @@ Shared lavenderblush tokens, white surfaces, 48 px controls and focus treatments
 
 `dart format --output=none --set-exit-if-changed lib test integration_test` and `flutter analyze --no-pub` pass. `python3 scripts/test_linux_native.py` passes **1 actual Linux plugin/keyring/SQLite/restart test**, now including the fixture route. `flutter build linux --release` passes; the release scan finds no dotenv/literal Groq key. The unchanged Stage 0 Python suite passes **30 tests, zero skipped** with the project's FFmpeg/ffprobe. Official Linux prerequisites were extracted into /tmp for these checks; no system packages or DOT. files were modified. Flutter/package pins and SQLite schema remain unchanged.
 
-Stage 2 is accepted for its fixture scope. This evidence does not certify actual phone screen readers/keyboards, Windows builds, native acquisition/playback/export, AI identification or online covers. Those gates remain open. No GitHub workflow, external provider call, deployment, commit or push was performed. Stage 3 is next, dependent on the relevant native media proof.
+Stage 2 is accepted for its fixture scope. This evidence does not certify actual phone screen readers/keyboards, Windows builds, native acquisition/playback/export, AI identification or online covers. Those gates remain open. No GitHub workflow, external provider call, deployment, commit or push was performed. Stage 3 Linux evidence is recorded below; other media-platform gates remain open.
+
+## Stage 3 implementation and Linux acceptance (2026-10-14)
+
+The native app has a separate real processing route and a Linux adapter with pinned-runtime verification. It enumerates atomically, preserves all returned positions/duplicate occurrences/unavailable placeholders, acquires unique sources once, strictly decodes and checks full MP3/snippet duration/hash/bytes, and publishes immutable assets under running generation tokens. Source uploader evidence is retained without guessing artists. Schema v4 adds durable enumeration/errors/durations/uploader evidence, explicit active manifests and unmapped-entry selection; historical migrations are unchanged.
+
+Pause, close/restart and explicit retry reuse only verified source/audio boundaries. Ready peers survive failures and keep their IDs/checksums; damaged media is flagged before an explicit rebuild. Cancel fences the database before stopping guarded process groups. OS file-size limits, bounded output, time/duration/count/concurrency/storage/free-space limits, orphan cleanup, 48-hour expiry and cancelled-job private cleanup are implemented. User-exported copies are outside cleanup; tagging/export capabilities remain false.
+
+Actual checks: **110 Flutter tests pass, zero skipped** (104 ordinary + 6 opt-in real-codec cases), **32 Python tests pass, zero skipped**, Linux formatting/analysis/release scan/builds pass, and both foundation and new actual native pipeline/UI/restart integration tests pass in disposable Linux sessions. The live sample first retained two successful peers while one source failed; explicit retry completed all three without reacquiring those peers. Sanitized records are in [STAGE3_RESULTS.json](STAGE3_RESULTS.json); setup/contracts are in [STAGE3_GUIDE.md](STAGE3_GUIDE.md). Native CPU/RAM/battery capacity has not been measured; configured limits are conservative desktop development bounds, not phone capacity claims.
+
+**Linux Stage 3 is accepted. Full multi-platform acceptance remains open.** The owner confirmed an Android phone available by USB; no USB device filesystem, JDK, SDK or ADB is exposed here. No Mac/iPhone is available. Windows process-tree/build/media execution is unverified. No phone adapter, real player, online metadata/artwork or native file-destination save was marked supported, and no paid host, deployment, commit or push was performed. Stage 4 can continue on proven Linux while these platform spikes are pursued separately.

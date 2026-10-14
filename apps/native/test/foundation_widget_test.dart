@@ -86,6 +86,8 @@ void main() {
         150,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.byKey(const Key('start-demo')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('start-demo')));
       await tester.pump();
       await tester.pageBack();

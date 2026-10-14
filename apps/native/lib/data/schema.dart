@@ -2,7 +2,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 /// Append migrations; never edit a version that has shipped.
 abstract final class Schema {
-  static const version = 3;
+  static const version = 4;
 
   static Future<void> migrate(DatabaseExecutor db, int from, int to) async {
     for (var target = from + 1; target <= to; target++) {
@@ -92,6 +92,27 @@ abstract final class Schema {
           // than misrepresenting it as the originally acquired metadata.
           await db.execute(
             'ALTER TABLE tracks ADD COLUMN original_metadata TEXT',
+          );
+        case 4:
+          await db.execute(
+            'ALTER TABLE jobs ADD COLUMN enumerated INTEGER NOT NULL DEFAULT 0',
+          );
+          await db.execute('ALTER TABLE jobs ADD COLUMN error_code TEXT');
+          await db.execute(
+            'ALTER TABLE tracks ADD COLUMN duration_seconds REAL',
+          );
+          await db.execute('ALTER TABLE tracks ADD COLUMN error_code TEXT');
+          await db.execute(
+            'ALTER TABLE tracks ADD COLUMN source_uploader TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE playlist_entries ADD COLUMN source_title TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE playlist_entries ADD COLUMN selected INTEGER NOT NULL DEFAULT 1',
+          );
+          await db.execute(
+            'ALTER TABLE assets ADD COLUMN active INTEGER NOT NULL DEFAULT 1',
           );
         default:
           throw StateError('Unknown schema version $target');
