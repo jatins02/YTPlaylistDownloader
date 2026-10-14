@@ -147,7 +147,7 @@ def disk_bytes(root: Path) -> int:
 
 
 def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
-            max_bytes: int = 512 * 1024 * 1024) -> bytes:
+            max_bytes: int = 512 * 1024 * 1024, require_clean_stderr: bool = False) -> bytes:
     """Drain output into temporary files, kill the process group on timeout/quota."""
     with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as errors:
         environment = {key: os.environ[key] for key in (
@@ -202,7 +202,7 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
             raise CheckError("TOOL_OUTPUT_LIMIT", "Tool produced excessive diagnostic output.")
         if scratch and disk_bytes(scratch) > max_bytes:
             raise CheckError("DISK_LIMIT", "Feasibility scratch-data limit exceeded.")
-        if process.returncode:
+        if process.returncode or (require_clean_stderr and os.fstat(errors.fileno()).st_size):
             errors.seek(0)
             diagnostic = errors.read(16384).decode(errors="replace").lower()
             # Store categories, never raw output containing source/signed URLs.
@@ -218,11 +218,14 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
 
 
 def probe_and_decode(path: Path, ffmpeg: str, ffprobe: str) -> float:
-    data = json.loads(command([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)]))
+    data = json.loads(command([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)], require_clean_stderr=True))
     duration = float(data["format"]["duration"])
     if not math.isfinite(duration) or duration <= 0 or duration > 601:
         raise CheckError("AUDIO_DURATION_INVALID", "Stage 0 accepts positive audio durations up to 10 minutes.")
-    command([ffmpeg, "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"], timeout=120)
+    # FFmpeg 6.1 can report decoder-thread errors and still exit zero even with
+    # -xerror. At log level error, any diagnostic means strict decoding failed.
+    command([ffmpeg, "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"],
+            timeout=120, require_clean_stderr=True)
     return duration
 
 

@@ -172,3 +172,32 @@ Next actions remain the Android toolchain/device spike, Windows execution and
 the unresolved iOS gate; Stage 4 can proceed on proven Linux with the owner's
 securely configured key and identifying artwork contact. This review adds no
 Stage 4–9 completion claim.
+
+## GitHub Actions repair — 2026-10-14
+
+The committed Foundation workflow's [run #3](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38596427291)
+failed before native app checks on both runners: Windows could not check out a
+long Flutter engine fixture filename; Linux's Dart SDK download stopped with
+curl exit 92 (an interrupted HTTP/2 stream). The media job also exposed a real
+FFmpeg 6.1.1 compatibility defect: decoder-thread errors can return exit zero
+even with `-xerror`.
+
+The Flutter clone now records `core.longpaths=true`. Linux bootstrap uses a
+private temporary curl configuration with HTTP/1.1, retries for interrupted
+transfers and connection/transfer time limits, without altering the pinned SDK
+or the user's curl configuration. Strict Stage 0 probe/decode operations now
+reject any error-level stderr even after a zero exit, retaining redacted failure
+messages. CI pins and prints the existing Ubuntu codec package
+`7:6.1.1-3ubuntu5`; it is a CLI compatibility test runtime, not the verified
+Stage 3 native media runtime.
+
+Actual local checks: 43 Python tests pass, zero skipped, with both the exact
+Ubuntu FFmpeg 6.1.1 package from the failed run and the project's pinned FFmpeg
+8 runtime. The former failure was reproduced before the fix. 132 Flutter tests
+pass with the pinned Stage 3 runtime, zero skipped; formatting changes no files
+and analysis reports no issues. Bootstrap revision/dirty-checkout rejection and
+temporary downloader configuration cleanup are covered by offline regressions.
+A completely fresh official Flutter clone and 227.6 MiB Dart SDK download also
+pass with the repaired bootstrap (Flutter 3.47.5 / Dart 3.13.4, exact revision).
+Publishing and the new GitHub Actions result are still pending; no Windows CI
+acceptance or successful remote rerun is claimed by these local checks.

@@ -79,7 +79,11 @@ jobs:
         with:
           python-version: '3.14.4'
       - run: sudo apt-get update
-      - run: sudo apt-get install -y ffmpeg
+      - name: Install and record the CI codec compatibility runtime
+        run: |
+          sudo apt-get install -y ffmpeg=7:6.1.1-3ubuntu5
+          ffmpeg -version
+          ffprobe -version
       - run: python3 -m venv .venv-ci
       - run: .venv-ci/bin/python -m pip install -r requirements-stage0.lock
       - run: .venv-ci/bin/python -m unittest discover -s tests -v
