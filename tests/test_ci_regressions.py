@@ -4,13 +4,13 @@ import io
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from scripts import bootstrap_flutter
 from stage0.core import CheckError, command
 
 
@@ -24,8 +24,13 @@ class CiRegressions(unittest.TestCase):
         self.assertEqual(raised.exception.code, 'TOOL_FAILED')
         self.assertNotIn('private decoder diagnostic', str(raised.exception))
 
-    @unittest.skipUnless(sys.platform == 'linux', 'Linux SDK downloader configuration')
+    @unittest.skipUnless(
+        sys.platform == 'linux' and shutil.which('git') and
+        (Path(__file__).resolve().parents[1] / 'scripts/bootstrap_flutter.py').is_file(),
+        'Native Linux bootstrap helper and Git required; absent from the CLI-only image',
+    )
     def test_bootstrap_scopes_download_settings_and_keeps_revision_guard(self):
+        from scripts import bootstrap_flutter
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             sdk = root / '.tools-stage1/flutter'
