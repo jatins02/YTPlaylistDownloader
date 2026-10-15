@@ -1,10 +1,10 @@
 # Project status
 
-Updated: 2026-10-15.
+Updated: 2026-10-16.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Real interactive review/device export are not implemented and no cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Device export is Stage 6 and remains unavailable. No cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ Updated: 2026-10-15.
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
 | 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
-| 5 — Review/edit | Not started | Written behavior |
+| 5 — Review/edit | Linux implementation/native-output acceptance verified; manual/device gates open | Durable revision-safe edits/covers/selections, one bounded native snippet, responsive review; see Stage 5 evidence below |
 | 6 — Device save | Not started | CLI ZIP verified; native picker/export untested |
 | 7 — Device QA | Not started | No real phone evidence |
 | 8 — Packaging | Not started | No installed application packages |
@@ -101,7 +101,7 @@ Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAG
 
 ## Next actions
 
-Desktop foundation CI now passes. Perform manual Windows QA and its skipped symlink check before broader platform acceptance. Stage 3 Linux and Stage 4 Linux implementation/live acceptance are verified. Prove Windows media/tag execution, expose an Android SDK/JDK/ADB/USB device path and retain the iOS gate until a Mac/iPhone can be built/tested. Those missing execution paths prevent full Stage 4 acceptance; no access to them exists in this environment. Real playback/editing remains Stage 5. The owner's configured development key stays in ignored `.env`; native releases continue to use each user's OS vault.
+Desktop foundation CI now passes. Perform manual Windows QA and its skipped symlink check before broader platform acceptance. Stage 3 Linux and Stage 4 Linux implementation/live acceptance are verified. Prove Windows media/tag execution, expose an Android SDK/JDK/ADB/USB device path and retain the iOS gate until a Mac/iPhone can be built/tested. Those missing execution paths prevent full Stage 4 acceptance; no access to them exists in this environment. Stage 5 Linux playback/editing is implemented; complete its manual speaker/chooser and platform gates, then implement Stage 6 verified device saving. The owner's configured development key stays in ignored `.env`; native releases continue to use each user's OS vault.
 
 For future updates, record stage, implementation revision, commands/results, observed limits and next action. Do not mark a platform or stage done without its stated evidence.
 
@@ -399,3 +399,31 @@ update records the successful run; its own push triggers the unchanged workflow
 again and must also be checked before reporting the final branch green. Native
 media/tag execution on Windows, Android and iOS, actual player/device-save QA,
 and the Stage 5–6 work remain open as documented above.
+
+
+## Stage 5 implementation and Linux acceptance (2026-10-16)
+
+The real processing route now exposes one gesture-started private snippet at a time, pause/resume, bounded seeking, explicit Stop and lifecycle suspension handling. Stable track/asset IDs preserve playback through renaming. The Linux adapter verifies the pinned FFmpeg PulseAudio output and a local Unix socket before enabling playback, verifies private snippet bytes/decoding and supervises bounded output. A fixed private PulseAudio client configuration disables shared memory/memfd/autospawn without relaxing existing file limits.
+
+Review uses durable revision-checked `review` attempt tokens in schema v5. Explicit Save atomically applies only changed human fields and the cover choice; Cancel/Escape discards uncommitted text. Failed saves retain text/image choices, and stale revisions require explicit rebase followed by Save, preserving untouched newer fields. Interrupted editors recover as cancelled attempts without requeuing verified audio. Human cover import/removal/selection uses verified private assets; original source titles and portable filename previews remain visible. Unique-track and unmapped-entry inclusion persists across restart. Pending edits/preparation, selected unavailable entries and review warnings remain visible, and final Save to Device stays disabled until Stage 6 publication/transfer exists.
+
+| Command/check actually executed | Result |
+| --- | --- |
+| `dart format --output=none --set-exit-if-changed lib test integration_test tool` | 79 files; no changes required |
+| `flutter analyze --no-pub` | No issues |
+| `STAGE3_TEST_RUNTIME=<pinned manifest> flutter test --no-pub` | 199 passed, zero skipped; includes 17 opt-in real-codec/image/tag cases |
+| `flutter test --no-pub` without runtime opt-in | 182 passed, zero skipped |
+| `STAGE5_SCREENSHOTS=<private output> flutter test --no-pub test/review_widget_test.dart` | 11 passed, including opt-in readable UI renders |
+| `scripts/test_linux_native.py --test foundation_test.dart`, `pipeline_test.dart`, `enrichment_test.dart` | 1 actual native integration case passed for each |
+| `scripts/test_stage5_audio.py` with pinned runtime and private PulseAudio 17.0 | 1 actual native review/output integration case passed |
+| `flutter build linux --release --no-pub` | Pass |
+| `scripts/check_native_bundle.py apps/native/build/linux/x64/release/bundle` | 18 release files; no dotenv asset or literal Groq key |
+| `.venv-stage0/bin/python -m unittest discover -s tests -v` with project FFmpeg | 58 passed, zero skipped |
+
+Native review acceptance uses real SQLite, the OS vault with a unique fictional credential, the pinned FFmpeg/image/tag workers and a disposable local PulseAudio server/null sink. Captured PCM distinguishes equal-title 440/880 Hz tracks, verifies bounded completion, switching and pause, and confirms renaming keeps preview bytes/IDs. Invalid cover Save leaves metadata untouched; retrying valid bytes succeeds. Human cover APIC bytes survive full-MP3 readback, and edits/removal/selection/recovery survive restart. Fictional providers make no live requests and do not use the owner's `.env` key.
+
+Widget tests cover 320/390/844-landscape/768/1024/1440 px, long Unicode metadata, 200% text, keyboard insets, explicit focus restoration, retained failed/conflicted text, chooser cancellation and suspension without autoplay. They wait for observable asynchronous results rather than assuming fixed disk latency. Reviewed [desktop](stage5/screens/review-desktop.png), [phone review](stage5/screens/review-phone.png) and [phone editor](stage5/screens/editor-phone.png) renders use fictional stored records; they do not prove physical phone behavior.
+
+The only new direct Flutter dependency is exact `file_selector: 1.1.0`; the lockfile and Linux/Windows generated registrants are committed. Flutter/Dart/media pins remain unchanged. PulseAudio acceptance exercised official package `1:17.0+dfsg1-2ubuntu4` in an isolated extracted toolchain; no system audio service, global packages, cloud infrastructure or DOT. files were changed. See [STAGE5_GUIDE.md](STAGE5_GUIDE.md) and [STAGE5_RESULTS.json](STAGE5_RESULTS.json).
+
+Stage 5 is accepted for the exercised Linux implementation and private native-output scope. Physical-speaker listening, manual OS image-chooser interaction, screen-reader/device keyboard QA and Windows/Android/iOS media/playback remain unverified. No Android SDK/JDK/ADB/USB or Mac/iPhone execution path is available here. Independent-phone requirements remain in scope. Stage 6 complete tagged-file/ZIP publication and destination transfer remain unimplemented. GitHub publication and fresh CI evidence will be recorded after the tested change is uploaded.

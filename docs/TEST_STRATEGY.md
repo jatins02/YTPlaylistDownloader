@@ -78,3 +78,10 @@ uses the real OS keyring, SQLite/UI and restart with fictional HTTP responses.
 Live provider quality is tested only through explicitly opted-in account checks;
 these fixtures do not close live or phone/Windows media gates. See STAGE4_GUIDE.md
 and STAGE4_RESULTS.json.
+
+
+## Stage 5 verification
+
+Ordinary tests exercise transactional edit/cover rollback, revision conflicts and explicit rebase, pending-edit export fencing, interrupted-editor recovery, persisted selection (including unmapped failures), portable Unicode filename previews, single-player asynchronous races and UI lifecycle/focus behavior. The real review layout matrix includes six sizes, 200% text and keyboard insets. Asynchronous disk actions wait for their observable UI result; fixed delays do not establish persistence.
+
+The opt-in `scripts/test_stage5_audio.py` uses the pinned runtime and isolated PulseAudio 17.0 server/null sink. Its native integration test distinguishes captured equal-title 440/880 Hz PCM, bounds completion and checks actual switching/pause, renaming without changed audio, corrupt-preview rejection, atomic image failures/retry, human APIC bytes and SQLite restart recovery. No live provider or personal key is needed. This proves native Linux output, not physical speakers, manual chooser operation or other platforms. See STAGE5_GUIDE.md and current status for commands and remaining gates.
