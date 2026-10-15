@@ -43,7 +43,7 @@
     },
     "linux_release": "passed",
     "release_scan": {
-      "files": 18,
+      "files": 17,
       "dotenv_assets": 0,
       "literal_groq_keys": 0
     }
@@ -94,5 +94,29 @@
     "iOS media/playback/export"
   ],
   "next_stage": "Stage 6 verified full tagged MP3/ZIP publication and destination transfer",
-  "github": "Publication and fresh CI recorded in PROJECT_STATUS.md after upload"
+  "github": {
+    "pull_request": "https://github.com/jatins02/YTPlaylistDownloader/pull/1",
+    "implementation_commit": "c768a1057982bd6ea6bc610ed887022b7b5327cc",
+    "tested_tree": "7bcd7ecbdcc5099bf47ee031cbb7f04ea4c91901",
+    "pr_run": {
+      "id": 38795782840,
+      "result": "all three jobs passed"
+    },
+    "branch_run": {
+      "id": 38795776924,
+      "result": "all three jobs passed"
+    },
+    "ci_tests": {
+      "linux_passed": 182,
+      "windows_passed": 173,
+      "windows_skipped": 1,
+      "python_passed": 58
+    },
+    "main_run": {
+      "id": 38796787457,
+      "url": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38796787457",
+      "revision": "c768a1057982bd6ea6bc610ed887022b7b5327cc",
+      "result": "all three jobs passed"
+    }
+  }
 }
