@@ -31,6 +31,16 @@ final class PipelineRepository {
     }
   }
 
+  /// Shared transaction fence for later pipeline stages. Callback writes commit
+  /// only while the exact owner/generation is still running and editable.
+  Future<T> writeWithToken<T>(
+    AttemptToken token,
+    Future<T> Function(Transaction) operation,
+  ) => _write((tx) async {
+    await _token(tx, token);
+    return operation(tx);
+  });
+
   Future<void> _token(DatabaseExecutor tx, AttemptToken token) async {
     final rows = await tx.rawQuery(
       '''SELECT a.status, a.generation, a.job_id, a.track_id, a.stage,
@@ -398,13 +408,23 @@ final class PipelineRepository {
     ].contains(rows.single['phase'])) {
       return;
     }
+    // An enrichment pause retains verified playable audio. Conversion work
+    // still resumes through its own queued checkpoint boundary.
+    await tx.rawUpdate(
+      "UPDATE tracks SET phase=CASE WHEN phase='enriching' AND EXISTS (SELECT 1 FROM attempts a WHERE a.track_id=tracks.id AND a.stage='enrichment' AND a.status='running') AND (SELECT COUNT(*) FROM assets WHERE track_id=tracks.id AND kind='audio' AND active=1)=1 AND (SELECT COUNT(*) FROM assets WHERE track_id=tracks.id AND kind='preview' AND active=1)=1 THEN 'ready' ELSE 'queued' END,revision=revision+1 WHERE job_id=? AND phase IN ('downloading','converting','enriching')",
+      [jobId],
+    );
+    await tx.rawUpdate(
+      "UPDATE enrichment SET naming='pending',naming_failure='operationCancelled' WHERE track_id IN (SELECT id FROM tracks WHERE job_id=?) AND naming='running'",
+      [jobId],
+    );
+    await tx.rawUpdate(
+      "UPDATE enrichment SET artwork='pending',artwork_failure='operationCancelled' WHERE track_id IN (SELECT id FROM tracks WHERE job_id=?) AND artwork='running'",
+      [jobId],
+    );
     await tx.rawUpdate(
       "UPDATE attempts SET status = 'retryable', generation = generation + 1, error_code = ? WHERE job_id = ? AND status = 'running'",
       [failure?.name ?? FailureCode.operationCancelled.name, jobId],
-    );
-    await tx.rawUpdate(
-      "UPDATE tracks SET phase = 'queued', revision = revision + 1 WHERE job_id = ? AND phase IN ('downloading','converting','enriching')",
-      [jobId],
     );
     await tx.update(
       'jobs',
@@ -465,6 +485,10 @@ final class PipelineRepository {
       );
     }
     await tx.delete('assets', where: 'job_id = ?', whereArgs: [jobId]);
+    await tx.rawUpdate(
+      "UPDATE enrichment SET artwork='unavailable',artwork_failure='expiredMedia',artwork_asset_id=NULL WHERE track_id IN (SELECT id FROM tracks WHERE job_id=?) AND artwork_override=0",
+      [jobId],
+    );
     await tx.rawUpdate(
       "UPDATE tracks SET phase = 'cancelled', revision = revision + 1 WHERE job_id = ?",
       [jobId],

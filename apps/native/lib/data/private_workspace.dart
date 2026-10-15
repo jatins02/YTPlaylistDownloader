@@ -113,14 +113,20 @@ final class PrivateWorkspace {
 
   String get databasePath => p.join(root.path, 'drafts.sqlite');
 
-  Future<File> installProcessGuard(Uint8List bytes) async {
+  Future<File> installProcessGuard(Uint8List bytes) =>
+      installTool('process_guard.py', bytes);
+
+  Future<File> installTool(String name, Uint8List bytes) async {
+    if (!{'process_guard.py', 'metadata_tools.py'}.contains(name)) {
+      throw const AppFailure(FailureCode.invalidPath, 'Unknown bundled tool.');
+    }
     if (_closed || bytes.length > 16384) {
       throw const AppFailure(
         FailureCode.storageUnavailable,
         'The private tool supervisor could not be installed.',
       );
     }
-    final file = File(p.join(root.path, 'process_guard.py'));
+    final file = File(p.join(root.path, name));
     if (await FileSystemEntity.type(file.path, followLinks: false) ==
         FileSystemEntityType.link) {
       throw const AppFailure(

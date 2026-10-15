@@ -2,7 +2,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 /// Append migrations; never edit a version that has shipped.
 abstract final class Schema {
-  static const version = 4;
+  static const version = 5;
 
   static Future<void> migrate(DatabaseExecutor db, int from, int to) async {
     for (var target = from + 1; target <= to; target++) {
@@ -113,6 +113,25 @@ abstract final class Schema {
           );
           await db.execute(
             'ALTER TABLE assets ADD COLUMN active INTEGER NOT NULL DEFAULT 1',
+          );
+        case 5:
+          await db.execute('''CREATE TABLE enrichment (
+            track_id TEXT PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,
+            naming TEXT NOT NULL DEFAULT 'pending' CHECK (naming IN ('pending','running','complete','failed','stale')), naming_failure TEXT, reason TEXT,
+            prompt_version TEXT, schema_version INTEGER, model TEXT,
+            artwork TEXT NOT NULL DEFAULT 'pending' CHECK (artwork IN ('pending','running','matched','unavailable','failed','stale','overridden')), artwork_failure TEXT,
+            provenance TEXT, artwork_asset_id TEXT REFERENCES assets(id) ON DELETE SET NULL,
+            artwork_override INTEGER NOT NULL DEFAULT 0 CHECK (artwork_override IN (0,1))
+          )''');
+          await db.execute('''CREATE TABLE provider_state (
+            provider TEXT PRIMARY KEY, not_before INTEGER NOT NULL CHECK (not_before >= 0)
+          )''');
+          await db.execute('''CREATE TABLE artwork_cache (
+            cache_key TEXT PRIMARY KEY, image BLOB NOT NULL CHECK (length(image) BETWEEN 1 AND 1048576), provenance TEXT NOT NULL,
+            sha256 TEXT NOT NULL CHECK (length(sha256) = 64), expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL CHECK (expires_at >= created_at)
+          )''');
+          await db.execute(
+            'CREATE TABLE metadata_settings (id INTEGER PRIMARY KEY CHECK (id = 1), model TEXT NOT NULL, contact TEXT NOT NULL)',
           );
         default:
           throw StateError('Unknown schema version $target');

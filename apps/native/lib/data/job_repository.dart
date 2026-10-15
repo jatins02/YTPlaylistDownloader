@@ -1,3 +1,6 @@
+import 'artwork_state.dart';
+import '../domain/enrichment.dart';
+
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
@@ -367,6 +370,10 @@ final class JobRepository implements DraftStore {
       _expectRevision(track.revision, revision);
       if (fields.isEmpty) return track;
       final merged = track.metadata.merge(candidate, fields);
+      if (artworkKey(track.metadata) != artworkKey(merged) ||
+          track.metadata.needsReview != merged.needsReview) {
+        await invalidateAutomaticArtwork(tx, trackId);
+      }
       final overrides = {
         ...track.overrides,
         ...fields,
@@ -400,6 +407,10 @@ final class JobRepository implements DraftStore {
         track.overrides,
       );
       final merged = track.metadata.merge(suggestion, available);
+      if (artworkKey(track.metadata) != artworkKey(merged) ||
+          track.metadata.needsReview != merged.needsReview) {
+        await invalidateAutomaticArtwork(tx, trackId);
+      }
       await tx.update(
         'tracks',
         {
@@ -412,6 +423,64 @@ final class JobRepository implements DraftStore {
       );
       await _touch(tx, track.jobId);
       return true;
+    }),
+  );
+
+  Future<void> overrideArtwork({
+    required String trackId,
+    required int revision,
+    String? assetId,
+  }) => _guard(
+    () => db.transaction((tx) async {
+      final track = await _requireTrack(tx, trackId);
+      await _editable(tx, track.jobId);
+      _expectRevision(track.revision, revision);
+      if (assetId != null) {
+        final rows = await tx.query(
+          'assets',
+          where: "id=? AND job_id=? AND track_id=? AND kind='artwork'",
+          whereArgs: [assetId, track.jobId, trackId],
+        );
+        if (rows.length != 1) {
+          throw const AppFailure(
+            FailureCode.invalidPath,
+            'Choose a verified cover belonging to this track.',
+          );
+        }
+      }
+      await tx.insert('enrichment', {
+        'track_id': trackId,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      await tx.update(
+        'assets',
+        {'active': 0},
+        where: "track_id=? AND kind='artwork'",
+        whereArgs: [trackId],
+      );
+      if (assetId != null) {
+        await tx.update(
+          'assets',
+          {'active': 1},
+          where: 'id=?',
+          whereArgs: [assetId],
+        );
+      }
+      await tx.update(
+        'enrichment',
+        {
+          'artwork': 'overridden',
+          'artwork_override': 1,
+          'artwork_asset_id': assetId,
+          'artwork_failure': null,
+          'provenance': null,
+        },
+        where: 'track_id=?',
+        whereArgs: [trackId],
+      );
+      await tx.rawUpdate('UPDATE tracks SET revision=revision+1 WHERE id=?', [
+        trackId,
+      ]);
+      await _touch(tx, track.jobId);
     }),
   );
 
@@ -801,6 +870,12 @@ final class JobRepository implements DraftStore {
           );
         }
       }
+      await tx.execute(
+        "UPDATE enrichment SET naming='pending',naming_failure='aiUnavailable',reason='Details preparation was interrupted; retry from retained audio.' WHERE naming='running'",
+      );
+      await tx.execute(
+        "UPDATE enrichment SET artwork='pending',artwork_failure='artworkUnavailable' WHERE artwork='running'",
+      );
       return interrupted.length + orphanJobs;
     }),
   );
@@ -873,15 +948,17 @@ final class JobRepository implements DraftStore {
       }
       final assets = await tx.query(
         'assets',
-        where: 'job_id = ? AND kind = ? AND active = 1',
-        whereArgs: [jobId, AssetKind.audio.name],
+        where: 'job_id = ? AND kind IN (?,?) AND active = 1',
+        whereArgs: [jobId, AssetKind.audio.name, AssetKind.artwork.name],
         orderBy: 'id',
       );
       final selectedIds = tracks.map((track) => track.id).toSet();
       final audioByTrack = <String, List<Map<String, Object?>>>{};
       for (final asset in assets) {
         final trackId = asset['track_id'] as String?;
-        if (trackId != null && selectedIds.contains(trackId)) {
+        if (trackId != null &&
+            selectedIds.contains(trackId) &&
+            asset['kind'] == AssetKind.audio.name) {
           audioByTrack.putIfAbsent(trackId, () => []).add(asset);
         }
       }
@@ -889,6 +966,21 @@ final class JobRepository implements DraftStore {
         throw const AppFailure(
           FailureCode.invalidTransition,
           'Each selected track needs exactly one verified audio asset before saving.',
+        );
+      }
+      final coversByTrack = <String, List<Map<String, Object?>>>{};
+      for (final asset in assets.where(
+        (a) => a['kind'] == AssetKind.artwork.name,
+      )) {
+        final id = asset['track_id'] as String?;
+        if (id != null && selectedIds.contains(id)) {
+          coversByTrack.putIfAbsent(id, () => []).add(asset);
+        }
+      }
+      if (coversByTrack.values.any((covers) => covers.length != 1)) {
+        throw const AppFailure(
+          FailureCode.invalidTransition,
+          'Each selected track can have only one verified cover.',
         );
       }
       final running = await tx.query(
@@ -918,6 +1010,7 @@ final class JobRepository implements DraftStore {
                 'video_id': track.videoId,
                 'track_revision': track.revision,
                 'audio_asset_id': audioByTrack[track.id]!.single['id'],
+                'artwork_asset_id': coversByTrack[track.id]?.single['id'],
                 'metadata': track.metadata.toJson(),
               },
             )
