@@ -2,7 +2,7 @@
 
 A successor to DOT.: playlist downloads, AI song naming, automatic covers, snippets and editable review, then full tagged MP3/ZIP save to your device.
 
-**Current state:** Linux Stage 3 now processes real playlists into private full MP3s and verified snippets, with ordered/duplicate handling, pause/resume, failures/retries, storage limits and cleanup. Configure the local runtime, save a playlist draft, then **Open playlist → Process playlist**. The fictional Stage 2 demo remains separate. AI naming/covers, interactive playback/editing and final device export are later stages. Android, Windows and iOS media verification remain open.
+**Current state:** Linux Stage 3 prepares real playlists into private full MP3s and snippets. Stage 4 now attempts revision-safe AI names and conservative front covers using your own securely stored key, with visible failures, retries and validated private MP3 tag adapters. Live Groq naming, public artwork and embedded-cover checks pass. Listening/editing and final MP3/ZIP device save remain later stages. Android, Windows and iOS media/tag execution gates remain open; the fictional Stage 2 demo stays separate.
 
 ## Confirmed direction
 
@@ -10,6 +10,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 
 ## Start here
 
+- [Stage 4 naming, artwork, tags and acceptance boundaries](docs/STAGE4_GUIDE.md)
 - [Stage 3 setup, processing and platform evidence](docs/STAGE3_GUIDE.md)
 - [Stage 2 demo, verification and screenshots](docs/STAGE2_GUIDE.md)
 - [Native app setup and Stage 1 contracts](docs/STAGE1_GUIDE.md)
@@ -32,6 +33,6 @@ python -m unittest discover -s tests -v
 python -m stage0 synthetic --runs 3
 ```
 
-Install the pinned requirements and FFmpeg/ffprobe/Deno first as described in the guide. Real AI naming awaits a configured key; online artwork and actual mobile export tests remain open. The optional S3 adapter/container is a future experiment, not required native infrastructure.
+Install the pinned requirements and FFmpeg/ffprobe/Deno first as described in the guide. Linux live AI naming and known public artwork/embedded-cover acceptance are verified; each user still supplies their own key. Actual mobile media/tag/export tests remain open. The optional S3 adapter/container is a future experiment, not required native infrastructure.
 
 Coding agents start with [AGENTS.md](AGENTS.md); agent.md is a compatibility pointer. Task-specific skills live under .agents/skills/. The sibling DOT. stays reference-only; its environment, credentials and music are not imported.

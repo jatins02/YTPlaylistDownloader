@@ -37,7 +37,7 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** three fresh source runs succeed; live AI and known-cover checks pass; the sample downloads/converts/exports on actual Android, iPhone and laptop independently of a laptop server or hosted media worker; local players display correct tags/cover; resource limits and tested dependency versions are recorded; a distribution route fits the owner's constraints. Desktop Python success, emulator output and an iOS compile cannot replace actual device evidence.
 
-**Current limits:** local core runs passed. Groq key and artwork contact are pending. Android/iOS native adapters are untested; Mac/iPhone access is unavailable. Keep Stage 0 in progress and document unsupported/unproven gates. Continue useful core/provider or feasible-platform work without promising both-phone completion.
+**Current limits:** local core runs and Stage 4 configured Groq/known-artwork acceptance passed. Android/iOS native adapters are untested; Mac/iPhone access is unavailable. Windows media/tag execution and saved-file/player/distribution evidence remain open. Keep Stage 0 in progress and document unsupported/unproven gates. Continue useful core/provider or feasible-platform work without promising both-phone completion.
 
 ## Stage 1 — Native foundation and local state
 
@@ -84,6 +84,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 **Work:** Start with openai/gpt-oss-120b on the user's configured Groq account; validate account availability and quality. Send bounded source text only. Preserve remix/live/slowed/verse-only details. Match recording/release-linked front artwork, validate images and let human overrides win by field/revision.
 
 **Done when:** missing/extra/reordered/duplicate replies, multilingual/unknown titles, modified versions, wrong/missing art and provider rate limits have tested outcomes; no positional mapping; delayed AI cannot replace human edits; actual tags/cover read back on each platform. Provider failure keeps playable audio and visible review flags.
+
+**Implementation record (2026-10-15):** Native Stage 4 is implemented for the proven Linux development runtime: secure-key Groq adapter and strict stable-ID validation, conservative recording/release-linked approved front-art lookup, bounded cache/transport, revision/token-safe publication and verified ID3v2.3 full-MP3 derivatives from frozen metadata. Actual image/tag/codecs and Linux native secure-storage/UI/restart checks pass with fictional provider fixtures. The authorized live Groq benchmark passes on openai/gpt-oss-120b for stable IDs, title/artist/features, modified versions and unknown-source uncertainty. Known public recording/release/front-art lookup and embedded-cover/full-decode proof also pass. Windows/Android/iOS media/tag execution remains open; full multi-platform Stage 4 acceptance is not claimed. Playback/editing and verified destination publication remain Stages 5–6. See [Stage 4 guide](docs/STAGE4_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
 
 ## Stage 5 — Real review and editing
 

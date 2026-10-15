@@ -4,7 +4,7 @@
 
 Work in YTPlaylistDownloader. The sibling DOT. is reference-only; never modify its files, import its .env, reuse its environment or copy its downloaded media.
 
-Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Real review/playback, enrichment and device export remain later work. Explicit owner instructions override documents.
+Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Stage 4 Linux naming/artwork/tag adapters are implemented; read docs/STAGE4_GUIDE.md for actual evidence and unresolved live/platform gates. Real review/playback and device export remain later work. Explicit owner instructions override documents.
 
 The owner confirmed zero budget, independent Android and iPhone operation, laptop support and device-only saves. No Mac/iPhone is available for testing. Do not replace independent phones with a laptop/LAN companion, provision paid hosting or silently drop iOS. The old hosted topology is superseded. Flutter 3.47.5 is selected for the foundation (decision 0002); media adapters remain candidates pending platform proof. Windows and Linux are the prioritized desktop targets; Windows execution is pending, while Linux foundation checks passed.
 
@@ -41,4 +41,20 @@ Use apps/native with the exact SDK revision in toolchain.json and committed pubs
 
 ## Stage 3 contracts
 
-Schema v4 is current. Source/channel evidence stays separate from human metadata; active manifests select a single verified audio revision. Do not revive cancelled jobs, bypass unresolved-entry export gating, refetch a remote playlist on resume or mark a track ready without verified audio and a snippet. Process groups/file caps are Linux-only primitives. Pause/close retain checkpoints; cancellation fences before killing; expiry/discard affect only private job bytes and preserve metadata/user copies. Real-codec tests require STAGE3_TEST_RUNTIME; live smoke checks are explicitly opt-in. No USB/JDK/Android SDK/ADB is exposed in this execution environment; the owner has an Android phone available by USB.
+Schema v5 is current; v4 remains the historical Stage 3 migration. Source/channel evidence stays separate from human metadata; active manifests select a single verified audio revision. Do not revive cancelled jobs, bypass unresolved-entry export gating, refetch a remote playlist on resume or mark a track ready without verified audio and a snippet. Process groups/file caps are Linux-only primitives. Pause/close retain checkpoints; cancellation fences before killing; expiry/discard affect only private job bytes and preserve metadata/user copies. Real-codec tests require STAGE3_TEST_RUNTIME; live smoke checks are explicitly opt-in. No USB/JDK/Android SDK/ADB is exposed in this execution environment; the owner has an Android phone available by USB.
+
+## Stage 4 contracts
+
+Use the real EnrichmentPipeline and PipelineRepository token-checked writes,
+not fixtures. Groq requests use the OS vault and bounded original text; enforce
+exact ID sets, uncertainty/version markers and field/revision precedence.
+Match recording/release/approved front artwork conservatively. Public HTTPS
+DNS/redirect validation, byte/pixel/deadline caps and persisted device pacing/
+cache expiry are mandatory. Human cover/removal overrides survive late results.
+Tagging uses new frozen-snapshot derivatives, exact embedded-cover readback and
+encoded-audio/full-decode verification inside private job work directories.
+Linux tagging, configured Groq naming and known public artwork/APIC acceptance
+are proven; other-platform media/tag execution remains open. Stage 4 does not prove real playback/editing, ZIP
+publication or destination save. Development live checks require explicit
+opt-in and never pass a key through argv/files/reports. Stage 6 must own final
+verified publication and device transfer.
