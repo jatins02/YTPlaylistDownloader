@@ -52,10 +52,10 @@ class ReviewRegressions(unittest.TestCase):
 
     def test_ambiguous_unknown_album_does_not_choose_the_first_release(self):
         client = ArtworkClient.__new__(ArtworkClient)
-        recording = {'id': 'fixture-recording', 'title': 'Moonlit Train',
+        recording = {'id': '11111111-1111-4111-8111-111111111111', 'title': 'Moonlit Train',
                      'artist-credit': [{'artist': {'name': 'Mira Vale'}}]}
-        responses = [ {'recordings': [recording]}, {'releases': [
-            {'id': 'release-a', 'title': 'Original album'},
+        responses = [ {'count': 1, 'recordings': [recording]}, {**recording, 'releases': [
+            {'id': '22222222-2222-4222-8222-222222222222', 'title': 'Original album'},
             {'id': 'release-b', 'title': 'Compilation'}]},
             {'images': [{'front': True, 'approved': True, 'image': 'https://archive.org/image.jpg'}]} ]
         with patch.object(client, 'json', side_effect=responses), patch.object(client, 'fetch', return_value=b'image'), patch('stage0.providers.normalize_image', return_value=b'cover'):
@@ -65,9 +65,9 @@ class ReviewRegressions(unittest.TestCase):
 
     def test_cover_matching_includes_known_featured_artist_credits(self):
         client = ArtworkClient.__new__(ArtworkClient)
-        recording = {'id': 'fixture-recording', 'title': 'Moonlit Train', 'artist-credit': [
+        recording = {'id': '11111111-1111-4111-8111-111111111111', 'title': 'Moonlit Train', 'artist-credit': [
             {'artist': {'name': 'Mira Vale'}}, {'artist': {'name': 'Jun Park'}}]}
-        responses = [{'recordings': [recording]}, {'releases': [{'id': 'release-a', 'title': 'Known album'}]},
+        responses = [{'count': 1, 'recordings': [recording]}, {**recording, 'releases': [{'id': '22222222-2222-4222-8222-222222222222', 'title': 'Known album'}]},
                      {'images': [{'front': True, 'approved': True, 'image': 'https://archive.org/image.jpg'}]}]
         with patch.object(client, 'json', side_effect=responses), patch.object(client, 'fetch', return_value=b'image'), patch('stage0.providers.normalize_image', return_value=b'cover'):
             image, provenance = client.lookup('Moonlit Train', ['Mira Vale'], 'Known album', featured_artists=['Jun Park'])
@@ -181,7 +181,7 @@ class ReviewRegressions(unittest.TestCase):
                     'featured_artists': [], 'album': None, 'version': None, 'needs_review': False, 'reason': None}
         client = MagicMock()
         client.chat.completions.create.return_value = SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps({'tracks': [metadata]})))], usage=None)
+            choices=[SimpleNamespace(finish_reason='stop', message=SimpleNamespace(content=json.dumps({'tracks': [metadata]})))], usage=None)
         with patch.dict('os.environ', {'GROQ_API_KEY': 'synthetic-test-key'}), patch('groq.Groq') as provider:
             provider.return_value.__enter__.return_value = client
             result, _ = format_with_groq([{'track_id': 'a', 'title': 'Source title', 'cookies': 'PRIVATE_VALUE'}])

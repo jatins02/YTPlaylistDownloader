@@ -29,7 +29,7 @@ class CurrentReviewTests(unittest.TestCase):
                 'featured_artists': [], 'album': None, 'version': None, 'needs_review': False, 'reason': None}
             client = MagicMock()
             client.chat.completions.create.return_value = SimpleNamespace(
-                choices=[SimpleNamespace(message=SimpleNamespace(content=json.dumps({'tracks': [metadata]})))], usage=None)
+                choices=[SimpleNamespace(finish_reason='stop', message=SimpleNamespace(content=json.dumps({'tracks': [metadata]})))], usage=None)
             source = 'Mira Vale - Moonlit Train (' + version + ')'
             with self.subTest(version=version), patch.dict(os.environ, {'GROQ_API_KEY': 'fictional-test-value'}), \
                  patch('groq.Groq') as provider:
@@ -94,9 +94,10 @@ class CurrentReviewTests(unittest.TestCase):
 
     def test_known_album_does_not_guess_between_matching_release_editions(self):
         client = ArtworkClient.__new__(ArtworkClient)
-        responses = [{'recordings': [{'id': 'fixture', 'title': 'Moonlit Train',
-            'artist-credit': [{'artist': {'name': 'Mira Vale'}}]}]},
-            {'releases': [{'id': 'edition-a', 'title': 'Known album'},
+        recording = {'id': '11111111-1111-4111-8111-111111111111', 'title': 'Moonlit Train',
+                     'artist-credit': [{'artist': {'name': 'Mira Vale'}}]}
+        responses = [{'count': 1, 'recordings': [recording]},
+            {**recording, 'releases': [{'id': 'edition-a', 'title': 'Known album'},
                           {'id': 'edition-b', 'title': 'Known album'}]}]
         with patch.object(client, 'json', side_effect=responses), patch.object(client, 'fetch') as fetch:
             with self.assertRaises(CheckError) as raised:
