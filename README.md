@@ -2,7 +2,7 @@
 
 A successor to DOT.: playlist downloads, AI song naming, automatic covers, snippets and editable review, then full tagged MP3/ZIP save to your device.
 
-**Current state:** Linux Stage 3 prepares real playlists into private full MP3s and snippets. Stage 4 now attempts revision-safe AI names and conservative front covers using your own securely stored key, with visible failures, retries and validated private MP3 tag adapters. Live Groq naming, public artwork and embedded-cover checks pass. Listening/editing and final MP3/ZIP device save remain later stages. Android, Windows and iOS media/tag execution gates remain open; the fictional Stage 2 demo stays separate.
+**Current state:** Linux Stage 3 prepares real playlists into private full MP3s and snippets. Stage 4 now attempts revision-safe AI names and conservative front covers using your own securely stored key, with visible failures, retries and validated private MP3 tag adapters. Live Groq naming, public artwork and embedded-cover checks pass. Stage 5 adds real Linux snippet listening, persistent name/cover edits and include/exclude controls. Final MP3/ZIP device saving remains Stage 6. Android, Windows and iOS media/tag execution gates remain open; the fictional Stage 2 demo stays separate.
 
 ## Confirmed direction
 
@@ -10,6 +10,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 
 ## Start here
 
+- [Stage 5 real snippet playback and persistent review](docs/STAGE5_GUIDE.md)
 - [Stage 4 naming, artwork, tags and acceptance boundaries](docs/STAGE4_GUIDE.md)
 - [Stage 3 setup, processing and platform evidence](docs/STAGE3_GUIDE.md)
 - [Stage 2 demo, verification and screenshots](docs/STAGE2_GUIDE.md)

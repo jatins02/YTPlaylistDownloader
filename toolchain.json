@@ -25,5 +25,13 @@
   "metadata_runtime_versions": {
     "mutagen": "1.48.1",
     "pillow": "12.3.0"
+  },
+  "snippet_playback_platforms_verified": [
+    "linux"
+  ],
+  "review_runtime_versions": {
+    "file_selector": "1.1.0",
+    "pulseaudio_acceptance": "17.0",
+    "pulseaudio_acceptance_package": "1:17.0+dfsg1-2ubuntu4"
   }
 }
