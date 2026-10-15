@@ -10,6 +10,8 @@ import '../domain/models.dart';
 import '../platform/media_port.dart';
 import 'workspace_components.dart';
 import 'theme.dart';
+import 'review_editor.dart';
+import 'snippet_player_bar.dart';
 
 class ProcessingScreen extends StatefulWidget {
   const ProcessingScreen({
@@ -23,17 +25,27 @@ class ProcessingScreen extends StatefulWidget {
   State<ProcessingScreen> createState() => _ProcessingScreenState();
 }
 
-class _ProcessingScreenState extends State<ProcessingScreen> {
+class _ProcessingScreenState extends State<ProcessingScreen>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(widget.controller.initialize());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      unawaited(widget.controller.player.pause());
+    }
   }
 
   @override
@@ -43,6 +55,12 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       final state = widget.controller;
       final job = state.job;
       return Scaffold(
+        bottomNavigationBar: ListenableBuilder(
+          listenable: state.player,
+          builder: (context, _) => state.editing
+              ? const SizedBox.shrink()
+              : SnippetPlayerBar(controller: state),
+        ),
         appBar: AppBar(
           actions: [
             if (widget.onKeySettings != null)
@@ -53,7 +71,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
               ),
           ],
           title: const Text(
-            'Playlist processing',
+            'Playlist preparation and review',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -85,7 +103,9 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                       )
                   else ...[
                     WorkspaceHeading(
-                      'Prepare your tracks',
+                      job.phase == JobPhase.reviewReady
+                          ? 'Review your tracks'
+                          : 'Prepare your tracks',
                       subtitle: 'Processing happens on this device. Keep the app open; interrupted work can resume from verified local files.',
                     ),
                     const SizedBox(height: 16),
@@ -96,8 +116,8 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                           : 'Media runtime unavailable',
                       message: state.capability?.canAcquire == true
                           ? state.capability?.canEnrich == true
-                                ? 'Full audio and snippets are verified on this device, then names and approved front covers are prepared. Add your own key in AI key settings. Listening, editing and final save follow in later stages.'
-                                : 'This build prepares full MP3s and short previews. Naming and cover tools need setup; listening and final saving follow in later stages.'
+                                ? 'Prepare audio, then listen to snippets, review names and choose covers. Your changes stay on this device. Final MP3/ZIP saving is not available in this build.'
+                                : 'This build prepares full MP3s and short previews. Review and edit your names after preparation. Naming and cover tools need setup; final saving is not available in this build.'
                           : state.capability?.platform == DevicePlatform.linux
                           ? 'Media tools need setup on this device. Follow the local setup guide and reopen the app; your playlist remains saved.'
                           : 'Media processing is not available on this platform in this build. Your playlist remains saved; the fictional demo is separate.',
@@ -233,6 +253,24 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
                       ),
                     if (job.phase == JobPhase.reviewReady) ...[
                       const SizedBox(height: 16),
+                      Text(
+                        '${state.selectedCount} selected unique tracks · ${state.excludedCount} excluded items · ${state.selectedUnavailable} selected unavailable items',
+                        key: const Key('review-selection-counts'),
+                      ),
+                      const SizedBox(height: 12),
+                      const FilledButton(
+                        onPressed: null,
+                        child: Text('Save to Device'),
+                      ),
+                      Text(
+                        state.reviewBlockedReason ?? 'Review is ready. Saving files to a device destination is not available in this build.',
+                        key: const Key('review-save-reason'),
+                      ),
+                      if (state.capability?.canPlaySnippets != true)
+                        const Text(
+                          'Local snippet playback is unavailable. On Linux, check your local audio service and verified runtime.',
+                        ),
+                      const SizedBox(height: 12),
                       const Text(
                         'Prepared files remain private temporary assets. No files have been saved to your device destination yet.',
                         style: TextStyle(color: mutedInk),
@@ -249,12 +287,53 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
   );
 }
 
-class _EntryCard extends StatelessWidget {
+class _EntryCard extends StatefulWidget {
   const _EntryCard({required this.entry, required this.state});
   final StoredEntry entry;
   final ProcessingController state;
   @override
+  State<_EntryCard> createState() => _EntryCardState();
+}
+
+class _EntryCardState extends State<_EntryCard>
+    with AutomaticKeepAliveClientMixin {
+  final _editFocus = FocusNode(debugLabel: 'Review edit action');
+  bool _editing = false;
+  StoredEntry get entry => widget.entry;
+  ProcessingController get state => widget.state;
+  @override
+  bool get wantKeepAlive => _editing;
+  @override
+  void dispose() {
+    _editFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> edit(TrackRecord track) async {
+    _editing = true;
+    updateKeepAlive();
+    try {
+      await openReviewEditor(context, state, track);
+    } finally {
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          final target = _editFocus.context;
+          if (target != null) {
+            await Scrollable.ensureVisible(target, alignment: 0.5);
+          }
+          if (!mounted) return;
+          _editFocus.requestFocus();
+          _editing = false;
+          updateKeepAlive();
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final matching = state.tracks.where((t) => t.id == entry.trackId).toList();
     final track = matching.isEmpty ? null : matching.single;
     final details = track == null ? null : state.enrichment[track.id];
@@ -269,6 +348,67 @@ class _EntryCard extends StatelessWidget {
             '${entry.position}. ${entry.title}',
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          if (state.job?.phase == JobPhase.reviewReady) ...[
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                track == null
+                    ? 'Include unavailable entry'
+                    : 'Include ${track.metadata.songTitle}${occurrences > 1 ? ' (all occurrences)' : ''}',
+              ),
+              value: track?.selected ?? entry.selected,
+              onChanged: state.commanding || state.editing || state.cancelling
+                  ? null
+                  : (value) {
+                      if (track == null) {
+                        state.selectEntry(entry, value ?? false);
+                      } else {
+                        state.selectTrack(track, value ?? false);
+                      }
+                    },
+            ),
+            if (track != null && track.phase == TrackPhase.ready)
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  ListenableBuilder(
+                    listenable: state.player,
+                    builder: (context, _) {
+                      final active =
+                          state.player.trackId == track.id &&
+                          (state.player.playing || state.player.loading);
+                      return Semantics(
+                        label: track.metadata.songTitle,
+                        child: OutlinedButton.icon(
+                          key: Key('review-play-${entry.position}'),
+                          onPressed:
+                              state.capability?.canPlaySnippets == true &&
+                                  !state.commanding &&
+                                  !state.cancelling
+                              ? () => state.player.toggle(track.id)
+                              : null,
+                          icon: Icon(active ? Icons.pause : Icons.play_arrow),
+                          label: Text('${active ? 'Pause' : 'Play'} snippet'),
+                        ),
+                      );
+                    },
+                  ),
+                  Semantics(
+                    label: track.metadata.songTitle,
+                    child: OutlinedButton.icon(
+                      key: Key('review-edit-${entry.position}'),
+                      focusNode: _editFocus,
+                      onPressed: state.commanding || state.cancelling
+                          ? null
+                          : () => edit(track),
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Edit track'),
+                    ),
+                  ),
+                ],
+              ),
+          ],
           const SizedBox(height: 8),
           Text(
             track == null
@@ -290,7 +430,7 @@ class _EntryCard extends StatelessWidget {
               (track.phase == TrackPhase.ready ||
                   track.phase == TrackPhase.enriching)) ...[
             const SizedBox(height: 8),
-            Text(
+            SelectableText(
               track.metadata.displayName,
               key: Key('metadata-name-${track.id}'),
               style: Theme.of(context).textTheme.titleSmall,
