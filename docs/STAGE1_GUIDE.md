@@ -52,7 +52,7 @@ flutter run -d windows
 flutter build windows --release
 ```
 
-The Windows workflow performs the same checks and compiles the release bundle. It has been prepared but has not run on GitHub during this session. A Linux test does not verify Windows native key storage or compilation. Keep Windows evidence pending until those commands or CI pass.
+The Windows workflow now passes these foundation checks, including actual native key storage, draft restart and debug/release compilation: [Foundation run #4](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38614867240). Its default suite passes 115 tests and skips the existing symlink test, which requires developer/admin privileges. Manual Windows QA and media/device export execution remain pending.
 
 ## Platform evidence
 
@@ -63,7 +63,7 @@ Linux source/conversion/snippet adapter, see [Stage 3](STAGE3_GUIDE.md) and the
 | Platform | Foundation evidence | Media/device export |
 | --- | --- | --- |
 | Linux x64 | Local analysis, behavior tests, native debug/release compilation and actual native-plugin integration test | Adapter unavailable; Stage 0 CLI proof only |
-| Windows x64 | Runner, secure-storage integration, setup and CI authored; execution pending | Adapter unavailable; packaging/player evidence pending |
+| Windows x64 | Executed CI: analysis, 115 tests, native key storage/draft restart and debug/release builds pass; 1 symlink test skipped | Media adapter unavailable; manual QA, packaging/player evidence pending |
 | Android | Runner template, API 24 minimum (Flutter 3.47.5) and backups disabled; SDK/device checks pending | Native spike pending |
 | iOS | Runner template and Keychain entitlements authored; no Xcode/Mac/iPhone check | Native spike and distribution route unresolved |
 

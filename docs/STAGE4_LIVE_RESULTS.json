@@ -1,0 +1,114 @@
+{
+  "record_date_local": "2026-10-15",
+  "timezone": "Asia/Kolkata",
+  "owner_authorization": "Finish remaining Stage 4, including live acceptance",
+  "command": ".venv-stage0/bin/python scripts/test_stage4_live.py --live",
+  "runtime_manifest": ".tools-stage3/media-runtime.json",
+  "live_artwork_acceptance": "pass",
+  "live_groq_acceptance": "pass: configured openai/gpt-oss-120b account, strict stable-ID schema and known/modified/unknown benchmark",
+  "full_stage4_acceptance": "Linux implementation/live provider acceptance verified; Windows/Android/iOS media/tag execution remains open",
+  "scope": "Production native HTTPS/artwork adapter and pinned image/ID3/codecs. The tagged audio is a synthetic test tone. No source music downloaded; temporary artifacts removed.",
+  "recording_reference": "https://musicbrainz.org/recording/7af784a9-2bd1-4a11-8712-6c2432f17b0b",
+  "release_reference": "https://musicbrainz.org/release/db3b609d-3383-4675-af4c-fd5023c42367",
+  "fixes": [
+    "TLS handshake and hostname verification for DNS-pinned HttpClient connectionFactory",
+    "Reconstruct trusted default-port legacy image links as HTTPS before requests",
+    "Reject capped recording release subqueries lacking total-count evidence",
+    "Require separate known-cover/embedded-cover/decode evidence for live acceptance"
+  ],
+  "environment_gates": {
+    "windows_runtime_available": false,
+    "java_available": false,
+    "adb_available": false,
+    "usb_exposed": false,
+    "mac_iphone_available": false
+  },
+  "artwork_only_provider_report": {
+    "mode": "opt-in-live-providers",
+    "artwork_only": true,
+    "acceptance_passed": true,
+    "quality_passed": null,
+    "model": "openai/gpt-oss-120b",
+    "prompt_version": "native-stage4-v1",
+    "schema_version": 1,
+    "tracks": [],
+    "known_artwork": {
+      "title": "Foley",
+      "artist": "Patricia Taxxon",
+      "album": "Foley Artist",
+      "audio_kind": "synthetic test tone, not the original recording",
+      "recording_id": "7af784a9-2bd1-4a11-8712-6c2432f17b0b",
+      "release_id": "db3b609d-3383-4675-af4c-fd5023c42367",
+      "identity_verified": true,
+      "image_verified": true,
+      "cover_sha256": "a622e97ff2b5d984003bfbc5ec37563df652bf930b0fb41262aa725e8b9cc0c4",
+      "cover_bytes": 57618,
+      "cover_width": 500,
+      "cover_height": 500,
+      "embedded_cover_verified": true,
+      "full_audio_decode_verified": true,
+      "tagged_file_sha256": "ba3b51104c783174f2844c99456953c798d6608cba6d2037097d6960f9fce761",
+      "artwork": "matched, decoded and embedded with readback"
+    }
+  },
+  "provider_report": {
+    "mode": "opt-in-live-providers",
+    "artwork_only": false,
+    "acceptance_passed": true,
+    "quality_passed": true,
+    "model": "openai/gpt-oss-120b",
+    "prompt_version": "native-stage4-v1",
+    "schema_version": 1,
+    "tracks": [
+      {
+        "track_id": "known-original",
+        "valid_id_mapping": true,
+        "needs_review": false,
+        "version_details_preserved": true,
+        "known_artist_identified": true,
+        "known_title_identified": true,
+        "featured_artists_identified": true,
+        "artwork": "artworkUncertain"
+      },
+      {
+        "track_id": "known-modified",
+        "valid_id_mapping": true,
+        "needs_review": false,
+        "version_details_preserved": true,
+        "known_artist_identified": true,
+        "known_title_identified": true,
+        "artwork": "artworkUncertain"
+      },
+      {
+        "track_id": "unknown-fictional",
+        "valid_id_mapping": true,
+        "needs_review": true,
+        "version_details_preserved": true,
+        "unknown_is_explicit": true,
+        "artwork": "artworkUncertain"
+      }
+    ],
+    "known_artwork": {
+      "title": "Foley",
+      "artist": "Patricia Taxxon",
+      "album": "Foley Artist",
+      "audio_kind": "synthetic test tone, not the original recording",
+      "recording_id": "7af784a9-2bd1-4a11-8712-6c2432f17b0b",
+      "release_id": "db3b609d-3383-4675-af4c-fd5023c42367",
+      "identity_verified": true,
+      "image_verified": true,
+      "cover_sha256": "a622e97ff2b5d984003bfbc5ec37563df652bf930b0fb41262aa725e8b9cc0c4",
+      "cover_bytes": 57618,
+      "cover_width": 500,
+      "cover_height": 500,
+      "embedded_cover_verified": true,
+      "full_audio_decode_verified": true,
+      "tagged_file_sha256": "ba3b51104c783174f2844c99456953c798d6608cba6d2037097d6960f9fce761",
+      "artwork": "matched, decoded and embedded with readback"
+    }
+  },
+  "additional_command": ".venv-stage0/bin/python scripts/test_stage4_live.py --live --artwork-only",
+  "key_boundary": "Project development key in ignored .env; stdin only, never argv/child environment/reports/bundles; native releases use OS secure storage",
+  "quota_boundary": "No forced live quota exhaustion; 429, persisted cooldown and preserved-audio behavior verified offline",
+  "exit_code": 0
+}

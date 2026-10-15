@@ -63,3 +63,18 @@ Ordinary Flutter checks cover source validation/gaps/count caps, schema v4, atom
 Set STAGE3_TEST_RUNTIME to the pinned local manifest to additionally run six actual-codec tests: distinguishable generated equal-title files, duplicate sources, Unicode/partial failures, pause and late completion, acquired/converted-boundary reuse, corrupt ready audio and peer-preserving retry, external-copy-safe discard and expiry. Without that opt-in environment these tests are not registered; do not claim they ran from ordinary CI alone. The actual native pipeline test is `python scripts/test_linux_native.py --test pipeline_test.dart` with the same environment. Existing foundation integration remains the helper's default.
 
 Live YouTube smoke/retry is explicitly opt-in through tool/media_smoke.dart. Reports/music are ignored; sanitized counts/hash/time evidence belongs in STAGE3_RESULTS.json. Linux success is not Windows/Android/iOS, playback, tags, covers or device destination-transfer evidence.
+
+
+## Stage 4 verification
+
+Ordinary tests cover exact naming ID/schema validation, reordered/missing/extra/
+duplicate replies, multilingual and modified sources, unknowns, provider auth/
+model/quota failures, record/release/front-art ambiguity, hostile redirects and
+nonpublic addresses, revision/override fencing, restart, cooldown/cache bounds,
+settings failure and 200% text layouts. Opt-in Linux tests execute image/tag/
+codec workers, cache corruption/cover repair, cancellation/pause/resume and
+frozen full-MP3/embedded-cover verification. The separate native enrichment test
+uses the real OS keyring, SQLite/UI and restart with fictional HTTP responses.
+Live provider quality is tested only through explicitly opted-in account checks;
+these fixtures do not close live or phone/Windows media gates. See STAGE4_GUIDE.md
+and STAGE4_RESULTS.json.

@@ -1,18 +1,18 @@
 # Project status
 
-Updated: 2026-10-14.
+Updated: 2026-10-15.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is implemented and accepted on the proven Linux platform; Windows build execution remains pending. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery are implemented; enrichment, real interactive review and device export are not implemented and no cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Real interactive review/device export are not implemented and no cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
-| 0 — Feasibility | In progress | 41 Python tests pass; 3 fresh review synthetic runs and 3 historical live local playlist runs pass; native/provider gates open |
-| 1 — Native foundation | Implemented; Linux accepted, Windows verification pending | 48 behavior tests, static analysis, debug/release Linux builds and 1 native plugin/restart integration test pass |
+| 0 — Feasibility | In progress | 58 Python tests pass locally; historical CI has 43; source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
+| 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 122 Linux tests, 115 Windows tests (1 symlink test skipped); native plugin/restart checks and debug/release builds pass on both |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
-| 4 — AI/artwork | Not started | Provider adapters written; real key/match checks pending |
+| 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
 | 5 — Review/edit | Not started | Written behavior |
 | 6 — Device save | Not started | CLI ZIP verified; native picker/export untested |
 | 7 — Device QA | Not started | No real phone evidence |
@@ -52,12 +52,11 @@ Measurements are local sampled observations, not phone capacity or hosting avail
 
 Python 3.14.4; yt-dlp 2026.8.19; yt-dlp-ejs 0.8.0; Groq SDK 1.7.0; Mutagen 1.48.1; python-dotenv 1.2.4; FFmpeg/ffprobe n8.1.3-17-gc389840894-20261011; Deno 2.5.4. Other exact Python versions are in requirements-stage0.lock.
 
-Dependencies/tools were first tested in isolated /tmp locations, then an ignored project-only .venv-stage0 and .tools-stage0/bin were prepared and checked from this folder. Activate .venv-stage0 to run the harness here. No system Python or DOT. environment was changed. Recreate clean-checkout setup using STAGE0_GUIDE.md. Docker, Java/ADB and Xcode are unavailable here. The Stage 1 work used an isolated Flutter 3.47.5 / Dart 3.13.4 SDK and Linux build toolchain; Linux native builds are now verified. No system compiler packages were installed and no Windows/phone build has been verified.
+Dependencies/tools were first tested in isolated /tmp locations, then an ignored project-only .venv-stage0 and .tools-stage0/bin were prepared and checked from this folder. Activate .venv-stage0 to run the harness here. No system Python or DOT. environment was changed. Recreate clean-checkout setup using STAGE0_GUIDE.md. Docker, Java/ADB and Xcode are unavailable here. The Stage 1 work used an isolated Flutter 3.47.5 / Dart 3.13.4 SDK and Linux build toolchain; Linux native builds are now verified. No system compiler packages were installed locally. Subsequent Windows CI foundation evidence is recorded below; phone builds remain unverified.
 
 ## Pending Stage 0 gates
 
-- GROQ_API_KEY is empty at setup time; choose Groq's free plan, paste the key into .env and run metadata-check on a retained report. Account access, quota and song-identification quality remain unverified.
-- MUSICBRAINZ_CONTACT needs a project URL/contact identifier before the known recording/release/cover check.
+- Provider account/known-artwork gates are closed by Stage 4's live native checks below: the owner supplied the project Groq key, and the public project URL identifies artwork requests. Quota errors remain gracefully bounded and tested offline; no live quota exhaustion was forced.
 - Actual Android extraction/runtime/conversion/export spike and device evidence.
 - iOS-compatible extraction/media adapter, Xcode/build access, real iPhone evidence and a viable distribution route. No Mac/iPhone is available; this is an unresolved feasibility requirement, not a passed or dropped feature.
 - Laptop packaging and actual saved-file/player evidence beyond the CLI.
@@ -86,7 +85,7 @@ Final clean-source checks also ran successfully from this repository after copyi
 
 The keyring check used a disposable D-Bus session and data directories plus a unique synthetic key that was deleted. Missing-keyring exceptions are also tested for safe handling. No user's API key was included in source, UI state, database, logs or release assets. The app does not import the project .env.
 
-A Windows/Linux baseline GitHub workflow and exact-revision SDK bootstrap helper are authored. **GitHub CI has not run in this session.** Windows native build/key storage and Android/iOS device evidence remain pending; neither templates nor fixtures count as those results. Linux acceptance covers the Stage 1 foundation only, not playlist acquisition/export or installable packaging.
+At initial Stage 1 acceptance, the Windows/Linux workflow and bootstrap helper were authored but CI and Windows native checks had not run. The executed desktop CI results below supersede that pending foundation gate; Android/iOS device evidence remains pending. Linux acceptance covers the Stage 1 foundation only, not playlist acquisition/export or installable packaging.
 
 See [STAGE1_GUIDE.md](STAGE1_GUIDE.md) for clean setup, commands, data contracts and platform evidence, and [decision 0002](decisions/0002-native-foundation.md) for the framework boundary. Stage 2's shared interface work may proceed with the verified foundation, while each real media adapter still needs its Stage 0 proof.
 
@@ -98,11 +97,11 @@ SQLite schema is now **v3**. New tracks retain original structured metadata thro
 
 Actual review checks: **30 Python tests and 48 native tests passed, zero skipped on Linux; 1 real native integration test passed; static analysis and Dart formatting passed; Linux debug/release builds and the 14-file release bundle scan passed.** The three retained full-length live sample MP3s passed strict decoding without another source download. No live Groq/artwork/storage request or new device/platform pass was inferred from mocks. Upstream SQLite DNS was unavailable for the isolated copy; its existing downloaded artifact was reused through the dependency's hash-verified cache without changing pins.
 
-Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAGE01.md](CODE_REVIEW_STAGE01.md). Earlier test counts and run measurements above are retained as historical evidence. Windows/GitHub execution and live provider/phone gates remain pending.
+Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAGE01.md](CODE_REVIEW_STAGE01.md). Earlier test counts and run measurements above are retained as historical evidence. Windows/GitHub foundation execution was pending at that review; see the later CI results below. Live provider/phone gates remain pending.
 
 ## Next actions
 
-Run the prepared Windows native/build checks or GitHub CI and record actual results. Stage 3 Linux is accepted; expose an Android SDK/JDK/ADB/device path for its native spike, execute Windows checks and retain the iOS gate. Populate this project's .env with the new Groq key (never paste it in chat), then run one live stable-ID naming check against the retained sample. Supply an identifying MusicBrainz contact for a known-cover test. Continue the Android native execution spike when a toolchain/device is available; retain iOS as explicitly unresolved until it can be built/tested.
+Desktop foundation CI now passes. Perform manual Windows QA and its skipped symlink check before broader platform acceptance. Stage 3 Linux and Stage 4 Linux implementation/live acceptance are verified. Prove Windows media/tag execution, expose an Android SDK/JDK/ADB/USB device path and retain the iOS gate until a Mac/iPhone can be built/tested. Those missing execution paths prevent full Stage 4 acceptance; no access to them exists in this environment. Real playback/editing remains Stage 5. The owner's configured development key stays in ignored `.env`; native releases continue to use each user's OS vault.
 
 For future updates, record stage, implementation revision, commands/results, observed limits and next action. Do not mark a platform or stage done without its stated evidence.
 
@@ -199,5 +198,171 @@ and analysis reports no issues. Bootstrap revision/dirty-checkout rejection and
 temporary downloader configuration cleanup are covered by offline regressions.
 A completely fresh official Flutter clone and 227.6 MiB Dart SDK download also
 pass with the repaired bootstrap (Flutter 3.47.5 / Dart 3.13.4, exact revision).
-Publishing and the new GitHub Actions result are still pending; no Windows CI
-acceptance or successful remote rerun is claimed by these local checks.
+The owner published the commits through `6cc8bbd280850655e5788743fed59f293e1c625f`.
+[Foundation run #4](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38614867240)
+completed successfully on all three jobs (2026-10-14 18:24:20–18:29:15 UTC),
+verified on 2026-10-15 locally. Each original failure is resolved; no check was
+removed or weakened to obtain success.
+
+| Actual GitHub check | Result |
+| --- | --- |
+| Media contracts: `.venv-ci/bin/python -m unittest discover -s tests -v` | 43 pass, zero skipped; FFmpeg/ffprobe 6.1.1-3ubuntu5, Python 3.14.4 |
+| Linux `flutter test --no-pub` | 122 pass, zero skipped; opt-in real-codec tests are not enabled in CI |
+| Windows `flutter test --no-pub` | 115 pass, 1 existing symlink test skipped because creating symlinks requires Windows developer/admin privileges |
+| Both SDK bootstraps, enforced package lockfiles, Dart formatting and Flutter analysis | Pass; exact Flutter 3.47.5 revision / Dart 3.13.4 |
+| Linux `python scripts/test_linux_native.py` | Actual native plugins, synthetic key storage, SQLite and draft restart pass; debug build passes |
+| Windows `flutter test integration_test/foundation_test.dart -d windows` | Actual native plugins, synthetic key storage, SQLite and draft restart pass; debug build passes |
+| `flutter build linux --release` and `flutter build windows --release` | Both pass |
+| `python scripts/check_native_bundle.py <bundle>` | Linux 16 files / Windows 15 files checked; no dotenv asset or literal Groq key |
+
+Runner images: Ubuntu 24.04 `20261004.327.1` and Windows Server 2022
+`20261004.326.1`. Linux installed clang package `1:18.0-59~exp2` and CMake
+`3.28.3-1build7`. These are executed CI foundation checks, not real phone,
+Windows media, user export, manual desktop QA or distribution evidence. The
+Windows symlink test still needs an appropriately privileged execution path.
+Android/iOS media/device gates and Stages 4–9 remain open.
+
+
+## Stage 4 implementation and Linux evidence — 2026-10-15
+
+[Stage 4 guide](STAGE4_GUIDE.md) describes setup, API/transport/identity contracts,
+resource bounds, opt-in live checks and exact feature boundaries. Schema **v5**
+appends enrichment states, provider cooldowns, bounded artwork cache and public
+model/contact settings without changing historical migrations. The personal key
+stays in the OS vault; no native dotenv, account library or shared key was added.
+
+The real Linux processing route now attempts naming/artwork after verified
+acquisition/conversion/snippets. Every response is validated by exact stable ID;
+invalid/unknown replies preserve source fallbacks and review flags. Existing
+human field overrides and newer revisions defeat delayed results. Name/art
+errors stay separate from source/audio failure. Explicit retries preserve
+accepted peers; paused/interrupted enrichment resumes with verified audio.
+
+Front covers require unique recording/release/credited-artist/version evidence
+and approved front images. Ambiguous editions, unsupported images and provider
+failures remain visible. Public HTTPS destinations/DNS/redirects, deadlines,
+response/image/pixel limits, persisted request pacing/cooldowns, verified JPEG
+normalization and a 24-hour/16-entry cache bound acquisition. Metadata changes
+retire automatic artwork while preserving human cover/removal choices. Cache
+expiry and job cleanup do not delete device-exported copies.
+
+The Linux tag adapter creates new full MP3s from immutable metadata/audio/cover
+snapshots in private job work directories. It verifies ID3v2.3 title/version,
+artists, features, known album, source identity and **exact embedded cover
+bytes**, unchanged encoded audio, file checksums and full decoding/duration.
+Equal titles retain distinct source audio and IDs. `canTag` is enabled only with
+the pinned Mutagen 1.48.1/Pillow 12.3.0 runtime; `canExport` remains false.
+No real playback/editor, completed ZIP publication or device transfer was added.
+
+Initial offline checks and subsequent acceptance results are recorded in
+[STAGE4_RESULTS.json](STAGE4_RESULTS.json). The table below is the initial
+offline implementation record; final follow-up counts appear below it.
+
+| Actual local check | Result |
+| --- | --- |
+| `flutter test --no-pub` without `STAGE3_TEST_RUNTIME` | 146 pass, zero skipped; default offline CI path |
+| `STAGE3_TEST_RUNTIME=<pinned manifest> flutter test --no-pub` | 163 pass, zero skipped: 146 ordinary + 17 actual-codec cases |
+| `.venv-stage0/bin/python -m unittest discover -s tests -v` | 47 pass, zero skipped, independently with project FFmpeg 8 and CI FFmpeg 6.1.1-3ubuntu5 |
+| `dart format --output=none --set-exit-if-changed lib test integration_test tool` | 65 files checked, zero changes |
+| `flutter analyze --no-pub` | No issues |
+| `python3 scripts/test_linux_native.py` | Foundation native plugins/keyring/SQLite/restart: 1 pass |
+| `python3 scripts/test_linux_native.py --test pipeline_test.dart` | Real-codec native pipeline/UI/restart: 1 pass with pinned runtime |
+| `python3 scripts/test_linux_native.py --test enrichment_test.dart` | Native keyring/provider boundary/UI/image/ID3/restart: 1 pass with pinned runtime and fictional providers |
+| `flutter build linux --release` | Pass; native tests also build debug |
+| `python3 scripts/check_native_bundle.py apps/native/build/linux/x64/release/bundle` | 17 files checked; no dotenv asset or literal Groq key |
+| `dart run tool/media_smoke.dart` | Existing standalone Stage 3 synthetic harness: pass, 3 ready tracks |
+| Live-tool preflight without `--live`, Python compilation and `git diff --check` | Expected live refusal; compilation and whitespace checks pass |
+
+Source/provider
+fixtures are fictional; actual images/codecs/keyring/SQLite/MP3 readback are
+executed on Linux. The development live tool refuses to run without `--live`,
+keeps keys off argv/child environment/reports and evaluates known/modified/
+unknown naming quality without turning failed outcomes into success.
+
+The owner initially chose offline checks, then explicitly requested the
+remaining live acceptance and supplied a Groq key in this project's ignored
+`.env`. The following execution evidence supersedes the deferred-live status.
+
+## Stage 4 live acceptance follow-up — 2026-10-15
+
+`.venv-stage0/bin/python scripts/test_stage4_live.py --live` exits **0**:
+`acceptance_passed=true` and `quality_passed=true` on **openai/gpt-oss-120b**,
+native prompt `native-stage4-v1` / response schema `1`. The configured account
+accepts the strict request. Stable-ID mapping, known Get Lucky title/Daft Punk/
+Pharrell Williams/Nile Rodgers fields, slowed/reverb preservation and explicit
+unknown-source review/empty artist arrays all pass. Ambiguous artwork for those
+benchmark songs remains honestly uncertain.
+
+The independent known-cover check and combined run both pass through the
+production artwork adapter: **Foley — Patricia Taxxon / Foley Artist**, recording
+`7af784a9-2bd1-4a11-8712-6c2432f17b0b`, release
+`db3b609d-3383-4675-af4c-fd5023c42367`. The approved front normalizes to a
+500×500, 57,618-byte JPEG, and its exact embedded APIC bytes and full audio
+decoding verify in a synthetic MP3. No actual song was downloaded for this
+artwork/tag check, and all temporary media was removed. Sanitized evidence is
+in [STAGE4_LIVE_RESULTS.json](STAGE4_LIVE_RESULTS.json).
+
+Live execution exposed and fixed two defects that fictional transport replies
+could not reveal: Dart's custom `HttpClient.connectionFactory` required an
+explicit TLS handshake with original-host certificate/SNI verification; CAA's
+index advertised legacy HTTP image links that now reconstruct to trusted HTTPS
+before any request. Regression tests execute real local TLS, wrong-host rejection
+and handshake cancellation. Capped MusicBrainz release subqueries lacking a
+total count stay uncertain, and canonical provenance omits empty query/fragment
+separators. The live tool now requires distinct naming and known-cover/readback
+success, supports key-free `--live --artwork-only`, and rejects a wrong known
+title or an uncertain/undecoded cover as acceptance evidence.
+
+Final verification: **170 Flutter tests pass, zero skipped** (153 ordinary + 17
+opt-in actual-codec cases); the default CI path separately has **153 pass, zero
+skipped**. **50 Python tests pass, zero skipped** with both pinned project FFmpeg
+8 and isolated CI FFmpeg 6.1.1-3ubuntu5. Formatting checks 67 Dart files with zero
+changes; analysis reports no issues. The affected actual Linux enrichment native
+integration passes (1 test), debug and release builds pass, and the rebuilt
+16-file release scan finds no dotenv asset or literal Groq key. Earlier foundation
+and pipeline native passes remain recorded in the initial evidence. Python
+compilation and `git diff --check` pass.
+
+**Remaining Stage 4 gate:** actual Windows/Android/iOS media/tag execution and
+tag/cover readback. No Windows runtime, Java/Android SDK/ADB/USB path or Mac/iPhone
+is available here; those tests remain unexecuted and corresponding media/tag
+capabilities stay disabled. Live quota exhaustion was not forced; bounded
+429/cooldown/provider-failure behavior passes offline tests. This completes
+Linux Stage 4 implementation and live provider acceptance, not full platform
+acceptance, player/device QA or a new GitHub CI run. Stages 5–6 retain playback/editing and verified export/destination
+publication responsibilities. Publication evidence is recorded separately below.
+
+## Review after Stage 4 — 2026-10-15
+
+[Review findings](CODE_REVIEW_STAGE04.md) document the inspected scope and fixed
+artwork transaction, settings read, decoded cover, legacy artwork identity and
+CLI prompt/completion issues. Final actual checks: **172 Flutter tests pass, zero
+skipped**, including 17 real-codec cases; the default CI path separately has
+**155 pass, zero skipped**. **58 Python tests pass, zero skipped** with each of
+the project FFmpeg 8 and CI FFmpeg 6 runtimes. Formatting checks 67 files with no
+changes, analysis reports no issues, all three actual Linux native integrations
+pass, and debug/release builds pass. The 16-file rebuilt release scan finds no
+dotenv or literal Groq key. Python compilation and whitespace checks pass.
+
+The owner authorized a local commit, push to origin/main and observation/fixing
+of GitHub workflows without further input. Code and review evidence are locally
+committed as `7c5b6d8e7e4f03a038a603b33a9bf8b09e7cf00e` (55 files). The working
+tree was clean after that commit; `.env` and the configured key were excluded.
+
+Publication attempts are blocked by authentication/access: HTTPS Git has no
+noninteractive credentials; SSH, after strict verification against GitHub's
+official published host key, returns `Permission denied (publickey)`; the GitHub
+connector's create-blob request returns HTTP 403 `Resource not accessible by
+integration`. The signed-in browser could stage four root files, but automatic
+approval review rejected committing that partial subset because it would create
+an incomplete repository state rather than publish the tested full commit.
+That upload draft was cancelled without committing. The atomic browser-editor
+alternative failed GitHub sign-in (`No auth flow succeeded`). No credentials,
+account permissions or remote branch settings were changed.
+
+Remote main remains at `6cc8bbd280850655e5788743fed59f293e1c625f`; no Stage 4 push
+or new workflow run succeeded. Foundation run #4 remains historical baseline
+evidence. The local commit is ready for an authenticated atomic push; publishing
+as a series of browser commits requires explicit approval because the automatic
+review rejected partial publication. CI monitoring/fixing must continue after
+publication; no new CI pass is claimed.

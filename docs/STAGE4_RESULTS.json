@@ -1,0 +1,240 @@
+{
+  "record_date_local": "2026-10-15",
+  "timezone": "Asia/Kolkata",
+  "implementation_base_revision": "6cc8bbd280850655e5788743fed59f293e1c625f",
+  "implementation_revision": "Stage 4 implementation and review; see repository commit history and PROJECT_STATUS.md publication evidence",
+  "acceptance": "Linux development implementation and live provider acceptance verified; full multi-platform Stage 4 acceptance remains open",
+  "owner_live_acceptance_decision": "Initially offline only; subsequently authorized remaining live checks and configured the project Groq key",
+  "runtimes": {
+    "flutter_version": "3.47.5",
+    "flutter_revision": "6a19cca56475dbfba1478ee68d7bd0c2ef891da1",
+    "dart_version": "3.13.4",
+    "foundation_platforms": [
+      "linux",
+      "windows"
+    ],
+    "phone_platforms_pending_proof": [
+      "android",
+      "ios"
+    ],
+    "sqlite_schema_version": 5,
+    "media_pipeline_platforms_verified": [
+      "linux"
+    ],
+    "media_runtime_versions": {
+      "python": "3.14.4",
+      "yt_dlp": "2026.8.19",
+      "ejs": "0.8.0",
+      "ffmpeg": "n8.1.3-17-gc389840894-20261011",
+      "ffprobe": "n8.1.3-17-gc389840894-20261011",
+      "deno": "2.5.4"
+    },
+    "metadata_runtime_versions": {
+      "mutagen": "1.48.1",
+      "pillow": "12.3.0"
+    }
+  },
+  "native_build_tools": {
+    "clang": "21.1.8",
+    "cmake": "4.2.3",
+    "ninja": "1.13.2",
+    "xvfb": "21.1.22",
+    "installation": "isolated extracted packages under /tmp, no system installation"
+  },
+  "behavior_evidence": [
+    "Exact stable-ID mapping, reordered/missing/extra/duplicate responses, multilingual and unknown names, preserved modified versions",
+    "Human field/revision and artwork-removal precedence over delayed responses",
+    "Naming/artwork failures, quota cooldowns and explicit retry preserve verified audio and accepted peers",
+    "Conservative unique recording/release/artist/version evidence and approved front image validation",
+    "Bounded transport, image normalization, cache provenance/checksums, corrupt cache eviction and repair",
+    "Frozen full-MP3 derivative ID3 readback, exact embedded cover bytes, unchanged encoded audio and full decode verification",
+    "Pause/cancel/restart fencing and standalone Stage 3 compatibility",
+    "Responsive enrichment UI and settings failure recovery",
+    "Actual local TLS encryption, trusted wrong-host certificate rejection and handshake cancellation",
+    "Legacy public artwork links upgraded to HTTPS before requests; capped release lists cannot select an edition",
+    "Live known title/artist/features, modified markers and explicit unknown review; verified known public front image embedded in synthetic audio"
+  ],
+  "capability_boundary": {
+    "linux_can_enrich": "enabled only with verified runtime",
+    "linux_can_tag": "enabled only with verified runtime",
+    "can_export": false,
+    "other_platform_media_tag_capabilities": "unavailable pending platform-specific execution evidence",
+    "fixture_journey": "isolated from real jobs and files"
+  },
+  "live_requests_made": true,
+  "stage4_github_ci_executed": false,
+  "pending_acceptance": [
+    "Windows, Android and iOS media/tag execution and actual tag/cover readback; execution paths unavailable here"
+  ],
+  "later_stage_work": [
+    "Stage 5 real snippet playback, persistent editor and artwork chooser",
+    "Stage 6 verified tagged export publication, ZIP manifest and device destination transfer/recovery",
+    "Real player/device lifecycle and distribution acceptance remains in Stages 0/7/8"
+  ],
+  "initial_offline_verification": [
+    {
+      "command": "flutter test --no-pub",
+      "environment": "STAGE3_TEST_RUNTIME unset",
+      "passed": 146,
+      "skipped": 0
+    },
+    {
+      "command": "STAGE3_TEST_RUNTIME=<pinned manifest> flutter test --no-pub",
+      "passed": 163,
+      "skipped": 0,
+      "ordinary": 146,
+      "opt_in_actual_codec": 17
+    },
+    {
+      "command": ".venv-stage0/bin/python -m unittest discover -s tests -v",
+      "runtime": "project FFmpeg/ffprobe n8.1.3-17-gc389840894-20261011",
+      "passed": 47,
+      "skipped": 0
+    },
+    {
+      "command": ".venv-stage0/bin/python -m unittest discover -s tests -v",
+      "runtime": "isolated CI FFmpeg/ffprobe 6.1.1-3ubuntu5",
+      "passed": 47,
+      "skipped": 0
+    },
+    {
+      "command": "dart format --output=none --set-exit-if-changed lib test integration_test tool",
+      "files": 65,
+      "changed": 0,
+      "result": "pass"
+    },
+    {
+      "command": "flutter analyze --no-pub",
+      "result": "no issues"
+    },
+    {
+      "command": "python3 scripts/test_linux_native.py",
+      "passed": 1,
+      "scope": "actual Linux plugins, keyring, SQLite and restart"
+    },
+    {
+      "command": "python3 scripts/test_linux_native.py --test pipeline_test.dart",
+      "passed": 1,
+      "scope": "actual Linux codecs, processing UI and restart; synthetic source"
+    },
+    {
+      "command": "python3 scripts/test_linux_native.py --test enrichment_test.dart",
+      "passed": 1,
+      "scope": "actual Linux keyring, UI, image/ID3/codecs and restart; fictional provider HTTP replies"
+    },
+    {
+      "command": "flutter build linux --release",
+      "result": "pass"
+    },
+    {
+      "command": "python3 scripts/check_native_bundle.py apps/native/build/linux/x64/release/bundle",
+      "result": "pass",
+      "files": 17,
+      "dotenv_assets_found": 0,
+      "literal_groq_keys_found": 0
+    },
+    {
+      "command": "dart run tool/media_smoke.dart",
+      "result": "pass",
+      "ready_tracks": 3,
+      "scope": "existing standalone Stage 3 synthetic harness"
+    },
+    {
+      "command": "dart run tool/enrichment_live.dart",
+      "result": "expected refusal without --live",
+      "live_requests": 0
+    },
+    {
+      "command": "Python py_compile for metadata worker, live wrapper and Stage 4 tests",
+      "result": "pass"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    }
+  ],
+  "live_results": "STAGE4_LIVE_RESULTS.json",
+  "verification": [
+    {
+      "command": "STAGE3_TEST_RUNTIME=<pinned manifest> flutter test --no-pub",
+      "passed": 170,
+      "skipped": 0,
+      "ordinary": 153,
+      "opt_in_actual_codec": 17
+    },
+    {
+      "command": "flutter test --no-pub",
+      "environment": "STAGE3_TEST_RUNTIME unset",
+      "passed": 153,
+      "skipped": 0
+    },
+    {
+      "command": ".venv-stage0/bin/python -m unittest discover -s tests -v",
+      "runtimes": [
+        "project FFmpeg/ffprobe n8.1.3-17-gc389840894-20261011",
+        "isolated CI FFmpeg/ffprobe 6.1.1-3ubuntu5"
+      ],
+      "passed_on_each": 50,
+      "skipped_on_each": 0
+    },
+    {
+      "command": "dart format --output=none --set-exit-if-changed lib test integration_test tool",
+      "files": 67,
+      "changed": 0,
+      "result": "pass"
+    },
+    {
+      "command": "flutter analyze --no-pub",
+      "result": "no issues"
+    },
+    {
+      "command": "python3 scripts/test_linux_native.py --test enrichment_test.dart",
+      "passed": 1,
+      "scope": "affected actual Linux keyring, UI, image/ID3/codecs and restart; fictional provider replies"
+    },
+    {
+      "command": "flutter build linux --release",
+      "result": "pass"
+    },
+    {
+      "command": "python3 scripts/check_native_bundle.py apps/native/build/linux/x64/release/bundle",
+      "result": "pass",
+      "files": 16,
+      "dotenv_assets_found": 0,
+      "literal_groq_keys_found": 0
+    },
+    {
+      "command": ".venv-stage0/bin/python scripts/test_stage4_live.py --live",
+      "result": "pass",
+      "exit_code": 0,
+      "scope": "Live configured Groq naming quality and public artwork with synthetic MP3 embedded-cover/full-decode proof"
+    },
+    {
+      "command": ".venv-stage0/bin/python scripts/test_stage4_live.py --live --artwork-only",
+      "result": "pass",
+      "scope": "Independent key-free public artwork and embedded-cover proof"
+    },
+    {
+      "command": "Python py_compile for metadata worker, live wrapper and Stage 4 Python tests",
+      "result": "pass"
+    },
+    {
+      "command": "git diff --check",
+      "result": "pass"
+    }
+  ],
+  "post_implementation_review": {
+    "guide": "CODE_REVIEW_STAGE04.md",
+    "flutter_passed": 172,
+    "flutter_skipped": 0,
+    "default_flutter_passed": 155,
+    "python_passed_each_codec_runtime": 58,
+    "python_skipped": 0,
+    "native_integrations_passed": 3,
+    "dart_files_formatted": 67,
+    "flutter_analyze": "no issues",
+    "linux_debug_release": "pass",
+    "release_scan_files": 16,
+    "release_secrets_found": 0
+  }
+}
