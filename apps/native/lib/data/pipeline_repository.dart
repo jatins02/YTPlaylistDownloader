@@ -422,6 +422,12 @@ final class PipelineRepository {
       "UPDATE enrichment SET artwork='pending',artwork_failure='operationCancelled' WHERE track_id IN (SELECT id FROM tracks WHERE job_id=?) AND artwork='running'",
       [jobId],
     );
+    // Editor text is not a resumable media checkpoint. A pause must release
+    // its export fence rather than leave an impossible retryable review task.
+    await tx.rawUpdate(
+      "UPDATE attempts SET status='cancelled',generation=generation+1,error_code=? WHERE job_id=? AND stage='review' AND status IN ('running','retryable')",
+      [failure?.name ?? FailureCode.operationCancelled.name, jobId],
+    );
     await tx.rawUpdate(
       "UPDATE attempts SET status = 'retryable', generation = generation + 1, error_code = ? WHERE job_id = ? AND status = 'running'",
       [failure?.name ?? FailureCode.operationCancelled.name, jobId],

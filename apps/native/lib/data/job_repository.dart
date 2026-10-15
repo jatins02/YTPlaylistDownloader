@@ -208,7 +208,7 @@ final class JobRepository implements DraftStore {
 
   Future<List<StoredEntry>> _entries(DatabaseExecutor tx, String jobId) async =>
       (await tx.rawQuery(
-            """SELECT e.position, e.track_id, e.error_code,
+            """SELECT e.position, e.track_id, e.error_code, e.selected,
         COALESCE(e.source_title, t.source_title, 'Unavailable source') AS source_title
         FROM playlist_entries e LEFT JOIN tracks t
         ON t.id = e.track_id AND t.job_id = e.job_id
@@ -220,6 +220,7 @@ final class JobRepository implements DraftStore {
               position: row['position']! as int,
               title: row['source_title']! as String,
               trackId: row['track_id'] as String?,
+              selected: row['selected'] == 1,
               failure: row['error_code'] == null
                   ? null
                   : FailureCode.values.byName(row['error_code']! as String),
@@ -724,6 +725,22 @@ final class JobRepository implements DraftStore {
       final affectedTracks = <String, TrackRecord>{};
       final interruptedStages = <String, Set<String>>{};
       for (final row in interrupted) {
+        if (row['stage'] == TaskStage.review.name) {
+          // Unsaved text was never committed. Release the editor/export fence
+          // without inventing a retryable media task or changing ready audio.
+          await tx.update(
+            'attempts',
+            {
+              'status': 'cancelled',
+              'generation': (row['generation']! as int) + 1,
+              'error_code': 'interrupted',
+              'updated_at': _now,
+            },
+            where: 'id=?',
+            whereArgs: [row['id']],
+          );
+          continue;
+        }
         final jobId = row['job_id']! as String;
         final job = affectedJobs[jobId] ?? await _requireJob(tx, jobId);
         affectedJobs[jobId] = job;
