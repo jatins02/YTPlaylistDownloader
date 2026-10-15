@@ -1,15 +1,28 @@
-# Native foundation
+# Native application
 
-Stage 1 shared Flutter application. Run/setup instructions, platform evidence and storage contracts are in [STAGE1_GUIDE.md](../../docs/STAGE1_GUIDE.md). Flutter and Dart are recorded in [toolchain.json](../../toolchain.json); commit pubspec.lock.
+The shared Flutter app contains the Stage 1 foundation, isolated Stage 2 fixture
+journey, verified Linux Stage 3 media pipeline and Stage 4 naming/artwork/tag
+adapters. Setup and execution boundaries are in [Stage 1](../../docs/STAGE1_GUIDE.md),
+[Stage 3](../../docs/STAGE3_GUIDE.md) and [Stage 4](../../docs/STAGE4_GUIDE.md).
+Flutter and Dart are recorded in [toolchain.json](../../toolchain.json); keep the
+committed pubspec.lock and exact runtime pins.
 
-The current screen saves playlist drafts and manages your own Groq key. Downloading, AI requests, cover lookup, playback and device exports are later stages. No fictional downloads are presented as real results.
+The real Linux route persists drafts, verifies full audio/snippets and attempts
+stable-ID naming and conservative front covers with each user's OS-stored key.
+Provider failures preserve prepared peers. Private MP3 tagging verifies frozen
+metadata, actual embedded cover bytes and audio. Playback/editing and device
+MP3/ZIP export remain Stages 5–6; the fictional journey stays separate.
 
 Source boundaries:
 
 - `domain/`: validated values, immutable records, phases and safe failures.
 - `data/`: versioned SQLite migrations, transactional repository and UUID-based private storage.
 - `platform/`: OS credential storage and explicit media capability contracts.
-- `application/`: runtime startup/recovery and draft/settings state.
-- `ui/`: minimal accessible lavenderblush foundation screen.
+- `metadata/`: bounded providers, artwork evidence/cache orchestration and guarded tag/image workers.
+- `application/`: runtime startup/recovery, durable processing and isolated fixture state.
+- `ui/`: responsive lavenderblush draft/processing/settings screens and separate fixture review.
 
-Desktop SQLite executes through the FFI package's background isolate; mobile SQLite uses the native plugin. Media adapters are unavailable until proven. Future media work must use native/background execution and the repository's attempt/revision checks.
+Desktop SQLite executes through the FFI package's background isolate; mobile
+SQLite uses the native plugin. Media/tagging are enabled only on verified Linux
+runtimes. Windows/Android/iOS execution gates remain open. Workers stay bounded
+and use current attempt/revision checks; final export publication is unavailable.
