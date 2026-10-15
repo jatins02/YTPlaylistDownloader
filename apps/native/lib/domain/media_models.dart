@@ -68,11 +68,13 @@ final class StoredEntry {
     required this.title,
     this.trackId,
     this.failure,
+    this.selected = true,
   });
   final int position;
   final String title;
   final String? trackId;
   final FailureCode? failure;
+  final bool selected;
 }
 
 String mediaFailureMessage(FailureCode? code) => switch (code) {

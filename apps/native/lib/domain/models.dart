@@ -31,7 +31,7 @@ enum MetadataField {
   needsReview,
 }
 
-enum TaskStage { acquisition, conversion, enrichment, export }
+enum TaskStage { acquisition, conversion, enrichment, export, review }
 
 enum CheckpointStep { pending, acquired, converted, enriched, published }
 
