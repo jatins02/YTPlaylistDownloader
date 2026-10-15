@@ -4,9 +4,9 @@
 
 Work in YTPlaylistDownloader. The sibling DOT. is reference-only; never modify its files, import its .env, reuse its environment or copy its downloaded media.
 
-Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Stage 4 Linux naming/artwork/tag adapters are implemented; read docs/STAGE4_GUIDE.md for actual evidence and unresolved live/platform gates. Real review/playback and device export remain later work. Explicit owner instructions override documents.
+Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Stage 4 Linux naming/artwork/tag adapters are implemented; read docs/STAGE4_GUIDE.md for actual evidence and unresolved live/platform gates. Stage 5 Linux real snippet playback and persistent review are implemented; read docs/STAGE5_GUIDE.md. Final device export remains Stage 6. Explicit owner instructions override documents.
 
-The owner confirmed zero budget, independent Android and iPhone operation, laptop support and device-only saves. No Mac/iPhone is available for testing. Do not replace independent phones with a laptop/LAN companion, provision paid hosting or silently drop iOS. The old hosted topology is superseded. Flutter 3.47.5 is selected for the foundation (decision 0002); media adapters remain candidates pending platform proof. Windows and Linux are the prioritized desktop targets; Windows execution is pending, while Linux foundation checks passed.
+The owner confirmed zero budget, independent Android and iPhone operation, laptop support and device-only saves. No Mac/iPhone is available for testing. Do not replace independent phones with a laptop/LAN companion, provision paid hosting or silently drop iOS. The old hosted topology is superseded. Flutter 3.47.5 is selected for the foundation (decision 0002); media adapters remain candidates pending platform proof. Windows and Linux are the prioritized desktop targets; Windows and Linux foundation checks pass in CI; Windows media/playback/tag execution remains unverified.
 
 ## Product behavior
 
@@ -58,3 +58,19 @@ are proven; other-platform media/tag execution remains open. Stage 4 does not pr
 publication or destination save. Development live checks require explicit
 opt-in and never pass a key through argv/files/reports. Stage 6 must own final
 verified publication and device transfer.
+
+## Stage 5 contracts
+
+ReviewRepository owns durable review tokens, atomic field/cover saves, explicit
+conflict rebasing and include/exclude writes. Open edits block frozen exports;
+interrupted review tokens cancel on restart without queuing media or losing
+committed edits. Source/asset identities stay unchanged during naming edits.
+Use SnippetController and ReviewMediaPort; one verified private preview plays
+through the pinned Linux FFmpeg to a local Unix audio socket. Stop and await old
+output before switching, navigation, suspension, processing or cleanup. Pulse
+clients disable shared memory and autospawn without raising media file caps.
+User-chosen images stay bounded, decode/normalize off the UI thread and publish
+only under the current review token/revision. Cancellation preserves prior
+metadata/cover choices; only explicit Save changes durable state. No Stage 5
+control publishes exports or transfers destination files. Platform and manual
+QA limits in the Stage 5 guide remain authoritative.

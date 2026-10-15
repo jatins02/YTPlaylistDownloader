@@ -16,6 +16,8 @@ final class MediaCapabilities {
     this.canTag = false,
     this.canEnrich = false,
     this.canExport = false,
+    this.canPlaySnippets = false,
+    this.canImportArtwork = false,
   });
   final DevicePlatform platform;
   final bool canAcquire;
@@ -24,6 +26,7 @@ final class MediaCapabilities {
   final bool canTag;
   final bool canEnrich;
   final bool canExport;
+  final bool canPlaySnippets, canImportArtwork;
 }
 
 /// Platform adapters receive identities and private paths, never title-based keys.

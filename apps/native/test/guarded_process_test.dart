@@ -34,6 +34,47 @@ void main() {
       expect(output.trim(), 'False False True');
     },
   );
+  test('audio client configuration disables shared memory and is removed after execution', () async {
+    final output = await scope.run(
+      python,
+      [
+        '-I',
+        '-c',
+        'import os,pathlib,resource; p=pathlib.Path(os.environ["PULSE_CLIENTCONFIG"]); print(p.read_text().strip()); print(resource.getrlimit(resource.RLIMIT_FSIZE)[0])',
+      ],
+      directory: directory,
+      localAudio: true,
+    );
+    expect(output, contains('enable-shm = no'));
+    expect(output, contains('enable-memfd = no'));
+    expect(output, contains('autospawn = no'));
+    expect(output, contains('${50 * 1024 * 1024}'));
+    expect(await directory.list().toList(), isEmpty);
+  });
+  test(
+    'progress callback errors stop the child and expose only a safe failure',
+    () async {
+      await expectLater(
+        scope.run(
+          python,
+          [
+            '-I',
+            '-c',
+            'print("progress",flush=True);import time;time.sleep(10)',
+          ],
+          directory: directory,
+          onOutput: (_) => throw StateError('private diagnostic'),
+        ),
+        throwsA(
+          isA<AppFailure>().having(
+            (e) => e.message,
+            'safe message',
+            isNot(contains('private diagnostic')),
+          ),
+        ),
+      );
+    },
+  );
   test(
     'fast final stdout overflow is stopped even after the process exits',
     () async {

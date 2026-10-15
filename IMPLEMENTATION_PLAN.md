@@ -97,6 +97,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** clips play without overlap and stop at their bound; renaming does not break playback; restart restores committed edits/selection; conflicts and excluded/failed counts are clear before export.
 
+**Implementation record (2026-10-16):** Stage 5 review is implemented for the proven Linux runtime: actual bounded snippets through the local PulseAudio/PipeWire socket, serialized switching/pause/seek and lifecycle stop, persistent revision-safe metadata editing, native image selection with bounded normalization, cover choices/removal and explicit track/unavailable-entry exclusions. Open review tokens block freezing; failed/stale saves preserve text and explicit rebase updates only edited fields. Native synthetic output capture distinguishes equal-title tracks, and user-cover/APIC and restart checks verify actual bytes and durable state. Final file publication/device transfer remains Stage 6. Windows/Android/iOS media/playback execution, physical-speaker listening and manual OS chooser/device QA remain unverified. See [Stage 5 guide](docs/STAGE5_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
+
 ## Stage 6 — Final Save to Device
 
 **Goal:** A frozen review revision becomes full-length tagged MP3s and a verified ZIP at the selected device destination.

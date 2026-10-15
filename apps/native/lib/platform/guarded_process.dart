@@ -45,6 +45,8 @@ final class ProcessScope {
     Duration timeout = const Duration(minutes: 5),
     int maxOutputBytes = 4 * 1024 * 1024,
     Future<void> Function()? monitor,
+    void Function(List<int>)? onOutput,
+    bool localAudio = false,
   }) async {
     check();
     if (timeout <= Duration.zero || maxOutputBytes <= 0) {
@@ -58,6 +60,7 @@ final class ProcessScope {
     Timer? deadline, polling;
     Future<void>? pendingMonitor;
     AppFailure? failure;
+    Directory? audioConfiguration;
     final output = BytesBuilder(copy: false);
     var outputBytes = 0;
     String stderrTail = "";
@@ -83,6 +86,24 @@ final class ProcessScope {
         'DENO_DIR': '${directory.path}/deno-cache',
         'PYTHONIOENCODING': 'utf-8',
       };
+      if (localAudio) {
+        if (!Platform.isLinux) {
+          throw const AppFailure(
+            FailureCode.unsupportedPlatform,
+            'This audio output adapter requires Linux.',
+          );
+        }
+        // PulseAudio otherwise allocates a shared-memory file larger than the
+        // media file cap. Use local socket transport without raising that cap,
+        // reading user client configuration or autospawning another server.
+        audioConfiguration = await directory.createTemp('.audio-client-');
+        final config = File('${audioConfiguration.path}/client.conf');
+        await config.writeAsString(
+          'enable-shm = no\nenable-memfd = no\nautospawn = no\n',
+          flush: true,
+        );
+        environment['PULSE_CLIENTCONFIG'] = config.path;
+      }
       process = await Process.start(
         python,
         ['-I', guard, '$maxFileBytes', executable, ...arguments],
@@ -109,7 +130,19 @@ final class ProcessScope {
       stdout = process.stdout.listen(
         (bytes) {
           count(bytes);
-          if (failure == null) output.add(bytes);
+          if (failure == null) {
+            output.add(bytes);
+            try {
+              onOutput?.call(bytes);
+            } catch (_) {
+              abort(
+                const AppFailure(
+                  FailureCode.toolUnavailable,
+                  'Tool progress could not be read safely.',
+                ),
+              );
+            }
+          }
         },
         onDone: outDone.complete,
         onError: (Object _) {
@@ -236,6 +269,13 @@ final class ProcessScope {
       }
       final pending = pendingMonitor;
       if (pending != null) await pending;
+      if (audioConfiguration != null) {
+        try {
+          await audioConfiguration.delete(recursive: true);
+        } on FileSystemException {
+          /* Private scratch cleanup retries later. */
+        }
+      }
     }
   }
 }

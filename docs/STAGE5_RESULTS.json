@@ -1,0 +1,98 @@
+{
+  "stage": 5,
+  "date": "2026-10-16",
+  "scope": "Linux native review implementation and private local output; manual and other-platform gates remain open",
+  "baseline_commit": "d63ec9c175ed3f91c7607fc9fc99fb45246e3711",
+  "runtime": {
+    "flutter": "3.47.5",
+    "dart": "3.13.4",
+    "pulseaudio": "17.0",
+    "pulseaudio_package": "1:17.0+dfsg1-2ubuntu4",
+    "file_selector": "1.1.0",
+    "media_runtime": "Existing pinned Stage 3 manifest; no runtime pin changes"
+  },
+  "checks": {
+    "format": "79 files; unchanged",
+    "analyze": "no issues",
+    "flutter_runtime_tests": {
+      "passed": 199,
+      "skipped": 0
+    },
+    "flutter_default_tests": {
+      "passed": 182,
+      "skipped": 0
+    },
+    "review_widget_with_renders": {
+      "passed": 11
+    },
+    "python_tests": {
+      "passed": 58,
+      "skipped": 0
+    },
+    "native_foundation": {
+      "passed": 1
+    },
+    "native_pipeline": {
+      "passed": 1
+    },
+    "native_enrichment": {
+      "passed": 1
+    },
+    "native_review_private_output": {
+      "passed": 1
+    },
+    "linux_release": "passed",
+    "release_scan": {
+      "files": 18,
+      "dotenv_assets": 0,
+      "literal_groq_keys": 0
+    }
+  },
+  "native_acceptance": [
+    "Distinguishable captured PCM from equal-title 440 Hz and 880 Hz synthetic tracks",
+    "Bounded output completion, replacement and pause",
+    "Rename preserves private preview identity and checksum",
+    "Pending editor prevents export freezing",
+    "Invalid cover Save rolls back metadata; same-session valid retry succeeds",
+    "Human cover exact APIC bytes verified in full-length tagged derivative",
+    "Selection, edits, human cover choice and interrupted-state recovery persist across restart",
+    "Changed preview bytes rejected before output"
+  ],
+  "ui_matrix": {
+    "widths": [
+      320,
+      390,
+      844,
+      768,
+      1024,
+      1440
+    ],
+    "text_scale": 2,
+    "keyboard_inset_pixels": 160,
+    "checks": [
+      "long Unicode metadata",
+      "Cancel and focus restoration",
+      "retained failed/conflicted text",
+      "explicit rebase preserves untouched newer fields",
+      "chooser cancellation",
+      "suspension stops output; resume does not autoplay"
+    ]
+  },
+  "privacy": {
+    "media": "generated fictional tones",
+    "provider_responses": "fictional; no live calls",
+    "credential": "unique disposable synthetic OS-vault value",
+    "owner_env_accessed": false,
+    "system_audio_used": false
+  },
+  "unverified": [
+    "Physical speaker listening",
+    "Manual native image chooser interaction",
+    "Physical-device accessibility, keyboard and lifecycle",
+    "Windows media/playback",
+    "Android media/playback/export",
+    "iOS media/playback/export"
+  ],
+  "next_stage": "Stage 6 verified full tagged MP3/ZIP publication and destination transfer",
+  "github": "Publication and fresh CI recorded in PROJECT_STATUS.md after upload"
+}

@@ -135,7 +135,14 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(state.capability!.canExport, isFalse);
-      expect(find.text('Save to Device'), findsNothing);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Save to Device'),
+            )
+            .onPressed,
+        isNull,
+      );
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.runAsync(fixture.close);
     },

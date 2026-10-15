@@ -107,3 +107,24 @@ NativeTagAdapter verify actual bytes with pinned Pillow/Mutagen/codecs. Frozen
 snapshots include active artwork IDs/manifests. Tag preparation creates no
 published export, and `canExport` remains false until Stage 6. See
 [Stage 4 setup and evidence](STAGE4_GUIDE.md) for unresolved live/platform gates.
+
+## Stage 5 review boundary
+
+Durable `review` attempts reuse schema v5's extensible stage column. Opening an
+editor captures a track revision and blocks export freezing. Save atomically
+merges only fields changed from that editor's original metadata, records human
+overrides, and applies a verified cover choice/removal. A stale revision requires
+explicit rebase; failed work cannot partially commit a name or image. Restart
+cancels review attempts rather than creating media retries. Track selections and
+unmapped occurrence exclusions are transactional and visible before finalization.
+
+`SnippetController` serializes native replacements and fences late callbacks.
+The Linux player revalidates the current private preview manifest and decodes it
+before output. Pinned FFmpeg writes bounded PCM to an explicit local Unix audio
+socket, with per-client shared memory/autospawn disabled and existing file caps
+retained. Stop waits for the supervised process; suspension/navigation never
+autoplays on return. Editing metadata does not rename or replace stored audio.
+Native image selection uses pinned `file_selector`; bounded source bytes are
+normalized by the existing guarded image worker and registered only by a current
+review token. Stage 6 still owns publication, collision allocation, ZIPs and OS
+destination transfer. See [Stage 5 evidence and platform limits](STAGE5_GUIDE.md).

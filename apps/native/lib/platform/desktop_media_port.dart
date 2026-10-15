@@ -6,6 +6,8 @@ import 'package:uuid/uuid.dart';
 
 import '../data/job_repository.dart';
 import '../data/enrichment_repository.dart';
+import '../data/review_repository.dart';
+import '../domain/review.dart';
 import '../domain/enrichment.dart';
 import '../metadata/enrichment_pipeline.dart';
 import '../metadata/native_metadata_tools.dart';
@@ -25,10 +27,13 @@ import 'guarded_process.dart';
 import 'media_port.dart';
 import 'native_codec.dart';
 import 'playlist_source.dart';
+import 'native_snippet_player.dart';
+import 'snippet_port.dart';
 
 /// Linux adapter. The portable repository/codec contracts are not evidence that
 /// this process implementation can run on Android, iOS or Windows.
-final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
+final class DesktopMediaPort
+    implements ManagedMediaPort, EnrichingMediaPort, ReviewMediaPort {
   DesktopMediaPort({
     required this.jobs,
     required this.workspace,
@@ -88,6 +93,10 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
   late final store = PipelineRepository(jobs);
   late final files = MediaWorkspace(workspace, limits);
   late final codec = NativeCodec(tools, limits);
+  late final _player = NativeSnippetPlayer(jobs, files, tools, codec);
+  Future<void>? _reviewTask;
+  ProcessScope? _reviewScope;
+  String? _reviewJob;
   String? _activeJob;
   ProcessScope? _scope;
   Future<void>? _task;
@@ -113,6 +122,11 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
     }
     limits.validate();
     await tools.verify(workspace.root);
+    try {
+      await _player.verifyOutput();
+    } on AppFailure {
+      /* Prepared audio and editing remain available without playback. */
+    }
     if (metadataTools != null && vault != null) {
       try {
         await metadataTools!.verify(workspace.root);
@@ -172,6 +186,8 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 48));
     for (final job in await jobs.listJobs()) {
       if (job.id == _activeJob ||
+          job.id == _player.jobId ||
+          job.id == _reviewJob ||
           job.createdAt.isAfter(cutoff) ||
           job.phase == JobPhase.exporting) {
         continue;
@@ -203,6 +219,8 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
     canPrepareSnippets: _initialized && !_closed,
     canEnrich: _initialized && !_closed && _enrichment != null,
     canTag: _initialized && !_closed && _enrichment != null,
+    canPlaySnippets: _initialized && !_closed && await _player.available(),
+    canImportArtwork: _initialized && !_closed && _enrichment != null,
   );
 
   @override
@@ -215,7 +233,10 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
         ),
       );
     }
-    if (_closed || _activeJob != null || _retentionWork != null) {
+    if (_closed ||
+        _activeJob != null ||
+        _retentionWork != null ||
+        _reviewTask != null) {
       return Future.error(
         const AppFailure(
           FailureCode.conflict,
@@ -236,12 +257,16 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
         ),
       ),
     );
-    final future = _process(playlist, jobId, scope).whenComplete(() {
-      deadline.cancel();
-      _activeJob = null;
-      _scope = null;
-      _task = null;
-    });
+    final future = _player
+        .stopSnippet()
+        .then((_) => _process(playlist, jobId, scope))
+        .whenComplete(() {
+          scope.cancel();
+          deadline.cancel();
+          _activeJob = null;
+          _scope = null;
+          _task = null;
+        });
     _task = future;
     return future;
   }
@@ -632,15 +657,27 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
     try {
       await store.stop(jobId, cancel: cancel);
     } finally {
+      final processing = _activeJob == jobId ? _task : null;
+      final reviewing = _reviewJob == jobId ? _reviewTask : null;
       if (_activeJob == jobId) {
         _enrichment?.cancel();
         _scope?.cancel();
-        final task = _task;
-        if (task != null) {
+      }
+      if (_reviewJob == jobId) _reviewScope?.cancel();
+      try {
+        if (_player.jobId == jobId) await _player.stopSnippet();
+      } finally {
+        try {
           try {
-            await task;
+            await reviewing;
           } on AppFailure {
-            /* Publication was fenced or the scope stopped. */
+            /* The edit token is fenced. */
+          }
+        } finally {
+          try {
+            await processing;
+          } on AppFailure {
+            /* Processing is fenced. */
           }
         }
       }
@@ -668,6 +705,7 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
   }
 
   Future<void> _discardPrivateMedia(String jobId) async {
+    if (_player.jobId == jobId) await _player.stopSnippet();
     if (_activeJob == jobId) await cancel(jobId);
     final job = await jobs.getJob(jobId);
     if (job.phase != JobPhase.cancelled) {
@@ -705,7 +743,7 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
         ),
       );
     }
-    if (_activeJob != null || _retentionWork != null) {
+    if (_activeJob != null || _retentionWork != null || _reviewTask != null) {
       return Future.error(
         const AppFailure(
           FailureCode.conflict,
@@ -726,12 +764,16 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
         ),
       ),
     );
-    final task = _enrich(jobId, scope, retry).whenComplete(() {
-      deadline.cancel();
-      _activeJob = null;
-      _scope = null;
-      _task = null;
-    });
+    final task = _player
+        .stopSnippet()
+        .then((_) => _enrich(jobId, scope, retry))
+        .whenComplete(() {
+          scope.cancel();
+          deadline.cancel();
+          _activeJob = null;
+          _scope = null;
+          _task = null;
+        });
     _task = task;
     return task;
   }
@@ -792,19 +834,218 @@ final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
   );
 
   @override
+  Future<void> playSnippet(
+    String jobId,
+    String trackId,
+    Duration position,
+    void Function(SnippetProgress) progress,
+  ) {
+    if (!_initialized ||
+        _closed ||
+        _activeJob != null ||
+        _retentionWork != null ||
+        _discardTasks.isNotEmpty) {
+      return Future.error(
+        const AppFailure(
+          FailureCode.conflict,
+          'Wait for preparation or cleanup before listening.',
+        ),
+      );
+    }
+    return _player.playSnippet(jobId, trackId, position, progress);
+  }
+
+  @override
+  Future<void> stopSnippet() => _player.stopSnippet();
+
+  @override
+  Future<Map<String, Uint8List>> reviewCovers(
+    String jobId,
+    String trackId,
+  ) async {
+    final track = await jobs.getTrack(trackId);
+    if (track.jobId != jobId || _closed) {
+      throw const AppFailure(
+        FailureCode.invalidPath,
+        'This cover belongs to another review.',
+      );
+    }
+    final active = (await EnrichmentRepository(
+      jobs,
+    ).records(jobId))[trackId]?.artworkAssetId;
+    final candidates =
+        (await store.assets(jobId, trackId: trackId, activeOnly: false))
+            .where(
+              (a) =>
+                  a.kind == AssetKind.artwork &&
+                  a.bytes <= EnrichmentRepository.cacheBytes,
+            )
+            .toList()
+          ..sort(
+            (a, b) => a.id == b.id
+                ? 0
+                : a.id == active
+                ? -1
+                : b.id == active
+                ? 1
+                : a.id.compareTo(b.id),
+          );
+    final result = <String, Uint8List>{};
+    for (final asset in candidates.take(16)) {
+      if (await files.matches(asset)) {
+        result[asset.id] = await (await files.file(asset)).readAsBytes();
+      }
+    }
+    return result;
+  }
+
+  @override
+  Future<void> saveReview(
+    ReviewSession session,
+    SongMetadata candidate,
+    CoverEdit cover,
+  ) {
+    if (_closed ||
+        _activeJob != null ||
+        _retentionWork != null ||
+        _reviewTask != null ||
+        _discardTasks.isNotEmpty) {
+      return Future.error(
+        const AppFailure(
+          FailureCode.conflict,
+          'Wait for the active task before saving these edits.',
+        ),
+      );
+    }
+    _reviewJob = session.token.jobId;
+    final scope = tools.scope(maxFileBytes: limits.maxFileBytes);
+    _reviewScope = scope;
+    return _reviewTask = _saveReview(session, candidate, cover, scope)
+        .whenComplete(() {
+          scope.cancel();
+          _reviewScope = null;
+          _reviewTask = null;
+          _reviewJob = null;
+        });
+  }
+
+  Future<void> _saveReview(
+    ReviewSession session,
+    SongMetadata candidate,
+    CoverEdit cover,
+    ProcessScope scope,
+  ) async {
+    Directory? work;
+    AssetRecord? imported;
+    var committed = false;
+    try {
+      if (cover.action == CoverAction.select) {
+        final choices = await reviewCovers(
+          session.token.jobId,
+          session.initial.id,
+        );
+        if (!choices.containsKey(cover.assetId)) {
+          throw const AppFailure(
+            FailureCode.artworkInvalid,
+            'That verified cover changed or expired. Choose another image.',
+          );
+        }
+      }
+      if (cover.action == CoverAction.import) {
+        if (_enrichment == null ||
+            cover.bytes == null ||
+            cover.bytes!.isEmpty ||
+            cover.bytes!.length > 5 * 1024 * 1024) {
+          throw const AppFailure(
+            FailureCode.artworkInvalid,
+            'Choose an image up to 5 MiB with the verified image runtime available.',
+          );
+        }
+        work = await files.work(session.token.jobId, const Uuid().v4());
+        Future<void> monitor() => budget(session.token.jobId, scope, work!);
+        await monitor();
+        final source = File('${work.path}/user-cover');
+        await source.create(exclusive: true);
+        await source.writeAsBytes(cover.bytes!, flush: true);
+        final normalized = File('${work.path}/user-cover.jpg');
+        final result = await metadataTools!.run(scope, work, [
+          'image',
+          source.path,
+          normalized.path,
+        ], monitor: monitor);
+        if (result['bytes'] != await normalized.length() ||
+            result['sha256'] != await files.digest(normalized.path)) {
+          throw const AppFailure(
+            FailureCode.artworkInvalid,
+            'The chosen image did not pass verification.',
+          );
+        }
+        scope.check();
+        imported = await files.stage(
+          normalized,
+          session.token.jobId,
+          session.initial.id,
+          const Uuid().v4(),
+          AssetKind.artwork,
+        );
+        await monitor();
+      }
+      scope.check();
+      await ReviewRepository(jobs)
+          .commit(session, candidate, cover, imported: imported);
+      committed = true;
+    } finally {
+      scope.cancel();
+      try {
+        if (work != null && await work.exists()) {
+          await work.delete(recursive: true);
+        }
+        if (!committed && imported != null) {
+          // An uncertain commit must never delete registered bytes.
+          final retained = await store.assets(
+            imported.jobId,
+            activeOnly: false,
+          );
+          if (!retained.any((a) => a.id == imported!.id)) {
+            final file = await files.file(imported);
+            if (await file.exists()) await file.delete();
+          }
+        }
+      } on AppFailure {
+        /* Cleanup retries at startup; retain the save outcome. */
+      } on FileSystemException {
+        /* Never turn a committed save into a failure. */
+      }
+    }
+  }
+
+  @override
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
     _retentionTimer?.cancel();
+    _reviewScope?.cancel();
     try {
-      final retention = _retentionWork;
-      if (retention != null) await retention;
+      try {
+        await _player.close();
+      } finally {
+        try {
+          await _reviewTask;
+        } on AppFailure {
+          /* Interrupted edits remain recoverable. */
+        }
+      }
     } finally {
       try {
-        final id = _activeJob;
-        if (id != null) await pause(id);
+        final retention = _retentionWork;
+        if (retention != null) await retention;
       } finally {
-        await Future.wait(_discardTasks.values.toList());
+        try {
+          final id = _activeJob;
+          if (id != null) await pause(id);
+        } finally {
+          await Future.wait(_discardTasks.values.toList());
+        }
       }
     }
   }
