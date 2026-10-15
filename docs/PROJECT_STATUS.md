@@ -8,8 +8,8 @@ Updated: 2026-10-15.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
-| 0 — Feasibility | In progress | 58 Python tests pass locally; historical CI has 43; source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
-| 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 122 Linux tests, 115 Windows tests (1 symlink test skipped); native plugin/restart checks and debug/release builds pass on both |
+| 0 — Feasibility | In progress | 58 Python tests pass locally and in CI; source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
+| 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 155 Linux tests, 148 Windows tests (1 symlink test skipped); native plugin/restart checks and debug/release builds pass on both |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
 | 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
@@ -349,7 +349,7 @@ of GitHub workflows without further input. Code and review evidence are locally
 committed as `7c5b6d8e7e4f03a038a603b33a9bf8b09e7cf00e` (55 files). The working
 tree was clean after that commit; `.env` and the configured key were excluded.
 
-Publication attempts are blocked by authentication/access: HTTPS Git has no
+Initial publication attempts were blocked by authentication/access: HTTPS Git has no
 noninteractive credentials; SSH, after strict verification against GitHub's
 official published host key, returns `Permission denied (publickey)`; the GitHub
 connector's create-blob request returns HTTP 403 `Resource not accessible by
@@ -360,9 +360,42 @@ That upload draft was cancelled without committing. The atomic browser-editor
 alternative failed GitHub sign-in (`No auth flow succeeded`). No credentials,
 account permissions or remote branch settings were changed.
 
-Remote main remains at `6cc8bbd280850655e5788743fed59f293e1c625f`; no Stage 4 push
-or new workflow run succeeded. Foundation run #4 remains historical baseline
-evidence. The local commit is ready for an authenticated atomic push; publishing
-as a series of browser commits requires explicit approval because the automatic
-review rejected partial publication. CI monitoring/fixing must continue after
-publication; no new CI pass is claimed.
+At that point remote main remained at `6cc8bbd280850655e5788743fed59f293e1c625f`
+and Foundation run #4 was only historical baseline evidence. The owner then
+explicitly approved ordered browser commits, including temporary intermediate
+states on main, to publish all 55 reviewed files.
+
+## Stage 4 publication and CI — 2026-10-15
+
+All 55 reviewed files were published through 18 browser commits, ending at
+`2a87a1aa60255fe02703969b3114b09fa3eeb049`. A missing documentation upload was
+detected by the tree comparison and republished before final acceptance.
+`git fetch origin main` and `git diff --exit-code HEAD origin/main` confirmed
+that the complete published tree exactly matched local reviewed commit
+`673e8f3`: both tree hashes were `8e21bf2fc90420f6141d657c67c3b6854b44f328`.
+The original local implementation/status commits remain preserved on
+`review/stage4-local-673e8f3`; local main was aligned with the identical published
+tree without changing project files or rewriting remote history.
+
+[Foundation run #22](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38772441828)
+passed all three jobs on the complete published revision. Actual CI results:
+
+| Job | Result |
+| --- | --- |
+| Native foundation (Linux, Ubuntu 24.04) | 155 tests pass, zero skipped; native SQLite/keyring/restart integration passes; debug/release builds pass; 17 release files pass credential/asset scan |
+| Native foundation (Windows Server 2022) | 148 tests pass, one existing symlink test skipped; native SQLite/secure-storage/restart integration passes; debug/release builds pass; 16 release files pass credential/asset scan |
+| Existing media contracts (Ubuntu 24.04, exact CI FFmpeg 6.1.1-3ubuntu5) | 58 Python tests pass, zero skipped |
+
+Both native jobs enforce the committed dependency lockfile, format 67 files
+without changes and report no analysis issues. The Windows symlink skip requires
+elevated/developer-mode filesystem privileges; it is not a passed test. The
+pinned checkout action emits a Node.js 20 deprecation warning while GitHub runs
+it on Node.js 24; all checks pass, so no unrelated action/dependency upgrade was
+made. Earlier runs from the approved intermediate publication were superseded
+by this complete revision; their results are not final acceptance evidence.
+
+No additional code changes were needed after complete publication. This status
+update records the successful run; its own push triggers the unchanged workflow
+again and must also be checked before reporting the final branch green. Native
+media/tag execution on Windows, Android and iOS, actual player/device-save QA,
+and the Stage 5–6 work remain open as documented above.
