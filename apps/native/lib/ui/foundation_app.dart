@@ -144,7 +144,7 @@ class _DraftsScreenState extends State<DraftsScreen> {
                   Text(
                     widget.media == null
                         ? 'Downloads and previews are not enabled in this foundation build.'
-                        : 'Open a saved playlist to process it with a verified local media runtime. AI naming, playback and final save follow in later stages.',
+                        : 'Open a saved playlist to process it with a verified local media runtime. Naming and covers use your configured key and verified runtime. Listening, editing and final save follow in later stages.',
                     style: TextStyle(color: mutedInk),
                   ),
                   const SizedBox(height: 16),
@@ -213,6 +213,11 @@ class _DraftsScreenState extends State<DraftsScreen> {
                                     await Navigator.of(context).push<void>(
                                       MaterialPageRoute(
                                         builder: (_) => ProcessingScreen(
+                                          onKeySettings: () => showDialog<void>(
+                                            context: context,
+                                            builder: (_) =>
+                                                _KeySettings(controller: state),
+                                          ),
                                           controller: ProcessingController(
                                             jobId: job.id,
                                             jobs: state.jobs as JobRepository,
