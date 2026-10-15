@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import '../domain/failure.dart';
+import '../domain/enrichment.dart';
 import '../domain/models.dart';
 import '../domain/playlist_url.dart';
 
@@ -11,6 +14,7 @@ final class MediaCapabilities {
     this.canConvert = false,
     this.canPrepareSnippets = false,
     this.canTag = false,
+    this.canEnrich = false,
     this.canExport = false,
   });
   final DevicePlatform platform;
@@ -18,6 +22,7 @@ final class MediaCapabilities {
   final bool canConvert;
   final bool canPrepareSnippets;
   final bool canTag;
+  final bool canEnrich;
   final bool canExport;
 }
 
@@ -56,4 +61,11 @@ final class UnavailableMediaPort implements MediaPort {
     FailureCode.mediaUnavailable,
     'Media processing is not available on this device yet. Your draft is saved.',
   );
+}
+
+abstract interface class EnrichingMediaPort implements MediaPort {
+  Future<void> enrich(String jobId, {bool retry = true});
+  Future<Uint8List?> coverBytes(String jobId, String assetId);
+  Future<EnrichmentOptions> metadataOptions();
+  Future<void> saveMetadataOptions(EnrichmentOptions options);
 }

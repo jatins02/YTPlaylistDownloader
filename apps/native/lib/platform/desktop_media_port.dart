@@ -1,9 +1,18 @@
+import 'dart:typed_data';
 import 'dart:async';
 import 'dart:io';
 
 import 'package:uuid/uuid.dart';
 
 import '../data/job_repository.dart';
+import '../data/enrichment_repository.dart';
+import '../domain/enrichment.dart';
+import '../metadata/enrichment_pipeline.dart';
+import '../metadata/native_metadata_tools.dart';
+import '../metadata/native_tag_adapter.dart';
+import '../metadata/providers.dart';
+import '../metadata/provider_transport.dart';
+import '../domain/credential.dart';
 import '../data/media_workspace.dart';
 import '../data/pipeline_repository.dart';
 import '../data/private_workspace.dart';
@@ -19,19 +28,63 @@ import 'playlist_source.dart';
 
 /// Linux adapter. The portable repository/codec contracts are not evidence that
 /// this process implementation can run on Android, iOS or Windows.
-final class DesktopMediaPort implements ManagedMediaPort {
+final class DesktopMediaPort implements ManagedMediaPort, EnrichingMediaPort {
   DesktopMediaPort({
     required this.jobs,
     required this.workspace,
     required this.tools,
     this.limits = const PipelineLimits(),
     PlaylistSource? source,
+    this.metadataTools,
+    this.vault,
+    this.namingProvider,
+    this.artworkProvider,
+    this.metadataTransport,
   }) : source = source ?? YoutubePlaylistSource(tools);
   final JobRepository jobs;
   final PrivateWorkspace workspace;
   final DesktopTools tools;
   final PipelineLimits limits;
   final PlaylistSource source;
+  final NativeMetadataTools? metadataTools;
+  final CredentialVault? vault;
+  final NamingProvider? namingProvider;
+  final ArtworkProvider? artworkProvider;
+  final ProviderTransport? metadataTransport;
+  EnrichmentPipeline? _enrichment;
+  NativeTagAdapter? get tagAdapter => _enrichment == null
+      ? null
+      : NativeTagAdapter(metadataTools!, files, codec);
+  @override
+  Future<Uint8List?> coverBytes(String jobId, String assetId) async {
+    final matches = (await store.assets(jobId))
+        .where(
+          (a) =>
+              a.id == assetId &&
+              a.kind == AssetKind.artwork &&
+              a.bytes <= EnrichmentRepository.cacheBytes,
+        )
+        .toList();
+    if (matches.length != 1 || !await files.matches(matches.single)) {
+      return null;
+    }
+    return (await files.file(matches.single)).readAsBytes();
+  }
+
+  @override
+  Future<EnrichmentOptions> metadataOptions() =>
+      EnrichmentRepository(jobs).options();
+  @override
+  Future<void> saveMetadataOptions(EnrichmentOptions options) async {
+    if (_closed || _activeJob != null) {
+      throw const AppFailure(
+        FailureCode.conflict,
+        'Wait for preparation to finish before changing naming settings.',
+      );
+    }
+    await EnrichmentRepository(jobs).saveOptions(options);
+  }
+
   late final store = PipelineRepository(jobs);
   late final files = MediaWorkspace(workspace, limits);
   late final codec = NativeCodec(tools, limits);
@@ -60,6 +113,32 @@ final class DesktopMediaPort implements ManagedMediaPort {
     }
     limits.validate();
     await tools.verify(workspace.root);
+    if (metadataTools != null && vault != null) {
+      try {
+        await metadataTools!.verify(workspace.root);
+        final metadataStore = EnrichmentRepository(jobs);
+        _enrichment = EnrichmentPipeline(
+          jobs: jobs,
+          files: files,
+          tools: metadataTools!,
+          naming:
+              namingProvider ??
+              GroqNamingProvider(
+                vault!,
+                metadataStore,
+                transport: metadataTransport,
+              ),
+          artwork:
+              artworkProvider ??
+              MusicBrainzArtworkProvider(
+                metadataStore,
+                transport: metadataTransport,
+              ),
+        );
+      } on AppFailure {
+        /* Audio remains available after missing metadata tools. */
+      }
+    }
     for (final job in await jobs.listJobs()) {
       if ([JobPhase.enumerating, JobPhase.processing].contains(job.phase)) {
         await store.stop(job.id);
@@ -89,6 +168,7 @@ final class DesktopMediaPort implements ManagedMediaPort {
   }
 
   Future<void> _expireOldMedia() async {
+    await EnrichmentRepository(jobs).pruneCache();
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 48));
     for (final job in await jobs.listJobs()) {
       if (job.id == _activeJob ||
@@ -121,6 +201,8 @@ final class DesktopMediaPort implements ManagedMediaPort {
     canAcquire: _initialized && !_closed,
     canConvert: _initialized && !_closed,
     canPrepareSnippets: _initialized && !_closed,
+    canEnrich: _initialized && !_closed && _enrichment != null,
+    canTag: _initialized && !_closed && _enrichment != null,
   );
 
   @override
@@ -290,11 +372,22 @@ final class DesktopMediaPort implements ManagedMediaPort {
       }
       scope.check();
       await _transition(jobId, JobPhase.reviewReady);
+      if (_enrichment != null) {
+        await _enrichment!.process(
+          jobId,
+          scope,
+          (directory) => budget(jobId, scope, directory),
+        );
+      }
     } on AppFailure catch (failure) {
       if (failure.code == FailureCode.operationCancelled) return;
       // An invalid start must not mutate a review/exporting/cancelled job.
       if (started && failure.code == FailureCode.conflict) {
         final current = await jobs.getJob(jobId);
+        if (scope.cancelled &&
+            [JobPhase.queued, JobPhase.cancelled].contains(current.phase)) {
+          return;
+        }
         if ([
           JobPhase.queued,
           JobPhase.enumerating,
@@ -540,6 +633,7 @@ final class DesktopMediaPort implements ManagedMediaPort {
       await store.stop(jobId, cancel: cancel);
     } finally {
       if (_activeJob == jobId) {
+        _enrichment?.cancel();
         _scope?.cancel();
         final task = _task;
         if (task != null) {
@@ -602,9 +696,99 @@ final class DesktopMediaPort implements ManagedMediaPort {
   }
 
   @override
+  Future<void> enrich(String jobId, {bool retry = true}) {
+    if (!_initialized || _closed || _enrichment == null) {
+      return Future.error(
+        const AppFailure(
+          FailureCode.mediaUnavailable,
+          'Naming and covers need the verified Linux metadata runtime.',
+        ),
+      );
+    }
+    if (_activeJob != null || _retentionWork != null) {
+      return Future.error(
+        const AppFailure(
+          FailureCode.conflict,
+          'Another preparation or cleanup task is active.',
+        ),
+      );
+    }
+    _activeJob = jobId;
+    final scope = tools.scope(maxFileBytes: limits.maxFileBytes);
+    _scope = scope;
+    final deadline = Timer(
+      limits.jobTimeout,
+      () => scope.cancel(
+        cause: const AppFailure(
+          FailureCode.processTimeout,
+          'Details preparation reached its deadline.',
+          retryable: true,
+        ),
+      ),
+    );
+    final task = _enrich(jobId, scope, retry).whenComplete(() {
+      deadline.cancel();
+      _activeJob = null;
+      _scope = null;
+      _task = null;
+    });
+    _task = task;
+    return task;
+  }
+
+  Future<void> _enrich(String jobId, ProcessScope scope, bool retry) async {
+    var started = false;
+    try {
+      if ((await jobs.getJob(jobId)).phase != JobPhase.reviewReady) {
+        throw const AppFailure(
+          FailureCode.invalidTransition,
+          'Prepare audio before requesting details.',
+        );
+      }
+      started = true;
+      await files.cleanup(jobId, await store.assets(jobId, activeOnly: false));
+      await _enrichment!.process(
+        jobId,
+        scope,
+        (directory) => budget(jobId, scope, directory),
+        retry: retry,
+      );
+    } on AppFailure catch (error) {
+      if (started && error.code == FailureCode.conflict) {
+        final current = await jobs.getJob(jobId);
+        if (scope.cancelled &&
+            [JobPhase.queued, JobPhase.cancelled].contains(current.phase)) {
+          return;
+        }
+      }
+      if (started && error.code != FailureCode.operationCancelled) {
+        await store.stop(jobId, failure: error.code);
+      }
+      if (error.code != FailureCode.operationCancelled) rethrow;
+    } catch (_) {
+      if (started) {
+        await store.stop(jobId, failure: FailureCode.storageUnavailable);
+      }
+      throw const AppFailure(
+        FailureCode.storageUnavailable,
+        'Details preparation could not finish safely. Audio is retained.',
+      );
+    } finally {
+      _enrichment?.cancel();
+      scope.cancel();
+      if (started) {
+        await files.cleanup(
+          jobId,
+          await store.assets(jobId, activeOnly: false),
+        );
+      }
+    }
+  }
+
+  @override
   Future<void> export(ExportSnapshot snapshot) async => throw const AppFailure(
     FailureCode.mediaUnavailable,
-    'Verified final tagging and device saving are not implemented until Stage 6.',
+    'Final publication and device saving are not implemented until Stage 6.',
   );
 
   @override
