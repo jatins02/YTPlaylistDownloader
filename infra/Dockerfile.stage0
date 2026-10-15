@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements-stage0.lock \
 COPY stage0 ./stage0
 COPY tests ./tests
 COPY apps/native/assets/process_guard.py ./apps/native/assets/process_guard.py
+COPY apps/native/assets/metadata_tools.py ./apps/native/assets/metadata_tools.py
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 AWS_EC2_METADATA_DISABLED=true
 USER stage0
 ENTRYPOINT ["python", "-m", "stage0"]
