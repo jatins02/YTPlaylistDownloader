@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart' as mobile;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../data/job_repository.dart';
+import '../data/enrichment_repository.dart';
 import '../data/local_database.dart';
 import '../data/private_workspace.dart';
 import '../domain/failure.dart';
@@ -15,6 +16,9 @@ import '../platform/credential_vault.dart';
 import '../platform/media_port.dart';
 import '../platform/desktop_media_port.dart';
 import '../platform/desktop_tools.dart';
+import '../metadata/native_metadata_tools.dart';
+import '../metadata/provider_transport.dart';
+import '../platform/playlist_source.dart';
 
 final class AppRuntime {
   AppRuntime._({
@@ -44,6 +48,8 @@ final class AppRuntime {
     Directory? supportRoot,
     CredentialVault? vault,
     File? mediaManifest,
+    PlaylistSource? source,
+    ProviderTransport? metadataTransport,
   }) async {
     PrivateWorkspace? workspace;
     Database? database;
@@ -68,8 +74,10 @@ final class AppRuntime {
         factory = mobile.databaseFactory;
       }
       database = await LocalDatabase.open(factory, workspace.databasePath);
+      final credentialVault = vault ?? SecureCredentialVault();
       final repository = JobRepository(database);
       final recovered = await repository.recoverInterruptedAttempts();
+      await EnrichmentRepository(repository).pruneCache();
       MediaPort media = UnavailableMediaPort(platform);
       if (platform == DevicePlatform.linux) {
         final manifest =
@@ -88,10 +96,24 @@ final class AppRuntime {
               ),
             );
             final tools = await DesktopTools.load(manifest, guard.path);
+            final helperBytes = await rootBundle.load(
+              'assets/metadata_tools.py',
+            );
+            final helper = await workspace.installTool(
+              'metadata_tools.py',
+              helperBytes.buffer.asUint8List(
+                helperBytes.offsetInBytes,
+                helperBytes.lengthInBytes,
+              ),
+            );
             final desktop = DesktopMediaPort(
               jobs: repository,
               workspace: workspace,
               tools: tools,
+              metadataTools: NativeMetadataTools(tools, helper.path),
+              vault: credentialVault,
+              source: source,
+              metadataTransport: metadataTransport,
             );
             await desktop.initialize();
             media = desktop;
@@ -107,7 +129,7 @@ final class AppRuntime {
       return AppRuntime._(
         workspace: workspace,
         jobs: repository,
-        vault: vault ?? SecureCredentialVault(),
+        vault: credentialVault,
         media: media,
         recoveredAttempts: recovered,
       );

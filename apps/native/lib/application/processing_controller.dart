@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../data/job_repository.dart';
+import '../data/enrichment_repository.dart';
+import '../domain/enrichment.dart';
 import '../data/pipeline_repository.dart';
 import '../domain/failure.dart';
 import '../domain/media_models.dart';
@@ -23,6 +25,9 @@ final class ProcessingController extends ChangeNotifier {
   JobRecord? job;
   List<TrackRecord> tracks = const [];
   List<StoredEntry> entries = const [];
+  Map<String, EnrichmentRecord> enrichment = const {};
+  Map<String, Uint8List> covers = const {};
+  Map<String, String> _coverIds = const {};
   MediaCapabilities? capability;
   AppFailure? failure;
   bool commanding = false, cancelling = false;
@@ -80,6 +85,22 @@ final class ProcessingController extends ChangeNotifier {
       final current = snapshot.$1,
           currentTracks = snapshot.$2,
           currentEntries = snapshot.$3;
+      final currentEnrichment = await EnrichmentRepository(jobs).records(jobId);
+      final loadedCovers = <String, Uint8List>{}, coverIds = <String, String>{};
+      if (capability?.canEnrich == true && media is EnrichingMediaPort) {
+        for (final record in currentEnrichment.values) {
+          final id = record.artworkAssetId;
+          if (id == null) continue;
+          final bytes = _coverIds[record.trackId] == id
+              ? covers[record.trackId]
+              : await (media as EnrichingMediaPort).coverBytes(jobId, id);
+          if (bytes != null) {
+            loadedCovers[record.trackId] = bytes;
+            coverIds[record.trackId] = id;
+          }
+        }
+        if ((await jobs.getJob(jobId)).revision != current.revision) return;
+      }
       if (_disposed) return;
       // A new snapshot is read after each command too; no stale poll can publish
       // over a later completed database read.
@@ -87,6 +108,9 @@ final class ProcessingController extends ChangeNotifier {
       job = current;
       tracks = List.unmodifiable(currentTracks);
       entries = List.unmodifiable(currentEntries);
+      enrichment = Map.unmodifiable(currentEnrichment);
+      covers = Map.unmodifiable(loadedCovers);
+      _coverIds = Map.unmodifiable(coverIds);
       if (identical(failure, _readFailure)) failure = null;
       _readFailure = null;
     } on AppFailure catch (error) {
@@ -129,12 +153,52 @@ final class ProcessingController extends ChangeNotifier {
         jobId: jobId,
       );
     } on AppFailure catch (error) {
-      if (!_disposed) failure = error;
+      if (!_disposed && !cancelling && _commandGeneration == generation) {
+        failure = error;
+      }
     } catch (_) {
-      if (!_disposed) {
+      if (!_disposed && !cancelling && _commandGeneration == generation) {
         failure = const AppFailure(
           FailureCode.storageUnavailable,
           'Processing could not finish safely. Reopen this draft to recover.',
+        );
+      }
+    } finally {
+      await refresh(force: true);
+      commanding = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> enrich() async {
+    if (_disposed ||
+        commanding ||
+        cancelling ||
+        job == null ||
+        media is! EnrichingMediaPort) {
+      return;
+    }
+    final generation = ++_commandGeneration;
+    commanding = true;
+    failure = null;
+    notifyListeners();
+    try {
+      if (capability?.canEnrich != true) {
+        throw const AppFailure(
+          FailureCode.mediaUnavailable,
+          'Naming and covers require the verified metadata runtime.',
+        );
+      }
+      await (media as EnrichingMediaPort).enrich(jobId);
+    } on AppFailure catch (error) {
+      if (!_disposed && !cancelling && _commandGeneration == generation) {
+        failure = error;
+      }
+    } catch (_) {
+      if (!_disposed && !cancelling && _commandGeneration == generation) {
+        failure = const AppFailure(
+          FailureCode.storageUnavailable,
+          'Details preparation could not finish safely. Audio is kept.',
         );
       }
     } finally {
