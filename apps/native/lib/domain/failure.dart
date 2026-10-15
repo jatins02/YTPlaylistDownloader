@@ -19,6 +19,16 @@ enum FailureCode {
   audioInvalid,
   liveUnsupported,
   expiredMedia,
+  aiCredentialMissing,
+  aiUnauthorized,
+  aiModelUnavailable,
+  aiRateLimited,
+  aiInvalidResponse,
+  aiUnavailable,
+  artworkUncertain,
+  artworkInvalid,
+  artworkUnavailable,
+  tagInvalid,
 }
 
 /// Only safe, user-facing messages cross adapter boundaries.
