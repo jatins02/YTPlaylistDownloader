@@ -119,7 +119,13 @@ void main() {
         );
         expect(tester.takeException(), isNull);
         await tester.runAsync(() => tester.tap(find.text('Cancel')));
-        await waitForUi(tester, () => !state.editing);
+        await waitForUi(
+          tester,
+          () =>
+              !state.editing &&
+              find.byType(ReviewEditor).evaluate().isEmpty &&
+              Focus.of(tester.element(find.text('Edit track'))).hasFocus,
+        );
         expect(
           (await tester.runAsync(() => fixture.jobs.getTrack(track.id)))!
               .metadata
