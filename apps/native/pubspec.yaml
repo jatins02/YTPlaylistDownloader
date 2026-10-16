@@ -32,3 +32,4 @@ flutter:
   assets:
     - assets/process_guard.py
     - assets/metadata_tools.py
+    - assets/export_tools.py
