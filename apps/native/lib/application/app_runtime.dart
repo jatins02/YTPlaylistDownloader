@@ -19,6 +19,8 @@ import '../platform/desktop_tools.dart';
 import '../metadata/native_metadata_tools.dart';
 import '../metadata/provider_transport.dart';
 import '../platform/playlist_source.dart';
+import '../platform/export_destination.dart';
+import '../platform/native_export_tools.dart';
 
 final class AppRuntime {
   AppRuntime._({
@@ -50,6 +52,7 @@ final class AppRuntime {
     File? mediaManifest,
     PlaylistSource? source,
     ProviderTransport? metadataTransport,
+    ExportDestination? exportDestination,
   }) async {
     PrivateWorkspace? workspace;
     Database? database;
@@ -106,6 +109,14 @@ final class AppRuntime {
                 helperBytes.lengthInBytes,
               ),
             );
+            final exportBytes = await rootBundle.load('assets/export_tools.py');
+            final exportHelper = await workspace.installTool(
+              'export_tools.py',
+              exportBytes.buffer.asUint8List(
+                exportBytes.offsetInBytes,
+                exportBytes.lengthInBytes,
+              ),
+            );
             final desktop = DesktopMediaPort(
               jobs: repository,
               workspace: workspace,
@@ -114,6 +125,9 @@ final class AppRuntime {
               vault: credentialVault,
               source: source,
               metadataTransport: metadataTransport,
+              exportTools: NativeExportTools(tools, exportHelper.path),
+              exportDestination:
+                  exportDestination ?? const LinuxExportDestination(),
             );
             await desktop.initialize();
             media = desktop;

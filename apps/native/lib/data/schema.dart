@@ -2,7 +2,7 @@ import 'package:sqflite_common/sqlite_api.dart';
 
 /// Append migrations; never edit a version that has shipped.
 abstract final class Schema {
-  static const version = 5;
+  static const version = 6;
 
   static Future<void> migrate(DatabaseExecutor db, int from, int to) async {
     for (var target = from + 1; target <= to; target++) {
@@ -132,6 +132,22 @@ abstract final class Schema {
           )''');
           await db.execute(
             'CREATE TABLE metadata_settings (id INTEGER PRIMARY KEY CHECK (id = 1), model TEXT NOT NULL, contact TEXT NOT NULL)',
+          );
+        case 6:
+          await db.execute('''CREATE TABLE export_publications (
+            export_id TEXT PRIMARY KEY REFERENCES exports(id) ON DELETE CASCADE,
+            record TEXT NOT NULL, record_hash TEXT NOT NULL, created_at INTEGER NOT NULL
+          )''');
+          await db.execute('''CREATE TABLE export_deliveries (
+            id TEXT PRIMARY KEY, export_id TEXT NOT NULL REFERENCES exports(id) ON DELETE CASCADE,
+            file_id TEXT NOT NULL, filename TEXT NOT NULL, destination TEXT NOT NULL,
+            temporary TEXT NOT NULL, device INTEGER NOT NULL, inode INTEGER NOT NULL,
+            status TEXT NOT NULL CHECK (status IN ('writing','complete','interrupted','failed')),
+            cleanup_pending INTEGER NOT NULL DEFAULT 1 CHECK (cleanup_pending IN (0,1)),
+            error_code TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+          )''');
+          await db.execute(
+            'CREATE INDEX delivery_export ON export_deliveries(export_id,status)',
           );
         default:
           throw StateError('Unknown schema version $target');

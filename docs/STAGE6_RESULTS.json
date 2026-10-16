@@ -1,0 +1,105 @@
+{
+  "stage": 6,
+  "date": "2026-10-16",
+  "scope": "Verified Linux full MP3/ZIP publication and local destination byte transfer; full device acceptance remains open",
+  "baseline_commit": "b87d62dc038046e4ae44ed135b827d98ccf39924",
+  "runtime": {
+    "flutter": "3.47.5",
+    "dart": "3.13.4",
+    "python": "3.14.4",
+    "sqlite_schema": 6,
+    "export_worker": 1,
+    "file_selector": "1.1.0",
+    "pulseaudio": "17.0",
+    "media_runtime": "Existing pinned Stage 3 manifest; unchanged pins"
+  },
+  "checks": {
+    "format": "92 files; unchanged",
+    "analyze": "no issues",
+    "flutter_runtime_tests": {
+      "passed": 226,
+      "skipped": 0
+    },
+    "flutter_default_tests": {
+      "passed": 203,
+      "skipped": 0
+    },
+    "export_widget_with_renders": {
+      "passed": 10
+    },
+    "python_tests": {
+      "passed": 77,
+      "skipped": 0
+    },
+    "native_foundation": {
+      "passed": 1
+    },
+    "native_pipeline": {
+      "passed": 1
+    },
+    "native_enrichment": {
+      "passed": 1
+    },
+    "native_review_private_output": {
+      "passed": 1
+    },
+    "native_export": {
+      "passed": 1
+    },
+    "linux_release": "passed",
+    "release_scan": "Checked 18 release files: no dotenv asset or literal Groq API key found."
+  },
+  "acceptance": [
+    "65-second full MP3 derivatives are distinct from 30-second previews",
+    "Equal-title distinguishable audio and Unicode filenames survive ZIP export; repeated source occurrences export once",
+    "Human metadata, version/features, exact embedded APIC and removed-cover choices verified",
+    "Exact ZIP entries, CRC, lengths, hashes, manifest and loose derivatives verified on creation, reuse and delivery",
+    "Repeated Save reuses snapshot, filenames and bytes; changed review freezes another revision",
+    "Actual external MP3/ZIP copies and durable receipts survive SQLite/native restart",
+    "Chooser cancellation, permission denial, low storage, existing destinations and corrupt bytes preserve recovery",
+    "Stop fences preparation and ignores late chooser results; interrupted inode/nonce journals clean only owned staging",
+    "Private expiry/discard preserves external copies; no shared-directory scan",
+    "v5 migration and transactional rollback preserve committed review and reject stale/forged publication",
+    "Corrupt source is diagnosed before explicit retry; committed human review survives repair"
+  ],
+  "ui_matrix": {
+    "widths": [
+      320,
+      390,
+      844,
+      768,
+      1024,
+      1440
+    ],
+    "text_scale": 2,
+    "keyboard_inset_pixels": 160,
+    "renders": [
+      "stage6/screens/export-desktop.png",
+      "stage6/screens/export-phone.png"
+    ],
+    "boundary": "Fictional stored-record Flutter renders, not physical-phone evidence"
+  },
+  "privacy": {
+    "media": "Generated fictional tones",
+    "providers": "Fictional; no live requests",
+    "credential": "Unique disposable synthetic OS-vault value",
+    "owner_env_accessed": false,
+    "system_audio_used": false
+  },
+  "unverified": [
+    "Manual Linux save-panel interaction",
+    "Physical saved-file/player acceptance",
+    "Windows media/tag/playback/export",
+    "Android media/document APIs and actual device export",
+    "iOS media/document/share APIs and actual iPhone export",
+    "Non-Linux-filesystem destination support without hard links/user xattrs"
+  ],
+  "github": {
+    "published": false,
+    "new_workflow_run": null,
+    "git_authentication": "Terminal has no HTTPS credentials; push dry-run fails with terminal prompts disabled",
+    "connector": "GitHub create_blob rejected: HTTP 403 Resource not accessible by integration",
+    "browser": "No enabled browser exposed; iab unavailable",
+    "next_action": "Push the local Stage 6 commit from an authenticated session, then inspect all three Foundation jobs. No new CI pass is claimed."
+  }
+}

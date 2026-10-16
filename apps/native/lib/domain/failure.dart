@@ -29,6 +29,9 @@ enum FailureCode {
   artworkInvalid,
   artworkUnavailable,
   tagInvalid,
+  exportInvalid,
+  destinationUnavailable,
+  destinationExists,
 }
 
 /// Only safe, user-facing messages cross adapter boundaries.

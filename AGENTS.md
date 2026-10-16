@@ -4,7 +4,7 @@
 
 Work in YTPlaylistDownloader. The sibling DOT. is reference-only; never modify its files, import its .env, reuse its environment or copy its downloaded media.
 
-Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Stage 4 Linux naming/artwork/tag adapters are implemented; read docs/STAGE4_GUIDE.md for actual evidence and unresolved live/platform gates. Stage 5 Linux real snippet playback and persistent review are implemented; read docs/STAGE5_GUIDE.md. Final device export remains Stage 6. Explicit owner instructions override documents.
+Read IMPLEMENTATION_PLAN.md, docs/PROJECT_STATUS.md and the relevant specification before coding. This checkout contains the Stage 0 CLI, Stage 1 native foundation and Stage 2 fictional journey in apps/native. Read docs/STAGE2_GUIDE.md for the fixture boundary and acceptance evidence. Read docs/STAGE1_GUIDE.md and toolchain.json for setup and contracts. Stage 3 source/conversion/snippet processing is implemented for verified Linux runtimes; read docs/STAGE3_GUIDE.md. Stage 4 Linux naming/artwork/tag adapters are implemented; read docs/STAGE4_GUIDE.md for actual evidence and unresolved live/platform gates. Stage 5 Linux real snippet playback and persistent review are implemented; read docs/STAGE5_GUIDE.md. Stage 6 verified full MP3/ZIP publication and destination transfer are implemented for Linux; read docs/STAGE6_GUIDE.md for the strict boundary and open manual/device gates. Explicit owner instructions override documents.
 
 The owner confirmed zero budget, independent Android and iPhone operation, laptop support and device-only saves. No Mac/iPhone is available for testing. Do not replace independent phones with a laptop/LAN companion, provision paid hosting or silently drop iOS. The old hosted topology is superseded. Flutter 3.47.5 is selected for the foundation (decision 0002); media adapters remain candidates pending platform proof. Windows and Linux are the prioritized desktop targets; Windows and Linux foundation checks pass in CI; Windows media/playback/tag execution remains unverified.
 
@@ -41,7 +41,7 @@ Use apps/native with the exact SDK revision in toolchain.json and committed pubs
 
 ## Stage 3 contracts
 
-Schema v5 is current; v4 remains the historical Stage 3 migration. Source/channel evidence stays separate from human metadata; active manifests select a single verified audio revision. Do not revive cancelled jobs, bypass unresolved-entry export gating, refetch a remote playlist on resume or mark a track ready without verified audio and a snippet. Process groups/file caps are Linux-only primitives. Pause/close retain checkpoints; cancellation fences before killing; expiry/discard affect only private job bytes and preserve metadata/user copies. Real-codec tests require STAGE3_TEST_RUNTIME; live smoke checks are explicitly opt-in. No USB/JDK/Android SDK/ADB is exposed in this execution environment; the owner has an Android phone available by USB.
+Schema v6 is current; v4/v5 remain the historical Stage 3/4 migrations. Source/channel evidence stays separate from human metadata; active manifests select a single verified audio revision. Do not revive cancelled jobs, bypass unresolved-entry export gating, refetch a remote playlist on resume or mark a track ready without verified audio and a snippet. Process groups/file caps are Linux-only primitives. Pause/close retain checkpoints; cancellation fences before killing; expiry/discard affect only private job bytes and preserve metadata/user copies. Real-codec tests require STAGE3_TEST_RUNTIME; live smoke checks are explicitly opt-in. No USB/JDK/Android SDK/ADB is exposed in this execution environment; the owner has an Android phone available by USB.
 
 ## Stage 4 contracts
 
@@ -74,3 +74,27 @@ only under the current review token/revision. Cancellation preserves prior
 metadata/cover choices; only explicit Save changes durable state. No Stage 5
 control publishes exports or transfers destination files. Platform and manual
 QA limits in the Stage 5 guide remain authoritative.
+
+
+## Stage 6 contracts
+
+ExportRepository owns frozen-snapshot publication and durable destination journals.
+ExportPipeline verifies full tagged derivatives and every ZIP/manifest byte before
+one token-checked transaction publishes the complete private bundle. Titles never
+locate bytes. Duplicate filenames use Unicode/casefold-safe bounded suffixes;
+repeated Save reuses a verified completed snapshot. Only a confirmed destination
+transfer creates a saved-copy receipt; private preparation is not device saving.
+Linux delivery uses the native save panel and a supervised, streamed, no-clobber
+atomic link of the verified open inode. Record staging intent before creation,
+bind its device/inode before copying, and retain the exact UUID/ownership nonce
+for restart cleanup. Never scan Downloads or remove a destination copy. Failed,
+interrupted or denied saves retain recovery. Finalization and review changes are
+fenced during active work; Stop fences before terminating processes. Archive
+aggregation has its own bounded cap without raising individual media caps.
+Active exports and open review tokens are excluded from retention; completed
+exports expire with private job bytes while external copies survive. Windows/Android/iOS export remains
+disabled until their native media/document API execution gates pass. Manual save
+panel, physical-player and phone acceptance are pending, not proved by injected
+choosers or desktop tests. Keep exact runtime pins and use the actual Stage 6
+Linux integration plus the affected Stage 1–5 native checks when changing this
+lifecycle.

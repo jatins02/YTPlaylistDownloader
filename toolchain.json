@@ -10,7 +10,7 @@
     "android",
     "ios"
   ],
-  "sqlite_schema_version": 5,
+  "sqlite_schema_version": 6,
   "media_pipeline_platforms_verified": [
     "linux"
   ],
@@ -33,5 +33,9 @@
     "file_selector": "1.1.0",
     "pulseaudio_acceptance": "17.0",
     "pulseaudio_acceptance_package": "1:17.0+dfsg1-2ubuntu4"
-  }
+  },
+  "device_export_platforms_verified": [
+    "linux"
+  ],
+  "export_worker_version": 1
 }

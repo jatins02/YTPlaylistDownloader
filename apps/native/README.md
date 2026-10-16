@@ -2,8 +2,8 @@
 
 The shared Flutter app contains the Stage 1 foundation, isolated Stage 2 fixture
 journey, verified Linux Stage 3 media pipeline and Stage 4 naming/artwork/tag
-adapters, plus Stage 5 snippet playback and persistent review. Setup and execution boundaries are in [Stage 1](../../docs/STAGE1_GUIDE.md),
-[Stage 3](../../docs/STAGE3_GUIDE.md), [Stage 4](../../docs/STAGE4_GUIDE.md) and [Stage 5](../../docs/STAGE5_GUIDE.md).
+adapters, Stage 5 snippet playback/persistent review and Stage 6 verified Linux MP3/ZIP saving. Setup and execution boundaries are in [Stage 1](../../docs/STAGE1_GUIDE.md),
+[Stage 3](../../docs/STAGE3_GUIDE.md), [Stage 4](../../docs/STAGE4_GUIDE.md), [Stage 5](../../docs/STAGE5_GUIDE.md) and [Stage 6](../../docs/STAGE6_GUIDE.md).
 Flutter and Dart are recorded in [toolchain.json](../../toolchain.json); keep the
 committed pubspec.lock and exact runtime pins.
 
@@ -11,7 +11,7 @@ The real Linux route persists drafts, verifies full audio/snippets and attempts
 stable-ID naming and conservative front covers with each user's OS-stored key.
 Provider failures preserve prepared peers. Private MP3 tagging verifies frozen
 metadata, actual embedded cover bytes and audio. Linux snippets play through the local audio service. Revision-safe name/cover
-edits and include/exclude choices persist across restart. Device MP3/ZIP export remains Stage 6; the fictional journey stays separate.
+edits and include/exclude choices persist across restart. Full tagged MP3/ZIP publication, destination copying and durable receipts are implemented for Linux. Phone/Windows media-export and manual save-panel/player checks remain open; the fictional journey stays separate.
 
 Source boundaries:
 
@@ -25,4 +25,5 @@ Source boundaries:
 Desktop SQLite executes through the FFI package's background isolate; mobile
 SQLite uses the native plugin. Media/tagging are enabled only on verified Linux
 runtimes. Windows/Android/iOS execution gates remain open. Workers stay bounded
-and use current attempt/revision checks; final export publication is unavailable.
+and use current attempt/revision checks. Stage 6 publication and device delivery
+are separate verified operations on Linux.

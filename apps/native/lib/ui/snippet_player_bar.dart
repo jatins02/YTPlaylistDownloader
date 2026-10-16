@@ -49,7 +49,9 @@ class _SnippetPlayerBarState extends State<SnippetPlayerBar> {
                       tooltip: player.playing || player.loading
                           ? 'Pause $name'
                           : 'Play $name',
-                      onPressed: () => player.toggle(tracks.single.id),
+                      onPressed: widget.controller.canPlaySnippets
+                          ? () => player.toggle(tracks.single.id)
+                          : null,
                       icon: Icon(
                         player.playing || player.loading
                             ? Icons.pause
@@ -77,11 +79,15 @@ class _SnippetPlayerBarState extends State<SnippetPlayerBar> {
                     max: total,
                     semanticFormatterCallback: (value) =>
                         'Snippet position ${time(Duration(milliseconds: value.round()))}',
-                    onChanged: (value) => setState(() => dragging = value),
-                    onChangeEnd: (value) {
-                      setState(() => dragging = null);
-                      player.seek(Duration(milliseconds: value.round()));
-                    },
+                    onChanged: widget.controller.canPlaySnippets
+                        ? (value) => setState(() => dragging = value)
+                        : null,
+                    onChangeEnd: widget.controller.canPlaySnippets
+                        ? (value) {
+                            setState(() => dragging = null);
+                            player.seek(Duration(milliseconds: value.round()));
+                          }
+                        : null,
                   ),
                 if (player.failure != null)
                   Text(

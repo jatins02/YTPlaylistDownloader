@@ -66,11 +66,14 @@ void main() {
         expect(state.unmappedCount, 1);
         expect(state.entries, hasLength(3));
         await tester.scrollUntilVisible(
-          find.textContaining('No files have been saved'),
+          find.textContaining('Private temporary preparation does not save'),
           200,
           scrollable: find.byType(Scrollable).first,
         );
-        expect(find.textContaining('No files have been saved'), findsOneWidget);
+        expect(
+          find.textContaining('Private temporary preparation does not save'),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.runAsync(fixture.close);

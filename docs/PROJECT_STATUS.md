@@ -4,17 +4,17 @@ Updated: 2026-10-16.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Device export is Stage 6 and remains unavailable. No cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Stage 6 Linux full MP3/ZIP publication and destination delivery are implemented; manual picker/player and other-platform device gates remain open. No cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
-| 0 — Feasibility | In progress | 58 Python tests pass locally and in CI; source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
+| 0 — Feasibility | In progress | 78 Python tests pass locally (58 at the last published CI revision); source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
 | 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 182 Linux tests, 173 Windows tests (1 symlink test skipped); native plugin/restart checks and debug/release builds pass on both |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
 | 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
 | 5 — Review/edit | Linux implementation/native-output acceptance verified; manual/device gates open | Durable revision-safe edits/covers/selections, one bounded native snippet, responsive review; see Stage 5 evidence below |
-| 6 — Device save | Not started | CLI ZIP verified; native picker/export untested |
+| 6 — Device save | Linux implementation/native byte-transfer acceptance; full device acceptance open | Frozen full tagged MP3/ZIP publication, verified destination receipts and restart/cleanup; manual native picker/player and Windows/Android/iOS export remain unverified |
 | 7 — Device QA | Not started | No real phone evidence |
 | 8 — Packaging | Not started | No installed application packages |
 | 9 — Release | Not started | No release |
@@ -101,7 +101,7 @@ Detailed findings, regression evidence and current boundaries: [CODE_REVIEW_STAG
 
 ## Next actions
 
-Desktop foundation CI now passes. Perform manual Windows QA and its skipped symlink check before broader platform acceptance. Stage 3 Linux and Stage 4 Linux implementation/live acceptance are verified. Prove Windows media/tag execution, expose an Android SDK/JDK/ADB/USB device path and retain the iOS gate until a Mac/iPhone can be built/tested. Those missing execution paths prevent full Stage 4 acceptance; no access to them exists in this environment. Stage 5 Linux playback/editing is implemented; complete its manual speaker/chooser and platform gates, then implement Stage 6 verified device saving. The owner's configured development key stays in ignored `.env`; native releases continue to use each user's OS vault.
+Desktop foundation CI now passes. Perform manual Windows QA and its skipped symlink check before broader platform acceptance. Stage 3 Linux and Stage 4 Linux implementation/live acceptance are verified. Prove Windows media/tag execution, expose an Android SDK/JDK/ADB/USB device path and retain the iOS gate until a Mac/iPhone can be built/tested. Those missing execution paths prevent full Stage 4 acceptance; no access to them exists in this environment. Stage 5 Linux playback/editing is implemented; complete its manual speaker/chooser and platform gates, complete Stage 6 manual/device gates and proceed to Stage 7 device QA for proven platforms. The owner's configured development key stays in ignored `.env`; native releases continue to use each user's OS vault.
 
 For future updates, record stage, implementation revision, commands/results, observed limits and next action. Do not mark a platform or stage done without its stated evidence.
 
@@ -436,3 +436,48 @@ Local implementation commit `a500c52` and the verified Windows layout-test corre
 The initial Windows run caught a premature focus assertion after asynchronous editor cleanup. The test now waits for the actual restored focus; both full local suites passed again. [Foundation PR run 41](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38795782840) and [branch run 40](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38795776924) subsequently passed all three jobs each before merging. Linux passed 182 ordinary tests, Windows passed 173 with the existing privilege-dependent symlink test skipped, and Python passed all 58 tests. Both desktop jobs also passed native plugin/restart integration, debug/release builds, formatting, analysis and release scans (18 Linux CI files / 17 Windows files). These runs do not execute the opt-in Stage 5 real-media/output acceptance; its separate local evidence is recorded above. Windows media/playback remains unverified.
 
 The merged `main` revision `c768a10` independently passed [Foundation run 42](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38796787457), all three jobs: 182 Linux tests, 173 Windows tests with the same one privilege-dependent skip, 58 Python tests, native desktop integration, release builds and credential scans. No workflow or dependency pin was weakened to obtain a pass. This documentation update records the completed publication and verification.
+
+
+## Stage 6 implementation and Linux acceptance (2026-10-16)
+
+The real review now prepares a frozen, complete private export and exposes native Linux ZIP/individual MP3 save actions. ExportRepository/ExportPipeline use schema v6, current export tokens, immutable UUID files and an atomic complete-publication transaction. Full MP3s retain semantic metadata/version/features, ID3v2.3 tags, exact human APIC bytes and encoded/full-decoded audio integrity. NFC names with NFKC/casefold collision checks and bounded suffixes preserve equal-name audio; repeated source occurrences export once. ZIPs stream all selected derivatives plus the exact checksum manifest and are verified before publication and on reuse/delivery. Returning to review unlocks changes and requires another frozen revision; pending edits/preparation and unresolved selected entries remain gated.
+
+Destination preparation is distinct from a successful save. The native save panel selects a local path; a supervised worker records intent before staging, binds the exact inode/device/ownership nonce before copying, checks free space, streams/fsyncs/readbacks the complete bytes and atomically links the verified open inode without overwriting existing files. Only confirmation creates a durable saved-copy receipt. Picker cancellation, permission denial, low space, Stop, failed verification and interruption keep recovery. Startup cleans only exact journalled owned staging files, including an interrupted unbound intent; it never scans Downloads or deletes a destination copy. Private export expiry/discard preserves external files. Existing audio caps remain intact, while archives use the bounded aggregate capacity within job/workspace quotas.
+
+Final source checks: **226 Flutter tests with the pinned real-media runtime, 203 ordinary Flutter tests and 77 Python tests pass, zero skipped on Linux**. Formatting checks 92 files unchanged; static analysis reports no issues. The opt-in export widget/render run passes ten tests, including six widths at 200% text and 160 px keyboard insets. All five actual Linux native integration cases pass (foundation, pipeline, enrichment, private playback/review and export). The release build and dotenv/literal-key bundle scan pass. Commands and sanitized evidence are in [STAGE6_GUIDE.md](STAGE6_GUIDE.md) and [STAGE6_RESULTS.json](STAGE6_RESULTS.json); reviewed fictional renders are linked from the guide.
+
+The checks demonstrate real 65-second distinct full tracks, cover/tag/ZIP readback, actual external destination bytes, native SQLite/vault/restart, interrupted-staging recovery and external-copy-safe expiry/discard. No live provider/source request or owner `.env` key was used. No system packages or audio service were installed/changed; official prerequisites were extracted into an isolated temporary toolchain.
+
+**GitHub publication is blocked in this session:** HTTPS Git has no credentials, the connected GitHub integration rejects writes with HTTP 403, and no enabled browser is exposed. The complete tested change is committed locally for an authenticated push. No new Stage 6 workflow run or CI pass is claimed; after pushing, all three Foundation jobs must pass. Previous Stage 5 CI evidence does not prove Stage 6.
+
+The implementation is Linux-only. Automated native acceptance injects the chooser boundary with test-owned paths; manual native-panel interaction, physical-player checks and actual Android/iPhone/Windows media/document execution remain unverified. Linux local destinations require hard links and user xattrs; unsupported filesystems fail safely. No SDK/JDK/ADB/USB or Mac/iPhone execution path is exposed here. Independent-phone requirements remain in scope, and full Stage 6 multi-platform acceptance is **not** claimed. See [STAGE6_GUIDE.md](STAGE6_GUIDE.md) for behavior, state, commands and remaining gates.
+
+## Review of implemented Stages 5–6 (2026-10-16)
+
+Reviewed the Stage 5 playback/persistent editor and Stage 6 frozen publication/
+destination lifecycle against the implementation plan, including their native
+workers, shared repositories, controller/UI, fixtures, runtime and CI boundaries.
+[Findings and command evidence](CODE_REVIEW_STAGE56.md) record the reproducing
+regressions and fixes. Version markers are retained as complete labels rather
+than incidental title substrings. Late pause/seek results are fenced; busy
+Play/seek controls are disabled; expiry preserves open review tokens transactionally; completed
+exports cancel before private discard; orphan cleanup no longer recreates
+removed jobs; special-file replacements cannot block export recovery. Media Stop
+queues its fence before extra reads so late provider results remain rejected.
+Unused worker mode handling was removed and cleanup closes owned descriptors.
+Dependencies, schema/migration versions and platform availability are unchanged.
+
+Final checks: **233 real-runtime Flutter tests, 208 ordinary Flutter tests and
+78 Python tests pass, zero skipped on Linux**. Formatting (92 files unchanged),
+analysis, all five native integration cases (foundation, pipeline, enrichment,
+private playback/review and export), Linux release build and the 18-file secret
+scan pass. Native export acceptance uses the real cancellation API and proves
+saved external MP3/ZIP copies survive private discard. No live provider request
+or owner `.env` access was needed.
+
+The fixes and prior Stage 6 implementation are committed locally. GitHub push/CI
+remains blocked by missing HTTPS/SSH authentication, connector write denial (403)
+and no exposed browser. Remote `main` is unchanged at the last read; no new CI
+success is inferred. Publish through an authenticated session, then require all
+three Foundation jobs to pass. Manual native-picker/physical-player and
+Windows/Android/iPhone media/export gates remain open.

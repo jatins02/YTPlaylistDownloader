@@ -97,7 +97,7 @@ final class SnippetController extends ChangeNotifier {
   }
 
   Future<void> pause({bool clear = false}) async {
-    ++_generation;
+    final generation = ++_generation;
     loading = playing = false;
     if (clear) {
       trackId = assetId = null;
@@ -108,7 +108,7 @@ final class SnippetController extends ChangeNotifier {
       try {
         await port?.stopSnippet();
       } catch (error) {
-        if (!_disposed) {
+        if (!_disposed && generation == _generation) {
           failure = error is AppFailure
               ? error
               : const AppFailure(
@@ -128,7 +128,10 @@ final class SnippetController extends ChangeNotifier {
       microseconds: target.inMicroseconds.clamp(0, duration.inMicroseconds),
     );
     if (bounded >= duration) {
-      await pause();
+      final stopped = pause();
+      final generation = _generation;
+      await stopped;
+      if (_disposed || generation != _generation) return;
       position = duration;
       _notify();
       return;

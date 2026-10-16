@@ -15,6 +15,9 @@ import '../domain/playlist_url.dart';
 import '../platform/media_port.dart';
 import '../platform/snippet_port.dart';
 import 'snippet_controller.dart';
+import '../platform/export_port.dart';
+import '../domain/device_export.dart';
+import '../data/export_repository.dart';
 
 final class ProcessingController extends ChangeNotifier {
   ProcessingController({
@@ -32,6 +35,23 @@ final class ProcessingController extends ChangeNotifier {
     media is SnippetPort ? media as SnippetPort : null,
   );
   ReviewSession? _editSession;
+  ExportPublication? publication;
+  DeliveryReceipt? savedCopy;
+  String? saveMessage;
+  bool exportBusy = false;
+  bool get canPlaySnippets =>
+      capability?.canPlaySnippets == true &&
+      job?.phase == JobPhase.reviewReady &&
+      !processing &&
+      !cancelling &&
+      !editing &&
+      !exportBusy;
+  bool get canPrepareExport =>
+      !exportBusy &&
+      !commanding &&
+      !cancelling &&
+      capability?.canExport == true &&
+      reviewBlockedReason == null;
   bool editing = false, reviewSaving = false;
   int pendingPreparations = 0;
   JobRecord? job;
@@ -125,6 +145,18 @@ final class ProcessingController extends ChangeNotifier {
       final current = snapshot.$1,
           currentTracks = snapshot.$2,
           currentEntries = snapshot.$3;
+      ExportPublication? prepared;
+      AppFailure? exportFailure;
+      if (current.phase == JobPhase.exportReady && media is ExportMediaPort) {
+        try {
+          prepared = await (media as ExportMediaPort).currentExport(jobId);
+        } on AppFailure catch (error) {
+          exportFailure = error;
+        }
+      }
+      final receipt = prepared == null
+          ? null
+          : await ExportRepository(jobs).latestReceipt(prepared.snapshot.id);
       final currentEnrichment = await EnrichmentRepository(jobs).records(jobId);
       final pending = await jobs.db.query(
         'attempts',
@@ -152,6 +184,8 @@ final class ProcessingController extends ChangeNotifier {
       // over a later completed database read.
       if (job != null && current.revision < job!.revision) return;
       job = current;
+      publication = prepared;
+      savedCopy = receipt;
       tracks = List.unmodifiable(currentTracks);
       entries = List.unmodifiable(currentEntries);
       enrichment = Map.unmodifiable(currentEnrichment);
@@ -174,6 +208,7 @@ final class ProcessingController extends ChangeNotifier {
       }
       if (identical(failure, _readFailure)) failure = null;
       _readFailure = null;
+      if (exportFailure != null) failure = _readFailure = exportFailure;
     } on AppFailure catch (error) {
       if (!_disposed) failure = _readFailure = error;
     } on Object {
@@ -193,7 +228,14 @@ final class ProcessingController extends ChangeNotifier {
   }
 
   Future<void> start({bool retryFailed = false}) async {
-    if (_disposed || commanding || cancelling || editing || job == null) return;
+    if (_disposed ||
+        exportBusy ||
+        commanding ||
+        cancelling ||
+        editing ||
+        job == null) {
+      return;
+    }
     final generation = ++_commandGeneration;
     commanding = true;
     failure = null;
@@ -270,6 +312,118 @@ final class ProcessingController extends ChangeNotifier {
     }
   }
 
+  Future<void> prepareDeviceExport() async {
+    if (_disposed ||
+        !canPrepareExport ||
+        job == null ||
+        media is! ExportMediaPort) {
+      return;
+    }
+    exportBusy = true;
+    failure = null;
+    saveMessage = 'Preparing and verifying full MP3s and ZIP…';
+    notifyListeners();
+    try {
+      publication = await (media as ExportMediaPort).prepareExport(
+        jobId,
+        job!.revision,
+      );
+      saveMessage =
+          'Files verified. Choose a ZIP or individual MP3 to save a copy.';
+    } on AppFailure catch (error) {
+      if (!_disposed) {
+        failure = error;
+        saveMessage = 'Preparation stopped. Your review is kept.';
+      }
+    } catch (_) {
+      if (!_disposed) {
+        failure = const AppFailure(
+          FailureCode.exportInvalid,
+          'Files could not be prepared safely. Your review is kept.',
+        );
+      }
+    } finally {
+      await refresh(force: true);
+      exportBusy = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> saveExportFile(String fileId) async {
+    final current = publication;
+    if (_disposed ||
+        exportBusy ||
+        current == null ||
+        media is! ExportMediaPort) {
+      return;
+    }
+    exportBusy = true;
+    failure = null;
+    saveMessage = 'Choose a location, then keep the app open while saving…';
+    notifyListeners();
+    try {
+      final receipt = await (media as ExportMediaPort).deliverExport(
+        current,
+        fileId,
+      );
+      if (!_disposed) {
+        savedCopy = receipt;
+        saveMessage = receipt == null
+            ? 'Save cancelled. Your prepared files are kept.'
+            : 'Saved verified copy: ${receipt.filename}';
+      }
+    } on AppFailure catch (error) {
+      if (!_disposed) {
+        failure = error;
+        saveMessage = 'Saving did not finish. Your prepared files are kept.';
+      }
+    } catch (_) {
+      if (!_disposed) {
+        failure = const AppFailure(
+          FailureCode.destinationUnavailable,
+          'Saving did not finish. Retry choosing a destination.',
+        );
+      }
+    } finally {
+      await refresh(force: true);
+      exportBusy = false;
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> stopDeviceSave() async {
+    if (_disposed || media is! ExportMediaPort) return;
+    try {
+      await (media as ExportMediaPort).stopExport(jobId);
+    } on AppFailure catch (error) {
+      if (!_disposed) failure = error;
+    } finally {
+      await refresh(force: true);
+      if (!_disposed) notifyListeners();
+    }
+  }
+
+  Future<void> returnToReview() async {
+    if (_disposed ||
+        exportBusy ||
+        commanding ||
+        job?.phase != JobPhase.exportReady) {
+      return;
+    }
+    try {
+      await jobs.transition(jobId, job!.revision, JobPhase.reviewReady);
+      publication = null;
+      savedCopy = null;
+      saveMessage = null;
+      failure = null;
+    } on AppFailure catch (error) {
+      failure = error;
+    } finally {
+      await refresh(force: true);
+      if (!_disposed) notifyListeners();
+    }
+  }
+
   Future<void> cancel() async {
     if (_disposed || cancelling) return;
     cancelling = true;
@@ -292,6 +446,7 @@ final class ProcessingController extends ChangeNotifier {
   Future<ReviewSession?> beginEdit(TrackRecord track) async {
     if (_disposed ||
         editing ||
+        exportBusy ||
         commanding ||
         cancelling ||
         job?.phase != JobPhase.reviewReady) {
@@ -383,7 +538,7 @@ final class ProcessingController extends ChangeNotifier {
   }
 
   Future<void> _select(Future<void> Function() action) async {
-    if (_disposed || editing || commanding || cancelling) return;
+    if (_disposed || exportBusy || editing || commanding || cancelling) return;
     commanding = true;
     failure = null;
     notifyListeners();
@@ -452,6 +607,11 @@ final class ProcessingController extends ChangeNotifier {
     if (_disposed) return;
     _disposed = true;
     _polling?.cancel();
+    if (exportBusy && media is ExportMediaPort) {
+      unawaited(
+        (media as ExportMediaPort).stopExport(jobId).catchError((Object _) {}),
+      );
+    }
     player.dispose();
     final session = _editSession;
     if (session != null) {

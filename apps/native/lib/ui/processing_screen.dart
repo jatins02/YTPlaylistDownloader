@@ -12,6 +12,7 @@ import 'workspace_components.dart';
 import 'theme.dart';
 import 'review_editor.dart';
 import 'snippet_player_bar.dart';
+import 'export_panel.dart';
 
 class ProcessingScreen extends StatefulWidget {
   const ProcessingScreen({
@@ -103,9 +104,12 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                       )
                   else ...[
                     WorkspaceHeading(
-                      job.phase == JobPhase.reviewReady
-                          ? 'Review your tracks'
-                          : 'Prepare your tracks',
+                      switch (job.phase) {
+                        JobPhase.reviewReady => 'Review your tracks',
+                        JobPhase.exporting => 'Preparing files for saving',
+                        JobPhase.exportReady => 'Save your files',
+                        _ => 'Prepare your tracks',
+                      },
                       subtitle: 'Processing happens on this device. Keep the app open; interrupted work can resume from verified local files.',
                     ),
                     const SizedBox(height: 16),
@@ -115,7 +119,9 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                           ? 'Real Linux media pipeline'
                           : 'Media runtime unavailable',
                       message: state.capability?.canAcquire == true
-                          ? state.capability?.canEnrich == true
+                          ? state.capability?.canExport == true
+                                ? 'Prepare and review your tracks, then save a verified ZIP or individual MP3s to a location you choose.'
+                                : state.capability?.canEnrich == true
                                 ? 'Prepare audio, then listen to snippets, review names and choose covers. Your changes stay on this device. Final MP3/ZIP saving is not available in this build.'
                                 : 'This build prepares full MP3s and short previews. Review and edit your names after preparation. Naming and cover tools need setup; final saving is not available in this build.'
                           : state.capability?.platform == DevicePlatform.linux
@@ -170,7 +176,12 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                             ),
                           ),
                         if (job.phase == JobPhase.reviewReady &&
-                            state.failedCount > 0)
+                            (state.failedCount > 0 ||
+                                [
+                                  FailureCode.tagInvalid,
+                                  FailureCode.audioInvalid,
+                                  FailureCode.exportInvalid,
+                                ].contains(state.failure?.code ?? job.failure)))
                           FilledButton.icon(
                             key: const Key('retry-processing'),
                             onPressed:
@@ -180,13 +191,20 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                                 ? null
                                 : () => state.start(retryFailed: true),
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Retry failed tracks'),
+                            label: Text(
+                              state.failedCount > 0
+                                  ? 'Retry failed tracks'
+                                  : 'Recheck audio',
+                            ),
                           ),
                         if (job.phase == JobPhase.reviewReady &&
                             state.capability?.canEnrich == true) ...[
                           FilledButton.icon(
                             key: const Key('enrich-tracks'),
-                            onPressed: state.commanding || state.cancelling
+                            onPressed:
+                                state.exportBusy ||
+                                    state.commanding ||
+                                    state.cancelling
                                 ? null
                                 : state.enrich,
                             icon: const Icon(Icons.auto_awesome_outlined),
@@ -196,7 +214,10 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                           ),
                           OutlinedButton.icon(
                             key: const Key('metadata-options'),
-                            onPressed: state.commanding || state.cancelling
+                            onPressed:
+                                state.exportBusy ||
+                                    state.commanding ||
+                                    state.cancelling
                                 ? null
                                 : () => _options(context, state),
                             icon: const Icon(Icons.tune),
@@ -258,12 +279,18 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                         key: const Key('review-selection-counts'),
                       ),
                       const SizedBox(height: 12),
-                      const FilledButton(
-                        onPressed: null,
-                        child: Text('Save to Device'),
+                      FilledButton(
+                        key: const Key('prepare-device-export'),
+                        onPressed: state.canPrepareExport
+                            ? state.prepareDeviceExport
+                            : null,
+                        child: const Text('Save to Device'),
                       ),
                       Text(
-                        state.reviewBlockedReason ?? 'Review is ready. Saving files to a device destination is not available in this build.',
+                        state.reviewBlockedReason ??
+                            (state.capability?.canExport == true
+                                ? 'Your selection is ready for verified saving.'
+                                : 'Review is ready. Saving files to a device destination is not available in this build.'),
                         key: const Key('review-save-reason'),
                       ),
                       if (state.capability?.canPlaySnippets != true)
@@ -272,10 +299,14 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                         ),
                       const SizedBox(height: 12),
                       const Text(
-                        'Prepared files remain private temporary assets. No files have been saved to your device destination yet.',
+                        'Private temporary preparation does not save a copy to your destination.',
                         style: TextStyle(color: mutedInk),
                       ),
                     ],
+                    if (state.exportBusy ||
+                        job.phase == JobPhase.exporting ||
+                        job.phase == JobPhase.exportReady)
+                      ExportPanel(controller: state),
                   ],
                 ],
               ),
@@ -357,7 +388,11 @@ class _EntryCardState extends State<_EntryCard>
                     : 'Include ${track.metadata.songTitle}${occurrences > 1 ? ' (all occurrences)' : ''}',
               ),
               value: track?.selected ?? entry.selected,
-              onChanged: state.commanding || state.editing || state.cancelling
+              onChanged:
+                  state.exportBusy ||
+                      state.commanding ||
+                      state.editing ||
+                      state.cancelling
                   ? null
                   : (value) {
                       if (track == null) {
@@ -382,10 +417,7 @@ class _EntryCardState extends State<_EntryCard>
                         label: track.metadata.songTitle,
                         child: OutlinedButton.icon(
                           key: Key('review-play-${entry.position}'),
-                          onPressed:
-                              state.capability?.canPlaySnippets == true &&
-                                  !state.commanding &&
-                                  !state.cancelling
+                          onPressed: state.canPlaySnippets
                               ? () => state.player.toggle(track.id)
                               : null,
                           icon: Icon(active ? Icons.pause : Icons.play_arrow),
@@ -399,7 +431,10 @@ class _EntryCardState extends State<_EntryCard>
                     child: OutlinedButton.icon(
                       key: Key('review-edit-${entry.position}'),
                       focusNode: _editFocus,
-                      onPressed: state.commanding || state.cancelling
+                      onPressed:
+                          state.exportBusy ||
+                              state.commanding ||
+                              state.cancelling
                           ? null
                           : () => edit(track),
                       icon: const Icon(Icons.edit_outlined),

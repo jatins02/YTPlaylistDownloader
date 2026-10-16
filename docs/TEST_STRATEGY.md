@@ -85,3 +85,23 @@ and STAGE4_RESULTS.json.
 Ordinary tests exercise transactional edit/cover rollback, revision conflicts and explicit rebase, pending-edit export fencing, interrupted-editor recovery, persisted selection (including unmapped failures), portable Unicode filename previews, single-player asynchronous races and UI lifecycle/focus behavior. The real review layout matrix includes six sizes, 200% text and keyboard insets. Asynchronous disk actions wait for their observable UI result; fixed delays do not establish persistence.
 
 The opt-in `scripts/test_stage5_audio.py` uses the pinned runtime and isolated PulseAudio 17.0 server/null sink. Its native integration test distinguishes captured equal-title 440/880 Hz PCM, bounds completion and checks actual switching/pause, renaming without changed audio, corrupt-preview rejection, atomic image failures/retry, human APIC bytes and SQLite restart recovery. No live provider or personal key is needed. This proves native Linux output, not physical speakers, manual chooser operation or other platforms. See STAGE5_GUIDE.md and current status for commands and remaining gates.
+
+
+## Stage 6 verification
+
+Default tests cover v5-to-v6 preservation, atomic complete publication, storage
+rollback, stale/abandoned worker fences, exact snapshot reuse, journal ownership,
+restart/interrupted receipts, unsafe manifests and unavailable runtime gates.
+Responsive save controls cover six viewport sizes, large text/keyboard insets,
+chooser cancellation, denial/retry, pending edits and success only after delivery.
+
+The opt-in pinned-runtime suite executes 65-second synthetic full tracks,
+distinct equal-title audio, exact human APIC bytes, portable collision suffixes,
+streamed ZIP/manifest verification, actual external MP3/ZIP transfer, corruption,
+source recheck, expiry and cancellation. Python tests exercise real ZIP corruption,
+no-clobber publication, SIGTERM mid-copy, inode/nonce-safe recovery, low space and
+permission errors. The actual Linux integration additionally uses registered
+plugins, the OS vault, SQLite, save controls, durable receipts and restart cleanup.
+Its chooser is injected; manual native-panel interaction and physical-device
+player/document checks remain separate. No live source/provider request or owner
+key is needed. See Stage 6 guide and status for actual results and platform limits.

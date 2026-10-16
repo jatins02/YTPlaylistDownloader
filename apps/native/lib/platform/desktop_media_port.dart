@@ -29,11 +29,21 @@ import 'native_codec.dart';
 import 'playlist_source.dart';
 import 'native_snippet_player.dart';
 import 'snippet_port.dart';
+import 'export_port.dart';
+import 'export_pipeline.dart';
+import 'export_destination.dart';
+import 'native_export_tools.dart';
+import '../data/export_repository.dart';
+import '../domain/device_export.dart';
 
 /// Linux adapter. The portable repository/codec contracts are not evidence that
 /// this process implementation can run on Android, iOS or Windows.
 final class DesktopMediaPort
-    implements ManagedMediaPort, EnrichingMediaPort, ReviewMediaPort {
+    implements
+        ManagedMediaPort,
+        EnrichingMediaPort,
+        ReviewMediaPort,
+        ExportMediaPort {
   DesktopMediaPort({
     required this.jobs,
     required this.workspace,
@@ -45,6 +55,8 @@ final class DesktopMediaPort
     this.namingProvider,
     this.artworkProvider,
     this.metadataTransport,
+    this.exportTools,
+    this.exportDestination = const LinuxExportDestination(),
   }) : source = source ?? YoutubePlaylistSource(tools);
   final JobRepository jobs;
   final PrivateWorkspace workspace;
@@ -56,6 +68,9 @@ final class DesktopMediaPort
   final NamingProvider? namingProvider;
   final ArtworkProvider? artworkProvider;
   final ProviderTransport? metadataTransport;
+  final NativeExportTools? exportTools;
+  final ExportDestination exportDestination;
+  ExportPipeline? _exports;
   EnrichmentPipeline? _enrichment;
   NativeTagAdapter? get tagAdapter => _enrichment == null
       ? null
@@ -153,6 +168,23 @@ final class DesktopMediaPort
         /* Audio remains available after missing metadata tools. */
       }
     }
+    if (exportTools != null && tagAdapter != null) {
+      final exporter = ExportPipeline(
+        jobs: jobs,
+        media: files,
+        tools: exportTools!,
+        tags: tagAdapter!,
+        destination: exportDestination,
+        stopPlayback: _player.stopSnippet,
+        budget: budget,
+      );
+      try {
+        await exporter.initialize();
+        _exports = exporter;
+      } on AppFailure {
+        /* Source/review remain usable when export verification is unavailable. */
+      }
+    }
     for (final job in await jobs.listJobs()) {
       if ([JobPhase.enumerating, JobPhase.processing].contains(job.phase)) {
         await store.stop(job.id);
@@ -185,7 +217,8 @@ final class DesktopMediaPort
     await EnrichmentRepository(jobs).pruneCache();
     final cutoff = DateTime.now().toUtc().subtract(const Duration(hours: 48));
     for (final job in await jobs.listJobs()) {
-      if (job.id == _activeJob ||
+      if (job.id == _exports?.jobId ||
+          job.id == _activeJob ||
           job.id == _player.jobId ||
           job.id == _reviewJob ||
           job.createdAt.isAfter(cutoff) ||
@@ -203,7 +236,16 @@ final class DesktopMediaPort
               FileSystemEntityType.notFound) {
         continue;
       }
-      await store.stop(job.id, cancel: true, failure: FailureCode.expiredMedia);
+      if (job.phase == JobPhase.exportReady) {
+        await ExportRepository(jobs).expireCompleted(job.id);
+      } else {
+        await store.stop(
+          job.id,
+          cancel: true,
+          failure: FailureCode.expiredMedia,
+          preserveReview: true,
+        );
+      }
       final current = await jobs.getJob(job.id);
       if (current.phase == JobPhase.cancelled) {
         await discardPrivateMedia(job.id);
@@ -219,6 +261,7 @@ final class DesktopMediaPort
     canPrepareSnippets: _initialized && !_closed,
     canEnrich: _initialized && !_closed && _enrichment != null,
     canTag: _initialized && !_closed && _enrichment != null,
+    canExport: _initialized && !_closed && _exports != null,
     canPlaySnippets: _initialized && !_closed && await _player.available(),
     canImportArtwork: _initialized && !_closed && _enrichment != null,
   );
@@ -235,6 +278,7 @@ final class DesktopMediaPort
     }
     if (_closed ||
         _activeJob != null ||
+        _exports?.busy == true ||
         _retentionWork != null ||
         _reviewTask != null) {
       return Future.error(
@@ -655,7 +699,19 @@ final class DesktopMediaPort
 
   Future<void> _stop(String jobId, {required bool cancel}) async {
     try {
+      final exporter = _exports;
+      if (exporter != null && exporter.jobId == jobId) {
+        await exporter.stop(jobId);
+      }
+      // Queue the media fence before any extra read can admit a late provider
+      // result. Completed publications have a separate cancellation transition.
       await store.stop(jobId, cancel: cancel);
+      if (cancel) {
+        final current = await jobs.getJob(jobId);
+        if (current.phase == JobPhase.exportReady) {
+          await jobs.transition(jobId, current.revision, JobPhase.cancelled);
+        }
+      }
     } finally {
       final processing = _activeJob == jobId ? _task : null;
       final reviewing = _reviewJob == jobId ? _reviewTask : null;
@@ -743,7 +799,10 @@ final class DesktopMediaPort
         ),
       );
     }
-    if (_activeJob != null || _retentionWork != null || _reviewTask != null) {
+    if (_activeJob != null ||
+        _exports?.busy == true ||
+        _retentionWork != null ||
+        _reviewTask != null) {
       return Future.error(
         const AppFailure(
           FailureCode.conflict,
@@ -827,11 +886,46 @@ final class DesktopMediaPort
     }
   }
 
+  ExportPipeline _exporter() {
+    if (!_initialized || _closed || _exports == null) {
+      throw const AppFailure(
+        FailureCode.mediaUnavailable,
+        'Verified device export is unavailable on this runtime. Your review is kept.',
+      );
+    }
+    if (_activeJob != null ||
+        _retentionWork != null ||
+        _reviewTask != null ||
+        _discardTasks.isNotEmpty) {
+      throw const AppFailure(
+        FailureCode.conflict,
+        'Wait for preparation, edits or cleanup before saving.',
+      );
+    }
+    return _exports!;
+  }
+
   @override
-  Future<void> export(ExportSnapshot snapshot) async => throw const AppFailure(
-    FailureCode.mediaUnavailable,
-    'Final publication and device saving are not implemented until Stage 6.',
-  );
+  Future<ExportPublication?> currentExport(String jobId) =>
+      ExportRepository(jobs).current(jobId);
+  @override
+  Future<ExportPublication> prepareExport(String jobId, int revision) =>
+      _exporter().prepare(jobId, revision);
+  @override
+  Future<DeliveryReceipt?> deliverExport(
+    ExportPublication publication,
+    String fileId,
+  ) => _exporter().deliver(publication, fileId);
+  @override
+  Future<void> stopExport(String jobId) async => _exports?.stop(jobId);
+  @override
+  Future<void> export(ExportSnapshot snapshot) async {
+    await _exporter().prepare(
+      snapshot.jobId,
+      snapshot.jobRevision,
+      frozen: snapshot,
+    );
+  }
 
   @override
   Future<void> playSnippet(
@@ -843,6 +937,7 @@ final class DesktopMediaPort
     if (!_initialized ||
         _closed ||
         _activeJob != null ||
+        _exports?.busy == true ||
         _retentionWork != null ||
         _discardTasks.isNotEmpty) {
       return Future.error(
@@ -907,6 +1002,7 @@ final class DesktopMediaPort
   ) {
     if (_closed ||
         _activeJob != null ||
+        _exports?.busy == true ||
         _retentionWork != null ||
         _reviewTask != null ||
         _discardTasks.isNotEmpty) {
@@ -1027,12 +1123,17 @@ final class DesktopMediaPort
     _reviewScope?.cancel();
     try {
       try {
-        await _player.close();
+        final exporting = _exports?.jobId;
+        if (exporting != null) await _exports!.stop(exporting);
       } finally {
         try {
-          await _reviewTask;
-        } on AppFailure {
-          /* Interrupted edits remain recoverable. */
+          await _player.close();
+        } finally {
+          try {
+            await _reviewTask;
+          } on AppFailure {
+            /* Interrupted edits remain recoverable. */
+          }
         }
       }
     } finally {

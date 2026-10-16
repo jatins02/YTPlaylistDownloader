@@ -152,10 +152,23 @@ final class SongMetadata {
   final String? version;
   final bool needsReview;
 
-  String get songTitle =>
-      version != null && !title.toLowerCase().contains(version!.toLowerCase())
-      ? '$title ($version)'
-      : title;
+  String get songTitle {
+    final label = version;
+    if (label == null) return title;
+    final word = RegExp(r'[\p{L}\p{M}\p{N}]', unicode: true);
+    final start = word.hasMatch(String.fromCharCode(label.runes.first))
+        ? r'(^|[^\p{L}\p{M}\p{N}])'
+        : '';
+    final end = word.hasMatch(String.fromCharCode(label.runes.last))
+        ? r'($|[^\p{L}\p{M}\p{N}])'
+        : '';
+    final marker = RegExp(
+      '$start${RegExp.escape(label)}$end',
+      caseSensitive: false,
+      unicode: true,
+    );
+    return marker.hasMatch(title) ? title : '$title ($label)';
+  }
 
   String get displayName {
     final main = artists.isEmpty ? 'Unknown Artist' : artists.join(', ');

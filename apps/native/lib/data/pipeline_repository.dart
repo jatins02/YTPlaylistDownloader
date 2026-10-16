@@ -37,11 +37,15 @@ final class PipelineRepository {
     AttemptToken token,
     Future<T> Function(Transaction) operation,
   ) => _write((tx) async {
-    await _token(tx, token);
+    await _token(tx, token, allowExport: token.stage == TaskStage.export);
     return operation(tx);
   });
 
-  Future<void> _token(DatabaseExecutor tx, AttemptToken token) async {
+  Future<void> _token(
+    DatabaseExecutor tx,
+    AttemptToken token, {
+    bool allowExport = false,
+  }) async {
     final rows = await tx.rawQuery(
       '''SELECT a.status, a.generation, a.job_id, a.track_id, a.stage,
       j.phase AS job_phase, t.phase AS track_phase FROM attempts a
@@ -60,12 +64,14 @@ final class PipelineRepository {
         row['job_id'] != token.jobId ||
         row['track_id'] != token.trackId ||
         row['stage'] != token.stage.name ||
-        [
-          'cancelled',
-          'failed',
-          'exporting',
-          'exportReady',
-        ].contains(row['job_phase']) ||
+        (allowExport
+            ? token.trackId != null || row['job_phase'] != 'exporting'
+            : [
+                'cancelled',
+                'failed',
+                'exporting',
+                'exportReady',
+              ].contains(row['job_phase'])) ||
         ['cancelled', 'failed'].contains(row['track_phase'])) {
       throw const AppFailure(
         FailureCode.conflict,
@@ -398,9 +404,22 @@ final class PipelineRepository {
     String jobId, {
     bool cancel = false,
     FailureCode? failure,
+    bool preserveReview = false,
   }) => _write((tx) async {
     final rows = await tx.query('jobs', where: 'id = ?', whereArgs: [jobId]);
     if (rows.isEmpty) return;
+    // Retention must decide inside this transaction: an editor may have opened
+    // after its sweep read the job. Explicit user Stop/Cancel still fences it.
+    if (preserveReview &&
+        (await tx.query(
+          'attempts',
+          columns: ['id'],
+          where: "job_id=? AND stage='review' AND status='running'",
+          whereArgs: [jobId],
+          limit: 1,
+        )).isNotEmpty) {
+      return;
+    }
     if ([
       'cancelled',
       'exporting',

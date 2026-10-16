@@ -117,7 +117,11 @@ final class PrivateWorkspace {
       installTool('process_guard.py', bytes);
 
   Future<File> installTool(String name, Uint8List bytes) async {
-    if (!{'process_guard.py', 'metadata_tools.py'}.contains(name)) {
+    if (!{
+      'process_guard.py',
+      'metadata_tools.py',
+      'export_tools.py',
+    }.contains(name)) {
       throw const AppFailure(FailureCode.invalidPath, 'Unknown bundled tool.');
     }
     if (_closed || bytes.length > 16384) {
