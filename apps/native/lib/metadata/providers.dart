@@ -298,11 +298,12 @@ final class MusicBrainzArtworkProvider implements ArtworkProvider {
     if (title is! String || credits is! List) return false;
     final artists = <String>[];
     for (final credit in credits) {
-      if (credit is Map &&
-          credit['artist'] is Map &&
-          credit['artist']['name'] is String) {
-        artists.add(matchText(credit['artist']['name'] as String));
+      if (credit is! Map ||
+          credit['artist'] is! Map ||
+          credit['artist']['name'] is! String) {
+        return false;
       }
+      artists.add(matchText(credit['artist']['name'] as String));
     }
     final expected = [
       ...metadata.artists,
