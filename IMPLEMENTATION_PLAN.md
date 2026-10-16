@@ -109,6 +109,8 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** sample exports/open on actual Android, iPhone and laptop; selected files/tags/covers are correct; equal names survive; repeat Save reuses a completed revision; interrupted writes do not count as success; denied permission, picker cancellation and low storage recover. Files export is not automatic insertion into every Music library.
 
+**Implementation record (2026-10-16):** Stage 6 is implemented for the verified Linux development runtime: current-revision freezing, full tagged MP3 derivatives with exact cover/audio readback, Unicode/casefold collision-safe names, streamed verified ZIP/manifest publication and native destination save actions. Private preparation and confirmed destination receipts are separate durable states. Repeated Save reuses the completed snapshot; Stop/restart, low storage, denied permission, existing destinations and corrupt artifacts preserve recovery. Owned staging cleanup and private export expiry preserve external copies. Synthetic 65-second full tracks, equal-title audio, actual destination bytes and native SQLite/vault/restart are exercised. The native chooser boundary is injected in automated acceptance; manual panel/player checks and actual Android/iPhone/Windows media/document execution remain open. Full multi-platform Stage 6 acceptance is not claimed. See [Stage 6 guide](docs/STAGE6_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
+
 ## Stage 7 — Device lifecycle, accessibility and performance
 
 **Goal:** Measured reliable behavior under realistic device interaction and resource limits.
