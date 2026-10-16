@@ -54,9 +54,10 @@ class _DraftsScreenState extends State<DraftsScreen> {
   }
 
   Future<void> _save() async {
-    final saved = await widget.controller.saveDraft(input.text);
+    final submitted = input.text;
+    final saved = await widget.controller.saveDraft(submitted);
     if (!mounted || !saved) return;
-    input.clear();
+    if (input.text == submitted) input.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Playlist draft saved on this device.')),
     );
@@ -144,7 +145,7 @@ class _DraftsScreenState extends State<DraftsScreen> {
                   Text(
                     widget.media == null
                         ? 'Downloads and previews are not enabled in this foundation build.'
-                        : 'Open a saved playlist to process it with a verified local media runtime. Naming and covers use your configured key and verified runtime. Listening, editing and final save follow in later stages.',
+                        : 'Open a saved playlist to see the processing, review and device-save actions available on this device. Naming uses your own configured AI key.',
                     style: TextStyle(color: mutedInk),
                   ),
                   const SizedBox(height: 16),
