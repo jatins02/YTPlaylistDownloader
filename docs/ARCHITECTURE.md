@@ -128,3 +128,27 @@ Native image selection uses pinned `file_selector`; bounded source bytes are
 normalized by the existing guarded image worker and registered only by a current
 review token. Stage 6 still owns publication, collision allocation, ZIPs and OS
 destination transfer. See [Stage 5 evidence and platform limits](STAGE5_GUIDE.md).
+
+
+## Stage 6 verified publication and delivery
+
+Schema v6 appends export publication records and destination journals without
+changing shipped migrations. ExportPipeline uses the existing frozen selection,
+NativeTagAdapter and current export attempt token. It stages new full derivatives
+under immutable file IDs, allocates bounded NFC names with NFKC/casefold collision
+checks, then streams and verifies the complete ZIP and manifest. One transaction
+publishes the bundle/record, completes the attempt and advances to exportReady.
+Private preparation is separate from destination success. Reuse rechecks hashes
+and ZIP entries; edits require returning to review and freezing another revision.
+
+LinuxExportDestination uses the pinned native file-selector save panel. The
+supervised export worker journals staging intent before creation, binds the exact
+inode/device and random ownership nonce before copying, fsyncs and reads back the
+bounded full bytes, then atomically links the verified open inode without
+replacement. Only its confirmed result creates a complete receipt. Recovery
+fences interrupted deliveries and cleans the exact owned staging file; it never
+scans a common download folder or removes external copies. Active export work is
+excluded from retention, and completed private bundles expire with job bytes.
+The Linux local filesystem requires hard links and user xattrs. Other-platform
+media/export remains unavailable; document APIs on phones, physical players and
+manual save-panel interaction remain acceptance gates. See STAGE6_GUIDE.md.

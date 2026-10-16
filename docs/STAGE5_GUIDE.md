@@ -3,7 +3,8 @@
 Implemented for the verified Linux development runtime on 2026-10-16. Real
 playback, metadata/cover editing and include/exclude controls use durable jobs
 and private assets. The fictional Stage 2 journey remains separate. Final MP3/ZIP
-publication and destination transfer are Stage 6; Save to Device stays disabled.
+publication and destination transfer are now implemented for Linux in
+[Stage 6](STAGE6_GUIDE.md); their platform/manual gates remain separate.
 
 ## Use the real review
 
@@ -58,9 +59,9 @@ checked before playback; generation checks prevent stale starts/progress.
 
 ## State and concurrency
 
-Schema v5 remains current; its stage column supports the appended `review`
-attempt kind without rewriting migrations. A running editor token blocks export
-freezing. Save requires that token, its captured/rebased revision and the current
+Review uses the Stage 4 v5 tables; current schema v6 adds Stage 6 publication/
+delivery records. The stage column supports `review` without rewriting migrations.
+A running editor token blocks export freezing. Save requires that token, its captured/rebased revision and the current
 track. User images publish in the same transaction as the edited metadata;
 discarded/failed candidates remain private and are cleaned safely. Only changed
 fields gain human override precedence. Provider suggestions cannot overwrite
@@ -68,8 +69,11 @@ saved human fields or a human cover/removal choice.
 
 Native playback replacements wait for old output to terminate. Media preparation,
 close and cancellation stop supervised playback; retention skips an active short
-preview/image save and retries later. Renaming metadata leaves the immutable
-track/audio/preview asset IDs and bytes intact. No control freezes an export to
+preview, open review token or image save and retries later. The open-token check
+and expiry decision share one transaction. Play/seek controls wait for active
+export, preparation or cancellation; Stop remains available. Late pause/seek
+results cannot overwrite a newer playback request. Renaming metadata leaves the
+immutable track/audio/preview asset IDs and bytes intact. No control freezes an export to
 bypass pending edits or declares a device save complete.
 
 ## Verification
@@ -124,8 +128,9 @@ speaker listening. Manual OS file-chooser interaction, physical-speaker listenin
 and phone/device keyboard/lifecycle/accessibility QA remain outstanding. Widget
 tests exercise chooser cancellation through an injected picker; plugin compilation
 does not prove manual dialog interaction. No unavailable platform or device test
-is marked passed. Stage 6 must still verify complete tagged MP3/ZIP publication,
-collision-safe filenames and successful destination transfer before saving.
+is marked passed. Stage 6 verifies complete tagged MP3/ZIP publication and
+Linux destination transfer before saving; actual phone/Windows and manual
+picker/player gates remain open. See [the Stage 5–6 review](CODE_REVIEW_STAGE56.md).
 
 Primary adapter references: [FFmpeg PulseAudio output](https://ffmpeg.org/ffmpeg-devices.html#pulse-1)
 and [Flutter's file_selector](https://pub.dev/packages/file_selector).
