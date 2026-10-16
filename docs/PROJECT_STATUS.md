@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-10-16.
+Updated: 2026-10-17.
 
 ## Current state
 
@@ -8,8 +8,8 @@ Updated: 2026-10-16.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
-| 0 — Feasibility | In progress | 78 Python tests pass locally (58 at the last published CI revision); source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
-| 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 182 Linux tests, 173 Windows tests (1 symlink test skipped); native plugin/restart checks and debug/release builds pass on both |
+| 0 — Feasibility | In progress | 78 Python tests pass locally and in CI; source runs and live Groq/artwork checks pass; native device/player/distribution gates open |
+| 1 — Native foundation | Linux accepted; Windows CI foundation verified, manual QA pending | GitHub CI: 208 Linux tests, 199 Windows tests (1 privilege-dependent symlink test skipped); native plugin/restart checks and release builds pass on both |
 | 2 — Design/fixture flow | Complete for fixture UI | Responsive journey; 80 native tests; rendered review; Linux integration/build pass |
 | 3 — Device pipeline | Linux accepted; other platform gates open | Real native source/codecs, historical live sample, recovery/quotas/cleanup; review passes 132 native and 41 Python tests |
 | 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
@@ -444,11 +444,11 @@ The real review now prepares a frozen, complete private export and exposes nativ
 
 Destination preparation is distinct from a successful save. The native save panel selects a local path; a supervised worker records intent before staging, binds the exact inode/device/ownership nonce before copying, checks free space, streams/fsyncs/readbacks the complete bytes and atomically links the verified open inode without overwriting existing files. Only confirmation creates a durable saved-copy receipt. Picker cancellation, permission denial, low space, Stop, failed verification and interruption keep recovery. Startup cleans only exact journalled owned staging files, including an interrupted unbound intent; it never scans Downloads or deletes a destination copy. Private export expiry/discard preserves external files. Existing audio caps remain intact, while archives use the bounded aggregate capacity within job/workspace quotas.
 
-Final source checks: **226 Flutter tests with the pinned real-media runtime, 203 ordinary Flutter tests and 77 Python tests pass, zero skipped on Linux**. Formatting checks 92 files unchanged; static analysis reports no issues. The opt-in export widget/render run passes ten tests, including six widths at 200% text and 160 px keyboard insets. All five actual Linux native integration cases pass (foundation, pipeline, enrichment, private playback/review and export). The release build and dotenv/literal-key bundle scan pass. Commands and sanitized evidence are in [STAGE6_GUIDE.md](STAGE6_GUIDE.md) and [STAGE6_RESULTS.json](STAGE6_RESULTS.json); reviewed fictional renders are linked from the guide.
+Initial Stage 6 source checks: **226 Flutter tests with the pinned real-media runtime, 203 ordinary Flutter tests and 77 Python tests pass, zero skipped on Linux**. Formatting checks 92 files unchanged; static analysis reports no issues. The opt-in export widget/render run passes ten tests, including six widths at 200% text and 160 px keyboard insets. All five actual Linux native integration cases pass (foundation, pipeline, enrichment, private playback/review and export). The release build and dotenv/literal-key bundle scan pass. Commands and sanitized evidence are in [STAGE6_GUIDE.md](STAGE6_GUIDE.md) and [STAGE6_RESULTS.json](STAGE6_RESULTS.json); reviewed fictional renders are linked from the guide.
 
 The checks demonstrate real 65-second distinct full tracks, cover/tag/ZIP readback, actual external destination bytes, native SQLite/vault/restart, interrupted-staging recovery and external-copy-safe expiry/discard. No live provider/source request or owner `.env` key was used. No system packages or audio service were installed/changed; official prerequisites were extracted into an isolated temporary toolchain.
 
-**GitHub publication is blocked in this session:** HTTPS Git has no credentials, the connected GitHub integration rejects writes with HTTP 403, and no enabled browser is exposed. The complete tested change is committed locally for an authenticated push. No new Stage 6 workflow run or CI pass is claimed; after pushing, all three Foundation jobs must pass. Previous Stage 5 CI evidence does not prove Stage 6.
+The complete Stage 6 implementation and subsequent review fixes were published through [PR #2](https://github.com/jatins02/YTPlaylistDownloader/pull/2) and merged into `main` as `10164cadc77490efa202a68304477556a3fbc3fa`. The merged tree exactly equals tested local commit `4ccb02c` (tree `2cc8c8ed649d01ff6b0e8d66acd34792a5963158`). Publication and CI evidence follows below.
 
 The implementation is Linux-only. Automated native acceptance injects the chooser boundary with test-owned paths; manual native-panel interaction, physical-player checks and actual Android/iPhone/Windows media/document execution remain unverified. Linux local destinations require hard links and user xattrs; unsupported filesystems fail safely. No SDK/JDK/ADB/USB or Mac/iPhone execution path is exposed here. Independent-phone requirements remain in scope, and full Stage 6 multi-platform acceptance is **not** claimed. See [STAGE6_GUIDE.md](STAGE6_GUIDE.md) for behavior, state, commands and remaining gates.
 
@@ -475,9 +475,30 @@ scan pass. Native export acceptance uses the real cancellation API and proves
 saved external MP3/ZIP copies survive private discard. No live provider request
 or owner `.env` access was needed.
 
-The fixes and prior Stage 6 implementation are committed locally. GitHub push/CI
-remains blocked by missing HTTPS/SSH authentication, connector write denial (403)
-and no exposed browser. Remote `main` is unchanged at the last read; no new CI
-success is inferred. Publish through an authenticated session, then require all
-three Foundation jobs to pass. Manual native-picker/physical-player and
-Windows/Android/iPhone media/export gates remain open.
+The fixes and prior Stage 6 implementation are published on `main` through PR #2.
+Manual native-picker/physical-player and Windows/Android/iPhone media/export
+gates remain open.
+
+### Stage 6 GitHub publication and CI — 2026-10-17
+
+The authorized signed-in browser published all 49 changed files on the isolated
+`stage6-review` branch. Its complete tree and the subsequent squash merge
+`10164ca` exactly match tested local commit `4ccb02c`; intermediate upload
+commits never changed `main`. Local implementation/review commits are retained
+on `backup/stage56-local-4ccb02c`. Local main was aligned only after a clean
+worktree and exact merged-tree equality were established.
+
+[Branch run #57](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913338077)
+and [PR run #58](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913473773)
+passed all six checks before merging. Each run passed 208 ordinary Linux tests,
+199 Windows tests with one existing privilege-dependent symlink skip, 78 Python
+tests, native desktop plugin/restart integration, formatting, analysis, release
+builds and credential scans. No workflow or dependency pin was weakened.
+
+The merged `main` commit independently passed all three jobs in
+[Foundation run #59](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38961141438).
+CI exercises ordinary tests
+and native foundation integration; the 25 opt-in real-media cases and the
+pipeline/enrichment/private-audio/export native acceptance ran separately on
+Linux as recorded above. Windows foundation CI does not prove media/export
+execution or close phone/manual device gates.

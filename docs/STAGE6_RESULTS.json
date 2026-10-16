@@ -17,18 +17,18 @@
     "format": "92 files; unchanged",
     "analyze": "no issues",
     "flutter_runtime_tests": {
-      "passed": 226,
+      "passed": 233,
       "skipped": 0
     },
     "flutter_default_tests": {
-      "passed": 203,
+      "passed": 208,
       "skipped": 0
     },
     "export_widget_with_renders": {
       "passed": 10
     },
     "python_tests": {
-      "passed": 77,
+      "passed": 78,
       "skipped": 0
     },
     "native_foundation": {
@@ -95,11 +95,43 @@
     "Non-Linux-filesystem destination support without hard links/user xattrs"
   ],
   "github": {
-    "published": false,
-    "new_workflow_run": null,
-    "git_authentication": "Terminal has no HTTPS credentials; push dry-run fails with terminal prompts disabled",
-    "connector": "GitHub create_blob rejected: HTTP 403 Resource not accessible by integration",
-    "browser": "No enabled browser exposed; iab unavailable",
-    "next_action": "Push the local Stage 6 commit from an authenticated session, then inspect all three Foundation jobs. No new CI pass is claimed."
-  }
+    "published": true,
+    "pull_request": "https://github.com/jatins02/YTPlaylistDownloader/pull/2",
+    "implementation_commit": "10164cadc77490efa202a68304477556a3fbc3fa",
+    "branch_head": "979382323bc665946002a44a3fe3fac6fb6499ae",
+    "publication_method": "Authorized signed-in browser; isolated branch and complete squash merge after all six checks passed",
+    "tested_tree_matches_branch_and_merge": true,
+    "branch_workflow": {
+      "url": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913338077",
+      "conclusion": "success"
+    },
+    "pr_workflow": {
+      "url": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913473773",
+      "conclusion": "success"
+    },
+    "main_workflow": {
+      "url": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38961141438",
+      "conclusion": "success"
+    },
+    "ci_tests": {
+      "linux": {
+        "passed": 208,
+        "skipped": 0
+      },
+      "windows": {
+        "passed": 199,
+        "skipped": 1,
+        "skip_reason": "Existing symlink test requires Windows developer/admin privileges"
+      },
+      "python": {
+        "passed": 78,
+        "skipped": 0
+      }
+    },
+    "ci_boundary": "Ordinary tests and native foundation integration; opt-in real-media, pipeline, enrichment, private-audio and export native acceptance executed separately on Linux. Windows/phone media/export and manual device gates remain open."
+  },
+  "review_date": "2026-10-16",
+  "publication_date": "2026-10-17",
+  "reviewed_local_commit": "4ccb02c",
+  "tested_tree": "2cc8c8ed649d01ff6b0e8d66acd34792a5963158"
 }

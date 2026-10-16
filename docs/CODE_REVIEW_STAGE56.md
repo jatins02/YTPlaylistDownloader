@@ -44,7 +44,7 @@ Destination directory descriptors close even when staging cleanup fails. The
 read-only worker helper no longer has an unused read/write mode branch.
 
 Export state fixtures use native paths under their test-owned temporary root.
-Windows execution remains pending until CI.
+Windows foundation execution now passes CI; native media/export execution remains unverified.
 
 ## Regression and acceptance evidence
 
@@ -85,15 +85,22 @@ changed. Existing Stage 3 runtime pins and Flutter 3.47.5/Dart 3.13.4 are retain
 
 ## Publication and remaining gates
 
-Publication is blocked in this session: HTTPS Git has no credentials (the push
-preflight cannot read a username with terminal prompts disabled), the GitHub
-connector rejects writes with HTTP 403, and no browser is exposed. The SSH agent
-has no identities and no standard identity file is available; host trust was not
-weakened. Remote `main` remains at `b87d62d` at the last read. The tested Stage 6
-implementation and this review are committed locally for an authenticated push.
-No new workflow run or CI pass is claimed. After publication, inspect all three
-Foundation jobs (Linux, Windows and Existing media contracts); local Linux
-acceptance alone does not establish their remote result.
+The complete reviewed change was published through [PR #2](https://github.com/jatins02/YTPlaylistDownloader/pull/2)
+and squash-merged into `main` as `10164cadc77490efa202a68304477556a3fbc3fa`.
+The branch and merged tree exactly equal tested local commit `4ccb02c`
+(tree `2cc8c8ed649d01ff6b0e8d66acd34792a5963158`). The signed-in browser
+performed authorized publication; local commits remain on
+`backup/stage56-local-4ccb02c`.
+
+[Branch run #57](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913338077)
+and [PR run #58](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38913473773)
+passed all six checks before merge: 208 ordinary Linux tests, 199 Windows tests
+with one privilege-dependent symlink skip, 78 Python tests, native desktop
+foundation/restart integration, release builds, formatting, analysis and secret
+scans. The merged main commit independently passed all three jobs in
+[Foundation run #59](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/38961141438).
+CI does not run the opt-in real-media/private-audio/export suites;
+their separate local Linux evidence is recorded above.
 
 Manual Linux save-panel/physical-player checks and Windows/Android/iPhone
 media/export execution remain unverified. Native destination acceptance injects
