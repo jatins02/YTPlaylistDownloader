@@ -273,6 +273,7 @@ Future<Map<String, Object?>> checkKnownArtwork(
     await request.writeAsString(
       jsonEncode({
         'metadata': metadata.toJson(),
+        'song_title': metadata.songTitle,
         'track_id': const Uuid().v4(),
         'track_revision': 0,
         'video_id': 'abcdefghijk',
@@ -292,6 +293,7 @@ Future<Map<String, Object?>> checkKnownArtwork(
     ]);
     row['embedded_cover_verified'] =
         tagged['cover_sha256'] == verified['sha256'] &&
+        tagged['song_title'] == metadata.songTitle &&
         tagged['id3_version'] == 3;
     final codec = NativeCodec(tools, const PipelineLimits());
     final original = await codec.verify(
