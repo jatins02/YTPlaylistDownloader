@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
@@ -19,6 +20,42 @@ void main() {
     await workspace.close();
     await temporary.delete(recursive: true);
   });
+
+  test('database paths reject directories and special files before opening storage', () async {
+    await Directory(workspace.databasePath).create();
+    await expectLater(
+      workspace.verifyDatabasePaths(),
+      throwsA(isA<AppFailure>()),
+    );
+    await Directory(workspace.databasePath).delete();
+    if (Platform.isLinux) {
+      expect(
+        (await Process.run('mkfifo', [workspace.databasePath])).exitCode,
+        0,
+      );
+      await expectLater(
+        workspace.verifyDatabasePaths(),
+        throwsA(isA<AppFailure>()),
+      );
+    }
+  });
+
+  test(
+    'bundled tool paths reject directories with a structured path error',
+    () async {
+      await Directory('${workspace.root.path}/metadata_tools.py').create();
+      await expectLater(
+        workspace.installTool('metadata_tools.py', Uint8List.fromList([1])),
+        throwsA(
+          isA<AppFailure>().having(
+            (e) => e.code,
+            'code',
+            FailureCode.invalidPath,
+          ),
+        ),
+      );
+    },
+  );
 
   test('jobs isolate immutable asset paths without using song names', () async {
     final first = const Uuid().v4();
