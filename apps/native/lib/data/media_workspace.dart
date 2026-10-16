@@ -14,6 +14,12 @@ final class MediaWorkspace {
   final PrivateWorkspace workspace;
   final PipelineLimits limits;
 
+  /// Archives aggregate multiple MP3s; individual audio keeps its original cap.
+  int get maxArchiveBytes {
+    final aggregate = limits.maxFileBytes * limits.maxTracks;
+    return aggregate < limits.maxJobBytes ? aggregate : limits.maxJobBytes;
+  }
+
   Future<Directory> work(String jobId, String attemptId) async {
     PrivatePaths.validateId(attemptId);
     final job = await workspace.ensureJob(jobId);
@@ -52,7 +58,10 @@ final class MediaWorkspace {
       }
       if (entity is File) {
         final size = await entity.length();
-        if (size > limits.maxFileBytes) {
+        final archive = RegExp(
+          r'/(?:exports/[a-f0-9-]{36}|\.work/[a-f0-9-]{36}/bundle)/[a-f0-9-]{36}\.zip$',
+        ).hasMatch(p.posix.normalize(entity.path.replaceAll('\\', '/')));
+        if (size > (archive ? maxArchiveBytes : limits.maxFileBytes)) {
           throw const AppFailure(
             FailureCode.limitExceeded,
             'A private media file exceeded its byte limit.',

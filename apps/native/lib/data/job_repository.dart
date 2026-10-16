@@ -130,7 +130,13 @@ final class JobRepository implements DraftStore {
 
   Future<void> _editable(DatabaseExecutor tx, String jobId) async {
     final job = await _requireJob(tx, jobId);
-    if (job.phase == JobPhase.exporting || job.phase == JobPhase.cancelled) {
+    final deliveries = await tx.rawQuery(
+      "SELECT d.id FROM export_deliveries d JOIN exports e ON e.id=d.export_id WHERE e.job_id=? AND d.status='writing' LIMIT 1",
+      [jobId],
+    );
+    if (deliveries.isNotEmpty ||
+        job.phase == JobPhase.exporting ||
+        job.phase == JobPhase.cancelled) {
       throw const AppFailure(
         FailureCode.conflict,
         'This draft is locked or cancelled.',
@@ -259,11 +265,22 @@ final class JobRepository implements DraftStore {
               'Create a frozen export snapshot before saving.',
             );
           }
+          if (job.phase == JobPhase.exportReady) {
+            final writing = await tx.rawQuery(
+              "SELECT d.id FROM export_deliveries d JOIN exports e ON e.id=d.export_id WHERE e.job_id=? AND d.status='writing' LIMIT 1",
+              [id],
+            );
+            if (writing.isNotEmpty) {
+              throw const AppFailure(
+                FailureCode.conflict,
+                'Stop the active device save before changing this review.',
+              );
+            }
+          }
           if (next == JobPhase.exportReady) {
-            final completed = await tx.query(
-              'exports',
-              where: 'job_id = ? AND status = ? AND job_revision = ?',
-              whereArgs: [id, 'complete', job.revision - 1],
+            final completed = await tx.rawQuery(
+              "SELECT e.id FROM exports e JOIN export_publications p ON p.export_id=e.id WHERE e.job_id=? AND e.status='complete' AND e.job_revision=?",
+              [id, job.revision - 1],
             );
             if (completed.isEmpty) {
               throw const AppFailure(
