@@ -82,9 +82,9 @@ def tag(source, destination, request_path):
     source = regular(source, MAX_AUDIO)
     request = json.loads(regular(request_path, 65536).read_text(encoding='utf-8'))
     metadata = request['metadata']
-    title = metadata['title']
-    if metadata['version'] and metadata['version'].lower() not in title.lower():
-        title += ' (' + metadata['version'] + ')'
+    # The native domain owns semantic version formatting for UI, filenames and
+    # tags. Read back this exact frozen value rather than recomputing it here.
+    title = request['song_title']
     artists = metadata['artists'] or ['Unknown Artist']
     for value in [title, *artists, *metadata['featured_artists'], metadata['album'] or '']:
         if not isinstance(value, str) or len(value) > 1000 or any(ord(c) < 32 for c in value):
@@ -132,6 +132,7 @@ def tag(source, destination, request_path):
     if before != audio_digest(destination) or MP3(destination).info.length <= 0:
         raise ValueError('audio changed')
     result = {'snapshot_hash': request['snapshot_hash'], 'track_id': request['track_id'],
+              'song_title': str(actual['TIT2']),
               'track_revision': request['track_revision'], 'audio_sha256': before,
               'cover_sha256': hashlib.sha256(images[0].data).hexdigest() if images else None,
               'sha256': hashlib.sha256(Path(destination).read_bytes()).hexdigest(),
