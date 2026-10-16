@@ -11,6 +11,8 @@ from pathlib import Path
 import socket
 import re
 import time
+import queue
+import threading
 import unicodedata
 from urllib.parse import quote, urljoin, urlsplit, urlunsplit
 
@@ -54,7 +56,7 @@ def artwork_id(value: object) -> str:
     return value
 
 
-def validate_artwork_url(url: str, resolver=socket.getaddrinfo) -> None:
+def validate_artwork_url(url: str, resolver=socket.getaddrinfo, *, timeout: float = 5) -> list[str]:
     try:
         parsed = urlsplit(url)
         host = parsed.hostname or ""
@@ -62,11 +64,38 @@ def validate_artwork_url(url: str, resolver=socket.getaddrinfo) -> None:
     except ValueError:
         raise CheckError("ARTWORK_URL_INVALID", "Invalid artwork URL.") from None
     allowed = host in {"musicbrainz.org", "coverartarchive.org", "archive.org"} or host.endswith(".archive.org")
-    if parsed.scheme != "https" or not allowed or port not in (None, 443) or parsed.username or parsed.password:
+    if parsed.scheme != "https" or not allowed or port not in (None, 443) or parsed.username or parsed.password or parsed.fragment:
         raise CheckError("ARTWORK_URL_INVALID", "Artwork URL is outside the trusted providers.")
-    addresses = resolver(host, 443, type=socket.SOCK_STREAM)
-    if not addresses or any(not ipaddress.ip_address(item[4][0]).is_global for item in addresses):
+    # OS DNS resolution has no socket timeout. Do not let it stall the bounded
+    # CLI; a late daemon result is discarded and never opens a connection.
+    resolved = queue.Queue(maxsize=1)
+    def lookup():
+        try:
+            resolved.put(resolver(host, 443, type=socket.SOCK_STREAM))
+        except Exception:
+            resolved.put(None)
+    threading.Thread(target=lookup, daemon=True).start()
+    try:
+        records = resolved.get(timeout=timeout)
+    except queue.Empty:
+        raise CheckError("ARTWORK_TIMEOUT", "Artwork DNS lookup exceeded its deadline.") from None
+    if records is None:
+        raise CheckError("ARTWORK_PROVIDER_HTTP", "Artwork provider DNS lookup failed.")
+    addresses = list(dict.fromkeys(item[4][0] for item in records))
+    if not addresses or any(not ipaddress.ip_address(address).is_global for address in addresses):
         raise CheckError("ARTWORK_ADDRESS_INVALID", "Artwork destination must resolve to public addresses.")
+    return addresses
+
+
+def artwork_connection(host: str, address: str, remaining: float):
+    """Pin TCP to the checked IP while verifying TLS and SNI for the host."""
+    import certifi
+    import urllib3
+    return urllib3.HTTPSConnectionPool(
+        address, port=443, server_hostname=host, assert_hostname=host,
+        cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(), retries=False,
+        timeout=urllib3.Timeout(total=remaining, connect=min(10, remaining), read=min(30, remaining)),
+    )
 
 
 def normalize_image(data: bytes) -> bytes:
@@ -90,18 +119,19 @@ def normalize_image(data: bytes) -> bytes:
 
 class ArtworkClient:
     def __init__(self):
-        import requests
         contact = os.getenv("MUSICBRAINZ_CONTACT", "")
         if not contact:
             raise CheckError("CONTACT_MISSING", "Set MUSICBRAINZ_CONTACT to identify the test client.")
-        self.session = requests.Session()
-        self.session.headers["User-Agent"] = "YTPlaylistDownloader-stage0/0.1 (" + contact + ")"
+        self.user_agent = "YTPlaylistDownloader-stage0/0.1 (" + contact + ")"
+        self._pool = None
         self.last_musicbrainz = 0.0
         self.received_bytes = 0
         self.requests = 0
 
     def close(self):
-        self.session.close()
+        if self._pool is not None:
+            self._pool.close()
+            self._pool = None
 
     def __enter__(self):
         return self
@@ -112,8 +142,12 @@ class ArtworkClient:
     def fetch(self, url: str, limit: int = 1024 * 1024) -> bytes:
         deadline = time.monotonic() + 45
         for _ in range(6):
-            validate_artwork_url(url)
-            if urlsplit(url).hostname == "musicbrainz.org":
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise CheckError("ARTWORK_TIMEOUT", "Artwork provider exceeded the response deadline.")
+            addresses = validate_artwork_url(url, timeout=min(5, remaining))
+            parsed = urlsplit(url)
+            if parsed.hostname == "musicbrainz.org":
                 delay = 1.05 - (time.monotonic() - self.last_musicbrainz)
                 if delay > 0:
                     time.sleep(delay)
@@ -122,21 +156,32 @@ class ArtworkClient:
             if remaining <= 0:
                 raise CheckError("ARTWORK_TIMEOUT", "Artwork provider exceeded the response deadline.")
             self.requests += 1
-            with self.session.get(url, timeout=(min(10, remaining), min(30, remaining)), stream=True, allow_redirects=False) as response:
-                if response.status_code in (301, 302, 303, 307, 308):
+            self.close()
+            self._pool = artwork_connection(parsed.hostname, addresses[0], remaining)
+            target = urlunsplit(('', '', parsed.path or '/', parsed.query, ''))
+            with self._pool.urlopen('GET', target,
+                    headers={'Host': parsed.hostname, 'User-Agent': self.user_agent, 'Accept-Encoding': 'identity'},
+                    preload_content=False, redirect=False, retries=False, assert_same_host=False) as response:
+                if response.status in (301, 302, 303, 307, 308):
                     url = urljoin(url, response.headers.get("Location", ""))
                     continue
-                if response.status_code == 404:
+                if response.status == 404:
                     raise CheckError("ARTWORK_NOT_FOUND", "No artwork is available for this release.")
-                if response.status_code != 200:
-                    raise CheckError("ARTWORK_PROVIDER_HTTP", "Artwork provider returned HTTP " + str(response.status_code) + ".")
+                if response.status != 200:
+                    raise CheckError("ARTWORK_PROVIDER_HTTP", "Artwork provider returned HTTP " + str(response.status) + ".")
                 chunks = bytearray()
                 while True:
-                    if time.monotonic() >= deadline:
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
                         raise CheckError("ARTWORK_TIMEOUT", "Artwork provider exceeded the response deadline.")
+                    connection = response.connection
+                    if connection is not None and connection.sock is not None:
+                        connection.sock.settimeout(min(30, remaining))
                     # read1 returns currently available data instead of waiting
                     # to fill 64 KiB while a slow server drip-feeds its response.
-                    chunk = response.raw.read1(65536, decode_content=True)
+                    chunk = response.read1(65536, decode_content=True)
+                    if time.monotonic() >= deadline:
+                        raise CheckError("ARTWORK_TIMEOUT", "Artwork provider exceeded the response deadline.")
                     if not chunk:
                         break
                     chunks.extend(chunk)

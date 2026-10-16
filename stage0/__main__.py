@@ -22,7 +22,8 @@ from .core import (CheckError, allocate_filename, build_archive, canonical_playl
                    song_title, tag_and_verify, validate_metadata)
 
 MODULES = {"yt-dlp": "yt_dlp", "yt-dlp-ejs": "yt_dlp_ejs", "groq": "groq", "mutagen": "mutagen", "python-dotenv": "dotenv",
-           "Pillow": "PIL", "jsonschema": "jsonschema", "boto3": "boto3", "psutil": "psutil", "requests": "requests"}
+           "Pillow": "PIL", "jsonschema": "jsonschema", "boto3": "boto3", "psutil": "psutil", "requests": "requests",
+           "urllib3": "urllib3", "certifi": "certifi"}
 TOOLS = {"ffmpeg": "FFMPEG_BIN", "ffprobe": "FFPROBE_BIN", "deno": "DENO_BIN"}
 
 
@@ -135,7 +136,7 @@ def require_runtime(live: bool, *, with_ai: bool = False, with_artwork: bool = F
     if with_ai:
         names += ["groq"]
     if with_artwork:
-        names += ["requests"]
+        names += ["urllib3", "certifi"]
     if with_storage:
         names += ["boto3", "requests"]
     state = preflight()

@@ -88,7 +88,15 @@ def fallback_metadata(track: dict) -> dict:
 def song_title(metadata: dict) -> str:
     title = metadata["title"].strip()
     version = (metadata.get("version") or "").strip()
-    if version and version.casefold() not in title.casefold():
+    if version:
+        def word(character):
+            return unicodedata.category(character)[0] in 'LMN'
+        # A version is a complete label, not a fragment of Olive/Delivery or a
+        # combining sequence. Punctuation in a label is literal, never regex.
+        for match in re.finditer(re.escape(version), title, re.IGNORECASE):
+            if ((not word(version[0]) or match.start() == 0 or not word(title[match.start() - 1]))
+                    and (not word(version[-1]) or match.end() == len(title) or not word(title[match.end()]))):
+                return title
         title += " (" + version + ")"
     return title
 
@@ -118,7 +126,7 @@ def allocate_filename(metadata: dict, used: set[str], budget: int = 180) -> str:
     while True:
         stem = truncate_utf8(base, budget - len(suffix.encode()) - 4) or "Untitled"
         name = stem + suffix + ".mp3"
-        key = unicodedata.normalize("NFC", name).casefold()
+        key = unicodedata.normalize("NFKC", name).casefold()
         if key not in used:
             used.add(key)
             return name
@@ -269,7 +277,7 @@ def build_archive(root: Path, records: list[dict], *, max_bytes: int = 512 * 102
     names = [record["filename"] for record in records]
     if any(not name or Path(name).name != name or "/" in name or "\\" in name for name in names):
         raise CheckError("UNSAFE_ARCHIVE_NAME", "Archive entry is not a portable filename.")
-    keys = [unicodedata.normalize("NFC", name).casefold() for name in [*names, "playlist.json"]]
+    keys = [unicodedata.normalize("NFKC", name).casefold() for name in [*names, "playlist.json"]]
     if len(keys) != len(set(keys)):
         raise CheckError("ZIP_VERIFY_FAILED", "Archive contains colliding entry names.")
     paths = [root / "export" / name for name in names]
