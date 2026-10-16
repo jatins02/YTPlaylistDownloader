@@ -9,11 +9,43 @@ import time
 import unittest
 from unittest.mock import patch
 
-from stage0.core import CheckError, allocate_filename, command, probe_and_decode
+from stage0.core import CheckError, allocate_filename, build_archive, checksum, command, probe_and_decode, song_title
 from stage0.providers import ArtworkClient, format_with_groq, naming_inputs
 
 
 class CurrentReviewTests(unittest.TestCase):
+    def test_cli_versions_match_whole_unicode_labels(self):
+        cases = [('Olive', 'Live', 'Olive (Live)'),
+                 ('Delivery', 'Live', 'Delivery (Live)'),
+                 ('Song (LIVE)', 'Live', 'Song (LIVE)'),
+                 ('Song (Slowed + Reverb)', 'Slowed + Reverb', 'Song (Slowed + Reverb)'),
+                 ('Song ((Live))', '(Live)', 'Song ((Live))'),
+                 ('Song e\u0301', 'e', 'Song e\u0301 (e)')]
+        for title, version, expected in cases:
+            with self.subTest(title=title, version=version):
+                self.assertEqual(song_title({'title': title, 'version': version}), expected)
+
+    def test_cli_compatibility_names_preserve_distinct_files(self):
+        used = set()
+        names = [allocate_filename({'track_id': identity, 'title': title,
+                                    'artists': ['Mira Vale'], 'featured_artists': []}, used)
+                 for identity, title in [('first', 'Song'), ('second', 'Ｓｏｎｇ')]]
+        import unicodedata
+        self.assertEqual(len({unicodedata.normalize('NFKC', name).casefold() for name in names}), 2)
+
+    def test_cli_archive_rejects_compatibility_collisions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / 'export').mkdir()
+            records = []
+            for name, payload in [('Song.mp3', b'first'), ('Ｓｏｎｇ.mp3', b'second')]:
+                path = root / 'export' / name
+                path.write_bytes(payload)
+                records.append({'filename': name, 'sha256': checksum(path), 'source_mode': 'synthetic'})
+            with self.assertRaises(CheckError):
+                build_archive(root, records)
+            self.assertFalse((root / 'playlist.zip').exists())
+
     def test_source_temporary_and_runtime_cache_paths_stay_inside_scratch(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

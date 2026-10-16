@@ -45,6 +45,7 @@ void main() {
     bool versioned = false,
     bool legacyImage = false,
     bool truncatedReleases = false,
+    bool malformedCredit = false,
   }) async {
     var count = 0;
     final transport = ReplyTransport((uri, headers, body) async {
@@ -61,6 +62,12 @@ void main() {
             {
               'artist': {'name': 'Wrong artist'},
             },
+          ];
+        }
+        if (malformedCredit) {
+          item['artist-credit'] = [
+            ...(item['artist-credit'] as List),
+            {'name': 'Unresolved additional artist'},
           ];
         }
         return jsonReply({
@@ -139,6 +146,19 @@ void main() {
     expect(result.provenance['matched_artists'], ['Mira Vale']);
     expect(result.bytes, [1, 2, 3]);
   });
+  test(
+    'incomplete artist credits cannot establish a recording match',
+    () async {
+      await expectLater(
+        (await provider(malformedCredit: true)).find(
+          SongMetadata(title: 'Moonlit Train', artists: ['Mira Vale']),
+          EnrichmentOptions(),
+          RequestScope(),
+        ),
+        failure(FailureCode.artworkUncertain),
+      );
+    },
+  );
   test(
     'legacy public image links are reconstructed as HTTPS before fetching',
     () async {

@@ -236,6 +236,7 @@ final class NativeSnippetPlayer implements SnippetPort {
         timeout: duration - position + const Duration(seconds: 10),
         maxOutputBytes: 128 * 1024,
         localAudio: true,
+        requireCleanStderr: true,
         onOutput: (bytes) {
           buffered += utf8.decode(bytes, allowMalformed: true);
           final lines = buffered.split('\n');

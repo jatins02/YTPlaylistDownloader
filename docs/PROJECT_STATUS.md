@@ -502,3 +502,33 @@ and native foundation integration; the 25 opt-in real-media cases and the
 pipeline/enrichment/private-audio/export native acceptance ran separately on
 Linux as recorded above. Windows foundation CI does not prove media/export
 execution or close phone/manual device gates.
+
+## Current codebase review — 2026-10-17
+
+Reviewed implemented Stages 0–6 at baseline `245090b` against the plan, product
+and architecture contracts. [Findings and validation](CODE_REVIEW_CURRENT.md)
+record the targeted corrections: frozen semantic titles now survive actual MP3
+readback; CLI version labels and compatibility-normalized names remain distinct;
+zero-exit codec errors cannot validate audio; incomplete artist credits cannot
+establish a cover match; private regular-file guards are shared; and a completed
+draft save preserves a newer typed link. The CLI artwork connection now pins the
+validated public address while retaining TLS/SNI/Host verification, bounded DNS,
+redirect revalidation and streaming limits. Duplicate tag-title logic and stale
+product copy were removed. Pins, migrations and platform availability are unchanged.
+
+Local checks pass **240 Flutter tests with the pinned real-media runtime,
+214 ordinary Flutter tests and 84 Python tests, zero skipped on Linux**.
+Formatting checks 93 files unchanged and analysis reports no issues. Synthetic
+local TLS tests exercise actual encrypted reads and hostname rejection; no live
+provider request or owner `.env` access was used. All five actual Linux native
+integration cases pass: foundation, pipeline, enrichment, full MP3/ZIP export
+and isolated private-audio review. The Linux release build and 19-file
+dotenv/literal-key scan pass.
+
+The unchanged CI runs ordinary tests, desktop foundation integration and release
+checks, plus Python media contracts. Its remote results are distinct from the
+opt-in local media/private-audio/export acceptance. Workflow results are visible
+in [GitHub Actions](https://github.com/jatins02/YTPlaylistDownloader/actions).
+Manual native picker/player/accessibility and Windows/Android/iPhone media/tag/
+playback/export execution remain open. Independent-phone and device-only-save
+requirements are retained; this review does not claim Stage 7–9 completion.

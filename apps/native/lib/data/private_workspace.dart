@@ -65,6 +65,17 @@ final class PrivateWorkspace {
     }
   }
 
+  static Future<void> _filePath(String path) async {
+    final type = await FileSystemEntity.type(path, followLinks: false);
+    if (type != FileSystemEntityType.notFound &&
+        type != FileSystemEntityType.file) {
+      throw const AppFailure(
+        FailureCode.invalidPath,
+        'Private storage contains an unsafe file path.',
+      );
+    }
+  }
+
   static Future<PrivateWorkspace> acquire(Directory requestedRoot) async {
     RandomAccessFile? lock;
     String? canonical;
@@ -81,13 +92,7 @@ final class PrivateWorkspace {
       }
       claimed = true;
       final lockPath = p.join(canonical, '.session.lock');
-      if (await FileSystemEntity.type(lockPath, followLinks: false) ==
-          FileSystemEntityType.link) {
-        throw const AppFailure(
-          FailureCode.invalidPath,
-          'Private storage contains an unsafe lock path.',
-        );
-      }
+      await _filePath(lockPath);
       lock = await File(lockPath).open(mode: FileMode.append);
       await lock.lock(FileLock.exclusive);
       final root = Directory(canonical);
@@ -131,29 +136,14 @@ final class PrivateWorkspace {
       );
     }
     final file = File(p.join(root.path, name));
-    if (await FileSystemEntity.type(file.path, followLinks: false) ==
-        FileSystemEntityType.link) {
-      throw const AppFailure(
-        FailureCode.invalidPath,
-        'Unsafe tool supervisor path.',
-      );
-    }
+    await _filePath(file.path);
     await file.writeAsBytes(bytes, flush: true);
     return file;
   }
 
   Future<void> verifyDatabasePaths() async {
     for (final suffix in ['', '-wal', '-shm']) {
-      if (await FileSystemEntity.type(
-            '$databasePath$suffix',
-            followLinks: false,
-          ) ==
-          FileSystemEntityType.link) {
-        throw const AppFailure(
-          FailureCode.invalidPath,
-          'Private storage contains an unsafe database path.',
-        );
-      }
+      await _filePath('$databasePath$suffix');
     }
   }
 
@@ -177,13 +167,7 @@ final class PrivateWorkspace {
     final relative = PrivatePaths.asset(jobId, assetId, kind);
     await ensureJob(jobId);
     final file = File(p.joinAll([root.path, ...relative.split('/')]));
-    if (await FileSystemEntity.type(file.path, followLinks: false) ==
-        FileSystemEntityType.link) {
-      throw const AppFailure(
-        FailureCode.invalidPath,
-        'Private storage contains an unsafe asset path.',
-      );
-    }
+    await _filePath(file.path);
     return file;
   }
 

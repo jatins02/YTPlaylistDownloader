@@ -128,6 +128,7 @@ final class NativeTagAdapter {
       await request.writeAsString(
         jsonEncode({
           'metadata': metadata.toJson(),
+          'song_title': metadata.songTitle,
           'track_id': trackId,
           'track_revision': track['track_revision'],
           'video_id': track['video_id'],
@@ -147,6 +148,7 @@ final class NativeTagAdapter {
       if (result['snapshot_hash'] != snapshot.hash ||
           result['track_id'] != trackId ||
           result['track_revision'] != track['track_revision'] ||
+          result['song_title'] != metadata.songTitle ||
           result['cover_sha256'] != cover?.sha256 ||
           result['id3_version'] != 3 ||
           result['sha256'] != await files.digest(output.path) ||

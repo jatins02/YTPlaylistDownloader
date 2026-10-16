@@ -43,6 +43,7 @@ final class NativeCodec {
         directory: work,
         monitor: monitor,
         timeout: const Duration(seconds: 30),
+        requireCleanStderr: true,
       );
       final data = jsonDecode(output) as Map<String, dynamic>;
       final duration = double.parse(
@@ -78,6 +79,7 @@ final class NativeCodec {
         ],
         directory: work,
         timeout: limits.operationTimeout,
+        requireCleanStderr: true,
         monitor: monitor,
       );
       return AudioProbe(duration, audio.single['codec_name']! as String);
@@ -135,6 +137,7 @@ final class NativeCodec {
       ],
       directory: work,
       timeout: limits.operationTimeout,
+      requireCleanStderr: true,
       monitor: monitor,
     );
     return target;
@@ -179,6 +182,7 @@ final class NativeCodec {
       ],
       directory: work,
       timeout: limits.operationTimeout,
+      requireCleanStderr: true,
       monitor: monitor,
     );
     return target;

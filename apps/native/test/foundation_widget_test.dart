@@ -1,9 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:yt_playlist_downloader/application/drafts_controller.dart';
+import 'package:yt_playlist_downloader/domain/draft_store.dart';
+import 'package:yt_playlist_downloader/domain/models.dart';
+import 'package:yt_playlist_downloader/domain/playlist_url.dart';
 import 'package:yt_playlist_downloader/ui/foundation_app.dart';
 
 import 'test_support.dart';
+
+final class PendingDraftStore implements DraftStore {
+  PendingDraftStore(this.delegate);
+  final DraftStore delegate;
+  final entered = Completer<void>(), release = Completer<void>();
+  @override
+  Future<List<JobRecord>> listJobs() => delegate.listJobs();
+  @override
+  Future<JobRecord> createDraft(
+    PlaylistUrl playlist, {
+    String? identity,
+  }) async {
+    entered.complete();
+    await release.future;
+    return delegate.createDraft(playlist, identity: identity);
+  }
+}
 
 void main() {
   late Fixture fixture;
@@ -21,6 +43,44 @@ void main() {
     controller.dispose();
     await fixture.close();
   });
+
+  testWidgets(
+    'saving a draft preserves a newer link typed while storage is pending',
+    (tester) async {
+      controller.dispose();
+      final store = (await tester.runAsync(
+        () async => PendingDraftStore(fixture.jobs),
+      ))!;
+      controller = DraftsController(
+        jobs: store,
+        workspace: fixture.workspace,
+        vault: MemoryVault(),
+      );
+      await tester.runAsync(controller.load);
+      await tester.pumpWidget(FoundationApp(controller: controller));
+      const first = 'https://youtube.com/playlist?list=PL1234567890';
+      const next = 'https://youtube.com/playlist?list=PL0987654321';
+      final input = find.byKey(const Key('playlist-input'));
+      await tester.enterText(input, first);
+      await tester.runAsync(() async {
+        await tester.tap(find.byKey(const Key('save-draft')));
+        await store.entered.future.timeout(const Duration(seconds: 5));
+      });
+      await tester.pump();
+      await tester.enterText(input, next);
+      await tester.runAsync(() async {
+        store.release.complete();
+        final deadline = DateTime.now().add(const Duration(seconds: 5));
+        while (controller.savingDraft && DateTime.now().isBefore(deadline)) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+        expect(controller.savingDraft, isFalse);
+      });
+      await tester.pumpAndSettle();
+      expect(controller.drafts.single.playlistId, 'PL1234567890');
+      expect(tester.widget<TextField>(input).controller!.text, next);
+    },
+  );
 
   testWidgets('the visible save-draft action persists a canonical playlist', (
     tester,

@@ -78,6 +78,46 @@ void main() {
   });
   Matcher failure(FailureCode code) =>
       isA<AppFailure>().having((e) => e.code, 'code', code);
+  test('embedded version titles match review and filenames even inside ordinary words', () async {
+    final tracks = (await fixture.jobs.listTracks(review.id))
+        .where((t) => ['abcdefghijk', '12345678901'].contains(t.videoId))
+        .toList();
+    for (var index = 0; index < tracks.length; index++) {
+      final track = tracks[index];
+      await fixture.jobs.editMetadata(
+        trackId: track.id,
+        revision: track.revision,
+        candidate: SongMetadata(
+          title: index == 0 ? 'Olive' : 'Delivery',
+          artists: track.metadata.artists,
+          version: 'Live',
+        ),
+        fields: {MetadataField.title, MetadataField.version},
+      );
+    }
+    final current = await fixture.jobs.getJob(review.id);
+    final publication = await media.prepareExport(review.id, current.revision);
+    final paths = ExportWorkspace(media.files);
+    final scope = tools.scope();
+    try {
+      for (final initial in tracks) {
+        final track = await fixture.jobs.getTrack(initial.id);
+        final file = publication.tracks.singleWhere(
+          (f) => f.trackId == track.id,
+        );
+        expect(file.filename, contains(track.metadata.songTitle));
+        final title = await scope.run(tools.python, [
+          '-I',
+          '-c',
+          'import sys;from mutagen.id3 import ID3;print(str(ID3(sys.argv[1])["TIT2"]))',
+          (await paths.file(publication, file)).path,
+        ], directory: fixture.root);
+        expect(title.trim(), track.metadata.songTitle);
+      }
+    } finally {
+      scope.cancel();
+    }
+  });
   test(
     'retention keeps an open editor playable until Save or Cancel',
     () async {
