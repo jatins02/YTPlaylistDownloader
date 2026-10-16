@@ -90,6 +90,31 @@ void main() {
     );
   });
 
+  test('version markers inside ordinary words do not disappear from exported names', () {
+    for (final entry in [
+      ('Olive', 'Live', 'Olive (Live)'),
+      ('Delivery', 'Live', 'Delivery (Live)'),
+      ('Unremixed', 'Remix', 'Unremixed (Remix)'),
+      ('Moonlit Train (LIVE)', 'Live', 'Moonlit Train (LIVE)'),
+      ('Moonlit Train(Live)', '(Live)', 'Moonlit Train(Live)'),
+      ('Live\u0301', 'Live', 'Live\u0301 (Live)'),
+      ('夜 (现场)', '现场', '夜 (现场)'),
+      (
+        'Moonlit Train [Slowed + Reverbed]',
+        'Slowed + Reverbed',
+        'Moonlit Train [Slowed + Reverbed]',
+      ),
+    ]) {
+      final metadata = SongMetadata(
+        title: entry.$1,
+        artists: ['Mira Vale'],
+        version: entry.$2,
+      );
+      expect(metadata.songTitle, entry.$3);
+      expect(metadata.displayName, '${entry.$3} - Mira Vale');
+    }
+  });
+
   test('a suggestion cannot clear uncertainty for a human-overridden unknown artist', () {
     final original = SongMetadata(
       title: 'Original',

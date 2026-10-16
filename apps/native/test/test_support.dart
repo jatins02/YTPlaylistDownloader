@@ -1,4 +1,9 @@
 import 'dart:io';
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+import 'package:yt_playlist_downloader/domain/device_export.dart';
+import 'package:yt_playlist_downloader/data/export_repository.dart';
 
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:uuid/uuid.dart';
@@ -138,4 +143,65 @@ final class MemoryVault implements CredentialVault {
   Future<void> removeGroqKey() async {
     _key = null;
   }
+}
+
+/// State fixture only; never claims real byte or destination verification.
+ExportPublication publicationFixture(
+  ExportSnapshot snapshot, {
+  List<String>? filenames,
+}) {
+  final rows =
+      (jsonDecode(snapshot.json) as Map<String, dynamic>)['tracks'] as List;
+  final tracks = <ExportFile>[
+    for (var i = 0; i < rows.length; i++)
+      ExportFile(
+        id: const Uuid().v4(),
+        kind: ExportFileKind.mp3,
+        trackId: rows[i]['track_id'] as String,
+        filename: filenames?[i] ?? 'Fictional track $i.mp3',
+        sha256: sha256.convert([i + 1]).toString(),
+        bytes: 1,
+      ),
+  ];
+  final content = jsonEncode({
+    'version': 1,
+    'export_id': snapshot.id,
+    'job_id': snapshot.jobId,
+    'snapshot_hash': snapshot.hash,
+    'files': tracks.map((f) => f.toJson()).toList(),
+  });
+  return ExportPublication(
+    snapshot: snapshot,
+    contentManifest: content,
+    files: [
+      ...tracks,
+      ExportFile(
+        id: const Uuid().v4(),
+        kind: ExportFileKind.manifest,
+        filename: 'manifest.json',
+        sha256: sha256.convert(utf8.encode(content)).toString(),
+        bytes: utf8.encode(content).length,
+      ),
+      ExportFile(
+        id: const Uuid().v4(),
+        kind: ExportFileKind.zip,
+        filename: 'Fictional playlist.zip',
+        sha256: sha256.convert([1, 2]).toString(),
+        bytes: 2,
+      ),
+    ],
+  );
+}
+
+Future<ExportPublication> publishFixture(
+  Fixture fixture,
+  ExportSnapshot snapshot,
+) async {
+  final publication = publicationFixture(snapshot);
+  final token = await fixture.jobs.beginAttempt(
+    jobId: snapshot.jobId,
+    stage: TaskStage.export,
+  );
+  await ExportRepository(fixture.jobs).publish(token, publication);
+  return publication;
 }

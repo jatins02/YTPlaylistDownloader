@@ -16,11 +16,88 @@ import 'package:yt_playlist_downloader/platform/media_port.dart';
 import 'package:yt_playlist_downloader/platform/snippet_port.dart';
 import 'package:yt_playlist_downloader/ui/processing_screen.dart';
 import 'package:yt_playlist_downloader/ui/review_editor.dart';
+import 'package:yt_playlist_downloader/ui/snippet_player_bar.dart';
 import 'package:yt_playlist_downloader/ui/theme.dart';
 
 import 'test_support.dart';
 
 void main() {
+  testWidgets('player controls wait for export, processing and cancellation', (
+    tester,
+  ) async {
+    final f = (await tester.runAsync(Fixture.open))!;
+    final job = (await tester.runAsync(f.draft))!;
+    await tester.runAsync(() async {
+      await f.ready(await f.track(job));
+      await f.review(job);
+    });
+    final state = ProcessingController(
+      jobId: job.id,
+      jobs: f.jobs,
+      media: ReviewWidgetPort(f),
+    );
+    await tester.runAsync(state.initialize);
+    final track = state.tracks.single;
+    await tester.runAsync(() => state.player.toggle(track.id));
+    Future<void> render() => tester.pumpWidget(
+      MaterialApp(
+        theme: appTheme,
+        home: Scaffold(body: SnippetPlayerBar(controller: state)),
+      ),
+    );
+    await render();
+    expect(
+      tester
+          .widget<IconButton>(
+            find.byWidgetPredicate(
+              (w) =>
+                  w is IconButton &&
+                  w.tooltip == 'Pause ${track.metadata.songTitle}',
+            ),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    for (final operation in ['export', 'processing', 'cancellation']) {
+      state.exportBusy = operation == 'export';
+      state.commanding = operation == 'processing';
+      state.cancelling = operation == 'cancellation';
+      await render();
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byWidgetPredicate(
+                (w) =>
+                    w is IconButton &&
+                    w.tooltip == 'Pause ${track.metadata.songTitle}',
+              ),
+            )
+            .onPressed,
+        isNull,
+        reason: operation,
+      );
+      expect(
+        tester.widget<Slider>(find.byType(Slider)).onChanged,
+        isNull,
+        reason: operation,
+      );
+      expect(
+        tester
+            .widget<IconButton>(
+              find.byWidgetPredicate(
+                (w) => w is IconButton && w.tooltip == 'Stop snippet',
+              ),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    }
+    state.exportBusy = state.commanding = state.cancelling = false;
+    await tester.runAsync(() => state.player.pause(clear: true));
+    await tester.pumpWidget(const SizedBox.shrink());
+    state.dispose();
+    await tester.runAsync(f.close);
+  });
   setUpAll(() async {
     if (Platform.environment['STAGE5_SCREENSHOTS'] == null) return;
     final sdk = Platform.environment['FLUTTER_ROOT'];

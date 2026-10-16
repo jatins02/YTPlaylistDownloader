@@ -157,19 +157,7 @@ void main() {
     final track = await fixture.ready(await fixture.track(job));
     final review = await fixture.review(job);
     final snapshot = await fixture.jobs.freezeExport(job.id, review.revision);
-    // State fixture only: actual tagged ZIP publication remains Stage 6 work.
-    await fixture.db.update(
-      'exports',
-      {'status': 'complete'},
-      where: 'id = ?',
-      whereArgs: [snapshot.id],
-    );
-    final exporting = await fixture.jobs.getJob(job.id);
-    await fixture.jobs.transition(
-      job.id,
-      exporting.revision,
-      JobPhase.exportReady,
-    );
+    await publishFixture(fixture, snapshot);
     expect(
       (await fixture.jobs.freezeExport(job.id, review.revision)).id,
       snapshot.id,

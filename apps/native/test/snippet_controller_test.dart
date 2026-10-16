@@ -96,6 +96,41 @@ void main() {
     port.stopFailure = false;
     player.dispose();
   });
+
+  test('a completed seek cannot move a newer resume request to the old end position', () async {
+    final port = ControlledSnippets(), player = SnippetController('job', port);
+    await player.toggle('A');
+    final gate = Completer<void>();
+    port.stopGate = gate.future;
+    port.deferProgress = true;
+    final seeking = player.seek(const Duration(seconds: 30));
+    final switching = player.toggle('A');
+    gate.complete();
+    await Future.wait([seeking, switching]);
+    expect(player.trackId, 'A');
+    expect(player.position, Duration.zero);
+    expect(player.loading, isTrue);
+    player.dispose();
+  });
+
+  test(
+    'a late pause failure cannot overwrite a newer playback result',
+    () async {
+      final port = ControlledSnippets(),
+          player = SnippetController('job', port);
+      await player.toggle('A');
+      final gate = Completer<void>();
+      port.stopGate = gate.future;
+      port.failNextStop = true;
+      final pausing = player.pause(), switching = player.toggle('B');
+      gate.complete();
+      await Future.wait([pausing, switching]);
+      expect(player.trackId, 'B');
+      expect(player.playing, isTrue);
+      expect(player.failure, isNull);
+      player.dispose();
+    },
+  );
 }
 
 final class ControlledSnippets implements SnippetPort {
@@ -103,6 +138,8 @@ final class ControlledSnippets implements SnippetPort {
   Completer<void>? _active;
   Future<void>? stopGate;
   bool stopFailure = false;
+  bool failNextStop = false;
+  bool deferProgress = false;
   String? current;
   int maximumConcurrent = 0;
   void Function(SnippetProgress)? progress;
@@ -120,15 +157,25 @@ final class ControlledSnippets implements SnippetPort {
     maximumConcurrent = 1;
     this.progress = progress;
     _active = Completer<void>();
-    progress(
-      SnippetProgress('asset-$trackId', position, const Duration(seconds: 30)),
-    );
+    if (!deferProgress) {
+      progress(
+        SnippetProgress(
+          'asset-$trackId',
+          position,
+          const Duration(seconds: 30),
+        ),
+      );
+    }
     return _active!.future;
   }
 
   @override
   Future<void> stopSnippet() async {
     await stopGate;
+    if (failNextStop) {
+      failNextStop = false;
+      throw StateError('private backend diagnostic');
+    }
     if (stopFailure) throw StateError('private backend diagnostic');
     _active?.complete();
     _active = null;
