@@ -129,19 +129,21 @@ class ReviewRegressions(unittest.TestCase):
     def test_streaming_artwork_deadline_and_size_use_bounded_reads(self):
         from unittest.mock import MagicMock
         client = ArtworkClient.__new__(ArtworkClient)
-        client.session = MagicMock()
+        client.user_agent = 'Fictional test client'
+        client._pool = None
         client.requests = client.received_bytes = 0
         client.last_musicbrainz = 0
         response = MagicMock()
-        response.status_code = 200
-        response.raw.read1.side_effect = [b'1234', b'5678']
-        client.session.get.return_value.__enter__.return_value = response
-        with patch('stage0.providers.validate_artwork_url'), patch('stage0.providers.time.monotonic', return_value=0):
+        response.status = 200
+        response.read1.side_effect = [b'1234', b'5678']
+        pool = MagicMock()
+        pool.urlopen.return_value.__enter__.return_value = response
+        with patch('stage0.providers.validate_artwork_url', return_value=['8.8.8.8']), patch('stage0.providers.artwork_connection', return_value=pool), patch('stage0.providers.time.monotonic', return_value=0):
             with self.assertRaises(CheckError) as raised:
                 client.fetch('https://archive.org/fixture.jpg', limit=5)
         self.assertEqual(raised.exception.code, 'ARTWORK_SIZE_LIMIT')
-        response.raw.read1.assert_called_with(65536, decode_content=True)
-        with patch('stage0.providers.validate_artwork_url'), patch('stage0.providers.time.monotonic', side_effect=[0, 0, 46]):
+        response.read1.assert_called_with(65536, decode_content=True)
+        with patch('stage0.providers.validate_artwork_url', return_value=['8.8.8.8']), patch('stage0.providers.artwork_connection', return_value=pool), patch('stage0.providers.time.monotonic', side_effect=[0, 0, 46]):
             with self.assertRaises(CheckError) as raised:
                 client.fetch('https://archive.org/fixture.jpg')
         self.assertEqual(raised.exception.code, 'ARTWORK_TIMEOUT')

@@ -65,7 +65,7 @@ class Stage4MetadataTests(unittest.TestCase):
                              'version': 'Live', 'needs_review': False},
                 'track_id': 'fictional-track', 'track_revision': 9, 'video_id': 'abcdefghijk',
                 'cover_path': str(root / 'cover.jpg'), 'cover_sha256': cover['sha256'],
-                'snapshot_hash': 'a' * 64,
+                'snapshot_hash': 'a' * 64, 'song_title': '夜の歌 (Live)',
             }
             (root / 'request.json').write_text(json.dumps(request), encoding='utf-8')
             result = worker.tag(source, root / 'tagged.mp3', root / 'request.json')
@@ -96,7 +96,8 @@ class Stage4MetadataTests(unittest.TestCase):
             request = {'metadata': {'title': 'Fictional', 'artists': [], 'featured_artists': [],
                                    'album': None, 'version': None, 'needs_review': True},
                        'track_id': 'fictional', 'track_revision': 0, 'video_id': 'abcdefghijk',
-                       'cover_path': None, 'cover_sha256': None, 'snapshot_hash': 'a' * 64}
+                       'cover_path': None, 'cover_sha256': None, 'snapshot_hash': 'a' * 64,
+                       'song_title': 'Fictional'}
             (root / 'request.json').write_text(json.dumps(request), encoding='utf-8')
             result = worker.tag(source, root / 'tagged.mp3', root / 'request.json')
             tags = ID3(root / 'tagged.mp3')
@@ -124,7 +125,7 @@ class Stage4MetadataTests(unittest.TestCase):
                     'featured_artists': [], 'album': None, 'version': None, 'needs_review': False},
                     'track_id': 'fixture', 'track_revision': 0, 'video_id': 'abcdefghijk',
                     'cover_path': str(cover), 'cover_sha256': hashlib.sha256(cover.read_bytes()).hexdigest(),
-                    'snapshot_hash': 'a' * 64}
+                    'snapshot_hash': 'a' * 64, 'song_title': 'Fictional'}
                 (root / 'request.json').write_text(json.dumps(request), encoding='utf-8')
                 with self.assertRaises((ValueError, OSError)):
                     worker.tag(source, root / 'bad.mp3', root / 'request.json')
