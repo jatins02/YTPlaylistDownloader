@@ -47,6 +47,7 @@ final class ProcessScope {
     Future<void> Function()? monitor,
     void Function(List<int>)? onOutput,
     bool localAudio = false,
+    bool requireCleanStderr = false,
   }) async {
     check();
     if (timeout <= Duration.zero || maxOutputBytes <= 0) {
@@ -63,6 +64,7 @@ final class ProcessScope {
     Directory? audioConfiguration;
     final output = BytesBuilder(copy: false);
     var outputBytes = 0;
+    var hasStderr = false;
     String stderrTail = "";
     FailureCode? exitHint;
     void abort(AppFailure error) {
@@ -158,6 +160,7 @@ final class ProcessScope {
       );
       stderr = process.stderr.listen(
         (bytes) {
+          hasStderr = hasStderr || bytes.isNotEmpty;
           count(bytes);
           final text =
               stderrTail +
@@ -233,7 +236,7 @@ final class ProcessScope {
           retryable: true,
         );
       }
-      if (code != 0) {
+      if (code != 0 || (requireCleanStderr && hasStderr)) {
         throw const AppFailure(
           FailureCode.sourceUnavailable,
           'The source or media tool could not finish. Check the connection and retry.',
