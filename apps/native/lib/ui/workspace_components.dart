@@ -2,6 +2,42 @@ import 'package:flutter/material.dart';
 
 import 'theme.dart';
 
+/// Unknown progress stays unknown, including when motion is disabled.
+class WorkspaceProgress extends StatelessWidget {
+  const WorkspaceProgress({
+    super.key,
+    required this.label,
+    this.linear = false,
+  });
+  final String label;
+  final bool linear;
+  @override
+  Widget build(BuildContext context) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return Semantics(
+        label: label,
+        child: const ExcludeSemantics(child: Icon(Icons.hourglass_top)),
+      );
+    }
+    return linear
+        ? LinearProgressIndicator(semanticsLabel: label)
+        : CircularProgressIndicator(semanticsLabel: label);
+  }
+}
+
+Future<T?> showWorkspaceDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) => showDialog<T>(
+  context: context,
+  builder: builder,
+  barrierDismissible: barrierDismissible,
+  animationStyle: MediaQuery.disableAnimationsOf(context)
+      ? AnimationStyle.noAnimation
+      : null,
+);
+
 class WorkspaceHeading extends StatelessWidget {
   const WorkspaceHeading(this.title, {super.key, required this.subtitle});
   final String title;

@@ -72,6 +72,7 @@ class _SnippetPlayerBarState extends State<SnippetPlayerBar> {
                 ),
                 if (total > 0)
                   Slider(
+                    label: 'Seek snippet for $name',
                     value:
                         (dragging ?? player.position.inMilliseconds.toDouble())
                             .clamp(0, total),

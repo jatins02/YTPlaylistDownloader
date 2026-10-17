@@ -7,6 +7,7 @@ import '../platform/media_port.dart';
 import 'processing_screen.dart';
 import 'fixture_screen.dart';
 import 'theme.dart';
+import 'workspace_components.dart';
 
 class FoundationApp extends StatelessWidget {
   const FoundationApp({
@@ -79,7 +80,7 @@ class _DraftsScreenState extends State<DraftsScreen> {
           actions: [
             IconButton(
               tooltip: 'AI key settings',
-              onPressed: () => showDialog<void>(
+              onPressed: () => showWorkspaceDialog<void>(
                 context: context,
                 builder: (_) => _KeySettings(controller: state),
               ),
@@ -172,9 +173,7 @@ class _DraftsScreenState extends State<DraftsScreen> {
                   const SizedBox(height: 24),
                   if (state.loading)
                     const Center(
-                      child: CircularProgressIndicator(
-                        semanticsLabel: 'Loading saved drafts',
-                      ),
+                      child: WorkspaceProgress(label: 'Loading saved drafts'),
                     )
                   else if (state.drafts.isEmpty)
                     const Padding(
@@ -214,11 +213,13 @@ class _DraftsScreenState extends State<DraftsScreen> {
                                     await Navigator.of(context).push<void>(
                                       MaterialPageRoute(
                                         builder: (_) => ProcessingScreen(
-                                          onKeySettings: () => showDialog<void>(
-                                            context: context,
-                                            builder: (_) =>
-                                                _KeySettings(controller: state),
-                                          ),
+                                          onKeySettings: () =>
+                                              showWorkspaceDialog<void>(
+                                                context: context,
+                                                builder: (_) => _KeySettings(
+                                                  controller: state,
+                                                ),
+                                              ),
                                           controller: ProcessingController(
                                             jobId: job.id,
                                             jobs: state.jobs as JobRepository,
