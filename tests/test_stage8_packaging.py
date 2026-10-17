@@ -138,6 +138,16 @@ class DesktopPackaging(unittest.TestCase):
         with self.assertRaises(package.PackageError):
             package.build(self.bundle, self.root / 'media-out', 'windows-x64', self.root)
 
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux executable permissions')
+    def test_shared_bundle_mode_bits_do_not_make_assets_executable(self):
+        for path in package.files(self.bundle):
+            path.chmod(0o777)  # Simulate an input mount synthesizing exec bits.
+        root = self.make_package()
+        data = package.verify(root)
+        self.assertEqual([name for name, record in data['files'].items()
+                          if record['executable']], ['app/yt_playlist_downloader'])
+        self.assertEqual((root / 'app/data/icudtl.dat').stat().st_mode & 0o777, 0o644)
+
     def test_private_files_and_special_files_rejected_without_reading(self):
         for name in ('.env', '.env.example', 'owner.jks', 'key.properties', 'drafts.sqlite', 'pyvenv.cfg'):
             with self.subTest(name=name):
