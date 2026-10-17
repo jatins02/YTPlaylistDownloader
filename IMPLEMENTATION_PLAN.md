@@ -148,8 +148,9 @@ standalone Linux runtime preparation and relocatable tool discovery, component
 notice collection, Linux versioned install/update/equal-schema binary rollback,
 offline failure tests and an isolated release-startup smoke helper. Android no
 longer silently debug-signs release builds. CI builds foundation evaluation
-packages after native checks; this does not enable Windows media. Clean-device
-and cross-version data/key acceptance, Android toolchain/device execution, iPhone
+packages after native checks; Android CI has built/verified a foundation test APK.
+This does not enable Windows/phone media. Clean-device
+and cross-version data/key acceptance, Android device execution, iPhone
 signing/distribution, matching component-source/notice clearance and the open
 Stage 7 gates remain unresolved. No public binary release is claimed. See
 [Stage 8 guide](docs/STAGE8_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
