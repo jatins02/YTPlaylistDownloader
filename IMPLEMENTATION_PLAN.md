@@ -121,6 +121,17 @@ Android/desktop work can progress independently while iOS is unproven. That does
 
 **Done when:** every claimed platform has real download/edit/save/playback and recovery evidence; no data-loss defect remains; initial capacities are measured. Emulator/simulator tests are distinguished from devices.
 
+**Implementation record (2026-10-17):** Repeatable Linux Stage 7 QA and
+accessibility corrections are implemented: reduced-motion progress/dialogs,
+identity-bearing actionable labels, keyboard/rotation/lifecycle regressions,
+real synthetic source-loss/space recovery, and measured pinned-codec/tag/ZIP/
+destination/reopen loads at three tracks, ten tracks and a ten-minute track.
+A sanitized device/version/results matrix and reproducible opt-in source smoke
+entry point are provided. Physical screen-reader, chooser/player, controlled
+battery/frame measurements, fresh source smoke and Windows/Android/iPhone media
+execution remain open. **Full Stage 7 is not accepted from desktop automation.**
+See [Stage 7 guide](docs/STAGE7_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
+
 ## Stage 8 — Packaging and distribution
 
 **Goal:** Installable verified packages with realistic zero-budget distribution and update behavior.
