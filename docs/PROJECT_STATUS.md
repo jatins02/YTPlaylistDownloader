@@ -4,7 +4,7 @@ Updated: 2026-10-17.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Stage 6 Linux full MP3/ZIP publication and destination delivery are implemented; manual picker/player and other-platform device gates remain open. No cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Stage 6 Linux full MP3/ZIP publication and destination delivery are implemented; manual picker/player and other-platform device gates remain open. Stage 7 adds automated Linux lifecycle/accessibility QA and measured synthetic capacity profiles; physical/device and controlled battery/frame gates remain open. No cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
@@ -15,7 +15,7 @@ Updated: 2026-10-17.
 | 4 — AI/artwork/tags | Linux implementation/live acceptance verified; full platform acceptance open | Review: 172 Flutter / 58 Python tests; native ID3/restart and live Groq/recording/release/front/APIC proof pass; Windows/phone tag execution remains unverified |
 | 5 — Review/edit | Linux implementation/native-output acceptance verified; manual/device gates open | Durable revision-safe edits/covers/selections, one bounded native snippet, responsive review; see Stage 5 evidence below |
 | 6 — Device save | Linux implementation/native byte-transfer acceptance; full device acceptance open | Frozen full tagged MP3/ZIP publication, verified destination receipts and restart/cleanup; manual native picker/player and Windows/Android/iOS export remain unverified |
-| 7 — Device QA | Not started | No real phone evidence |
+| 7 — Device QA | Linux automated QA implemented; physical/device acceptance open | Reduced motion/action labels, keyboard/rotation/lifecycle checks, measured synthetic loads and peer-safe failure recovery; no phone or battery attribution |
 | 8 — Packaging | Not started | No installed application packages |
 | 9 — Release | Not started | No release |
 
@@ -532,3 +532,64 @@ in [GitHub Actions](https://github.com/jatins02/YTPlaylistDownloader/actions).
 Manual native picker/player/accessibility and Windows/Android/iPhone media/tag/
 playback/export execution remain open. Independent-phone and device-only-save
 requirements are retained; this review does not claim Stage 7–9 completion.
+
+
+## Stage 7 Linux QA implementation (2026-10-17)
+
+Following the Stage 7 plan, added real-screen accessibility/lifecycle regressions,
+a reproducible measured-load/failure-recovery suite, an explicitly opted-in live
+source smoke entry point, a device/version matrix and sanitized measurement data.
+Production fixes give Play/Pause/Edit/MP3-save actions and the seek slider their
+song identity, honor reduced motion during startup/draft/playlist/cover/export
+loading and remove motion from review/settings dialogs when requested. Unknown
+progress remains unknown; stable IDs, revisions, pins, schema and media/platform
+capabilities are unchanged.
+
+The real review tests exercise keyboard Enter/Escape, explicit cancellation and
+focus return, 200% text, unsaved text through portrait/landscape rotation, target/
+label/contrast guidelines and valid inactive/hidden/paused/detached lifecycle
+sequences without autoplay on resume. A paused test view resumes before frame
+settling; these are binding events, not a claimed physical OS suspension test.
+Actual native media/output and byte-transfer checks remain separate evidence.
+
+Measured synthetic profiles use 3 × 65 seconds, 10 × 65 seconds and 1 × 600 seconds
+through the pinned Linux codec/tag/ZIP/transfer stack. They verify unique equal-name
+audio, saved bytes, committed metadata, SQLite close/reopen, snapshot/receipt
+reuse and external-copy-safe private cleanup. Source-loss injection retries only
+the failed source without reenumeration or changed peer IDs/hashes. An impossible
+reserve exercises the real free-space check safely, preserves other jobs and
+recovers after normal capacity is restored. The host disk is never filled.
+
+Final measured examples: 3 × 65 seconds took **23.332 s**, 10 × 65 seconds took
+**65.078 s**, and 1 × 600 seconds took **20.476 s**. Sampled private peaks were
+**29,169,318 / 96,454,783 / 80,664,942 bytes** respectively. See
+[STAGE7_RESULTS.json](STAGE7_RESULTS.json) for CPU, summed RSS, destination bytes,
+versions and sampling caveats. Instrumented test-process RSS includes shared
+pages, SQLite and the VM; CPU/storage samples can miss short-lived work. These
+finite, compressible synthetic profiles do not prove all maximum-size combinations,
+phone capacity, release frame responsiveness or battery life. Existing limits
+remain unchanged; no production-capacity increase is justified.
+
+Checks executed for this stage: **219 default Flutter tests**,
+**five focused accessibility tests**, **four additional opt-in Stage 7
+load/recovery cases**, **84 Python tests**, and the **five actual Linux native
+foundation/pipeline/enrichment/export/private-output cases** pass. Native tests
+use disposable display, vault, SQLite, test destinations and audio socket; no
+normal keyring/audio service, live provider, owner `.env` or sibling DOT. is used.
+Final source validation also passed **245 pinned-media Flutter tests**
+(`flutter test --no-pub --concurrency=1`), `flutter analyze`, the Linux release
+build and the release-bundle secret scan (**19 files checked**). The additional
+four Stage 7 load/recovery cases run separately from that 245-test suite.
+
+**Full Stage 7 remains in progress.** No USB/JDK/Android SDK/ADB or Mac/Xcode/iPhone
+is available. Windows media execution, manual Linux chooser/player/screen reader,
+controlled physical battery/thermal/frame measurement and fresh live-source smoke
+are open. No permitted public playlist was supplied for a fresh Stage 7 source
+run; prior Stage 3 live evidence is not relabeled. The native chooser in automated
+transfer tests is injected. No unavailable platform/device result is marked passed.
+
+Next actions: execute the concrete physical/device checklist in
+[STAGE7_GUIDE.md](STAGE7_GUIDE.md), prove each missing independent media/document
+adapter and record exact devices/OS/runtime observations before full acceptance.
+Stage 8 packaging and Stage 9 release remain unstarted. GitHub publication/checks
+are visible in [Actions](https://github.com/jatins02/YTPlaylistDownloader/actions).
