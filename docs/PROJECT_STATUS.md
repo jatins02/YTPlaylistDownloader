@@ -669,12 +669,30 @@ passes. The initial cold standalone runtime exposed an existing export test's
 without raising deadlines or media limits. The final 252-test/native runs above
 use that corrected runtime.
 
-Android CI now builds an arm64 personal debug APK, verifies the signature/package
-information and scans uncompressed assets with byte/path/secret limits. The
+Android CI built an arm64 personal debug APK, verified its v2 signature/package
+information and scanned uncompressed assets with byte/path/secret limits in
+[Foundation #84](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/39059459360).
+Recorded JDK: 17.0.20.1; platform 36 revision 2; min/target SDK 24/36;
+application ID `dev.ytpd.yt_playlist_downloader`, version 0.1.0 (1). The first
+Windows run caught two new test assertions comparing mixed path separators/DOS
+short names. They now compare canonical packaged paths and native legacy paths;
+all seven focused runtime cases and analysis pass locally after correction. The
 explicit Kotlin plugin matches the existing built-in-Kotlin opt-out, and Gradle
-9.3.1 now enforces its official archive checksum. These are configured checks;
-Android execution evidence is recorded only after the workflow actually runs.
-CI keeps no binary artifacts and creates no release or storage charge.
+9.3.1 now enforces its official archive checksum. Linux CI also passed its 225 tests, native plugin/restart, release scan and
+foundation archive assembly. Final Windows packaging and all pull-request checks
+are tracked in [PR #5](https://github.com/jatins02/YTPlaylistDownloader/pull/5).
+CI keeps no binary artifacts and creates no public release. APK build evidence
+is not physical phone media/document API acceptance.
+The clean local commit `a4989ab` produced a **289,484,989-byte** media archive
+(package ID `2a6b3ca39525191b`, **6,027 inventoried files**), which passed private
+installation, isolated installed AOT startup and post-launch inventory checks.
+Switching backward/forward between retained same-version/equal-schema evaluation
+packages passed. The shared workspace mount has synthetic ownership/world-write
+permissions, so installation correctly refuses it; the exercised prefix is in
+owned private test storage. No permission checks were bypassed. Exact archive
+hashes, source identity and scope are in [STAGE8_RESULTS.json](STAGE8_RESULTS.json).
+These same-version switches do not establish a cross-version data/key migration.
+
 Full Stage 8 remains in progress: clean-device install/actual cross-version
 settings/draft/key and rollback checks, physical source/player/export acceptance,
 component-source/notice clearance, Windows media/installer proof, Android/iPhone

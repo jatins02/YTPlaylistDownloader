@@ -188,5 +188,6 @@ and provider/account checks remain opt-in.
 Full Stage 8 acceptance still needs clean target-device install/run, actual
 update/draft/key persistence and rollback, packaged media source/edit/export/
 player evidence, component/source clearance and the outstanding Stage 7 gates.
-No unavailable phone result, fresh live source pass or public release is implied.
+The first Android CI arm64 debug build/signature/asset check passed; this is not
+physical phone execution. No unavailable phone result, fresh live source pass or public release is implied.
 Executed commands/results belong in [PROJECT_STATUS.md](PROJECT_STATUS.md).
