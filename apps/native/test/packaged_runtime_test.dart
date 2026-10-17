@@ -41,8 +41,10 @@ void main() {
         File(p.join(moved.path, 'media-runtime.json')),
         'private guard',
       );
-      expect(loaded.ffmpeg, p.join(moved.path, 'bin/ffmpeg'));
-      expect(loaded.python, p.join(moved.path, 'bin/python'));
+      // Windows may expand its temporary directory's DOS short-name alias.
+      final canonical = await moved.resolveSymbolicLinks();
+      expect(loaded.ffmpeg, p.join(canonical, 'bin', 'ffmpeg'));
+      expect(loaded.python, p.join(canonical, 'bin', 'python'));
       expect(loaded.guard, 'private guard');
     },
   );
@@ -149,7 +151,7 @@ void main() {
       }),
     );
     final loaded = await DesktopTools.load(manifest, 'guard');
-    expect(loaded.deno, p.join(manifest.parent.path, 'bin/deno'));
+    expect(loaded.deno, p.join(manifest.parent.path, 'bin', 'deno'));
   });
 
   test(
