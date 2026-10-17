@@ -83,12 +83,10 @@ final class AppRuntime {
       await EnrichmentRepository(repository).pruneCache();
       MediaPort media = UnavailableMediaPort(platform);
       if (platform == DevicePlatform.linux) {
-        final manifest =
-            mediaManifest ??
-            File(
-              Platform.environment['YTPD_MEDIA_RUNTIME'] ??
-                  p.join(workspace.root.path, 'media-runtime.json'),
-            );
+        final manifest = await DesktopTools.findManifest(
+          explicit: mediaManifest,
+          workspace: workspace.root,
+        );
         if (await manifest.exists()) {
           try {
             final guardBytes = await rootBundle.load('assets/process_guard.py');
