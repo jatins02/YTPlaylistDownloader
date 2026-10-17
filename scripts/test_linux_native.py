@@ -11,6 +11,17 @@ import sys
 import tempfile
 
 
+def unmount_document_portal(runtime: Path) -> None:
+    """Release only this test session's portal mount before its D-Bus exits."""
+    document_mount = str(runtime / "doc")
+    mounts = Path("/proc/self/mountinfo").read_text(encoding="utf-8").splitlines()
+    if any(line.split()[4] == document_mount for line in mounts):
+        unmount = shutil.which("fusermount3") or shutil.which("fusermount")
+        if not unmount:
+            raise RuntimeError("Install fuse3 to clean up the disposable document portal.")
+        subprocess.run([unmount, "-u", document_mount], check=True)
+
+
 def main() -> int:
     if sys.platform != "linux":
         raise SystemExit("This helper requires Linux. Use flutter test -d windows on Windows.")
@@ -41,13 +52,7 @@ def main() -> int:
             # GTK may activate the document portal. Unmount its disposable FUSE
             # directory while D-Bus is still alive, before TemporaryDirectory
             # cleanup; disconnected portal mounts otherwise produce ENOTCONN.
-            document_mount = str(Path(os.environ["XDG_RUNTIME_DIR"]) / "doc")
-            mounts = Path("/proc/self/mountinfo").read_text(encoding="utf-8").splitlines()
-            if any(line.split()[4] == document_mount for line in mounts):
-                unmount = shutil.which("fusermount3") or shutil.which("fusermount")
-                if not unmount:
-                    raise SystemExit("Cannot clean up the disposable document-portal mount: install fuse3.")
-                subprocess.run([unmount, "-u", document_mount], check=True)
+            unmount_document_portal(Path(os.environ["XDG_RUNTIME_DIR"]))
     for executable in ["dbus-run-session", "gnome-keyring-daemon", "xvfb-run", "Xvfb", "xauth"]:
         if not shutil.which(executable):
             raise SystemExit(f"Missing test dependency: {executable}")
