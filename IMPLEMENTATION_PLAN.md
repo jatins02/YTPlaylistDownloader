@@ -142,6 +142,19 @@ See [Stage 7 guide](docs/STAGE7_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
 
 **Done when:** clean target devices install/run the packages; updates preserve private settings/drafts; rollback works; keys are not shared in binaries; iOS install/distribution is either proven within budget or explicitly unresolved. No purchase is implied.
 
+**Implementation record (2026-10-17):** Stage 8 is in progress. Added private
+desktop evaluation packaging, complete file/hash/version/scope manifests,
+standalone Linux runtime preparation and relocatable tool discovery, component
+notice collection, Linux versioned install/update/equal-schema binary rollback,
+offline failure tests and an isolated release-startup smoke helper. Android no
+longer silently debug-signs release builds. CI builds foundation evaluation
+packages after native checks; Android CI has built/verified a foundation test APK.
+This does not enable Windows/phone media. Clean-device
+and cross-version data/key acceptance, Android device execution, iPhone
+signing/distribution, matching component-source/notice clearance and the open
+Stage 7 gates remain unresolved. No public binary release is claimed. See
+[Stage 8 guide](docs/STAGE8_GUIDE.md) and [status](docs/PROJECT_STATUS.md).
+
 ## Stage 9 — Release and handoff
 
 **Goal:** Deliver the verified scope with user guidance and a maintainable compatibility-update process.

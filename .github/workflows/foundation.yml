@@ -66,6 +66,9 @@ jobs:
       - name: Check release assets and literal keys
         working-directory: .
         run: python scripts/check_native_bundle.py ${{ matrix.bundle }}
+      - name: Build private desktop evaluation package
+        working-directory: .
+        run: python scripts/desktop_package.py build --target ${{ matrix.target }}-x64 --bundle ${{ matrix.bundle }} --output dist/stage8
 
   stage0:
     name: Existing media contracts
@@ -87,3 +90,39 @@ jobs:
       - run: python3 -m venv .venv-ci
       - run: .venv-ci/bin/python -m pip install -r requirements-stage0.lock
       - run: .venv-ci/bin/python -m unittest discover -s tests -v
+
+  android:
+    name: Android foundation test APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: apps/native
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14.4'
+      - name: Record Android build environment
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+          echo "$JAVA_HOME_17_X64/bin" >> "$GITHUB_PATH"
+          "$JAVA_HOME_17_X64/bin/java" -version
+          test -d "$ANDROID_HOME/platforms/android-36"
+          test -d "$ANDROID_HOME/build-tools/36.0.0"
+          cat "$ANDROID_HOME/platforms/android-36/source.properties"
+      - name: Bootstrap exact official Flutter revision
+        working-directory: .
+        run: python scripts/bootstrap_flutter.py
+      - run: echo "$GITHUB_WORKSPACE/.tools-stage1/flutter/bin" >> "$GITHUB_PATH"
+      - run: flutter pub get --enforce-lockfile
+      - name: Build personal foundation test APK
+        run: flutter build apk --debug --target-platform android-arm64 --no-pub
+      - name: Verify debug signature and packaged assets
+        working-directory: .
+        run: |
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs apps/native/build/app/outputs/flutter-apk/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging apps/native/build/app/outputs/flutter-apk/app-debug.apk
+          python scripts/check_android_apk.py apps/native/build/app/outputs/flutter-apk/app-debug.apk

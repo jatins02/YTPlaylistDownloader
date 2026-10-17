@@ -10,6 +10,7 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 
 ## Start here
 
+- [Stage 8 private evaluation packaging and distribution gates](docs/STAGE8_GUIDE.md)
 - [Stage 7 lifecycle, accessibility, measured loads and device gates](docs/STAGE7_GUIDE.md)
 - [Stage 6 full MP3/ZIP saving and acceptance limits](docs/STAGE6_GUIDE.md)
 - [Stage 5 real snippet playback and persistent review](docs/STAGE5_GUIDE.md)

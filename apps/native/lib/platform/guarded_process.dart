@@ -108,7 +108,17 @@ final class ProcessScope {
       }
       process = await Process.start(
         python,
-        ['-I', guard, '$maxFileBytes', executable, ...arguments],
+        [
+          '-I',
+          '-B',
+          guard,
+          '$maxFileBytes',
+          executable,
+          // Isolated Python ignores PYTHONDONTWRITEBYTECODE. Keep installed
+          // runtimes immutable instead of writing __pycache__ beside tools.
+          if (executable == python) '-B',
+          ...arguments,
+        ],
         workingDirectory: directory.path,
         environment: environment,
         includeParentEnvironment: false,
