@@ -8,6 +8,7 @@ import '../domain/review.dart';
 import '../platform/cover_picker.dart';
 import '../platform/snippet_port.dart';
 import 'theme.dart';
+import 'workspace_components.dart';
 
 Future<void> openReviewEditor(
   BuildContext context,
@@ -18,7 +19,7 @@ Future<void> openReviewEditor(
   if (session == null) return;
   try {
     if (context.mounted) {
-      await showDialog<void>(
+      await showWorkspaceDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (_) => ReviewEditor(controller: state, session: session),
@@ -335,8 +336,9 @@ class _ReviewEditorState extends State<ReviewEditor> {
                   ],
                 ),
                 if (loadingCovers)
-                  const LinearProgressIndicator(
-                    semanticsLabel: 'Loading verified cover choices',
+                  const WorkspaceProgress(
+                    linear: true,
+                    label: 'Loading verified cover choices',
                   ),
                 if (choices.isNotEmpty) ...[
                   const SizedBox(height: 12),

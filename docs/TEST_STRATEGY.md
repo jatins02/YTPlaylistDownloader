@@ -105,3 +105,23 @@ plugins, the OS vault, SQLite, save controls, durable receipts and restart clean
 Its chooser is injected; manual native-panel interaction and physical-device
 player/document checks remain separate. No live source/provider request or owner
 key is needed. See Stage 6 guide and status for actual results and platform limits.
+
+## Stage 7 verification
+
+`stage7_accessibility_test.dart` exercises the real startup/review/save controls:
+platform reduced motion and static unknown progress, actionable song/file labels,
+seek identity, keyboard Enter/Escape and focus return, portrait/landscape at 200%
+text, unsaved edits across rotation, guideline targets/contrast/labels and valid
+inactive/hidden/paused/detached transitions without autoplay. Binding events and
+semantic trees are supplemental to actual platform screen-reader/device QA.
+
+The additional `STAGE7_QA_OUTPUT` plus `STAGE3_TEST_RUNTIME` opt-in executes
+`stage7_capacity_test.dart`: source-loss and real free-space-budget recovery,
+3 × 65-second, 10 × 65-second and 1 × 600-second synthetic loads through actual
+codecs, tags, ZIP/manifest verification, injected-chooser external transfers,
+SQLite reopen and copy-preserving cleanup. The Linux sampler records bounded
+100 ms process-tree CPU/RSS/private/destination observations with explicit
+sampling limits; it is development instrumentation, not release/phone or battery
+proof. `stage7_source_smoke_test.dart` requires a separate explicit public-playlist
+opt-in and never runs live source calls in ordinary CI. See STAGE7_GUIDE.md and
+STAGE7_RESULTS.json for the device/version matrix and open physical gates.

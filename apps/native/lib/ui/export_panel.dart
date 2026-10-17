@@ -24,8 +24,9 @@ class ExportPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (state.exportBusy) ...[
-            const LinearProgressIndicator(
-              semanticsLabel: 'Preparing or saving verified files',
+            const WorkspaceProgress(
+              linear: true,
+              label: 'Preparing or saving verified files',
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -77,17 +78,17 @@ class ExportPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SelectableText(file.filename),
-                    Semantics(
-                      label: file.filename,
-                      child: OutlinedButton.icon(
-                        key: Key('save-mp3-${file.trackId}'),
-                        onPressed:
-                            state.exportBusy ||
-                                state.capability?.canExport != true
-                            ? null
-                            : () => state.saveExportFile(file.id),
-                        icon: const Icon(Icons.audio_file_outlined),
-                        label: const Text('Save MP3'),
+                    OutlinedButton.icon(
+                      key: Key('save-mp3-${file.trackId}'),
+                      onPressed:
+                          state.exportBusy ||
+                              state.capability?.canExport != true
+                          ? null
+                          : () => state.saveExportFile(file.id),
+                      icon: const Icon(Icons.audio_file_outlined),
+                      label: Text(
+                        'Save MP3',
+                        semanticsLabel: 'Save MP3 ${file.filename}',
                       ),
                     ),
                   ],

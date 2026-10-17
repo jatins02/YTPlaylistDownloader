@@ -99,9 +99,7 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                         child: const Text('Retry loading playlist'),
                       ),
                     ] else
-                      const CircularProgressIndicator(
-                        semanticsLabel: 'Loading this playlist',
-                      )
+                      const WorkspaceProgress(label: 'Loading this playlist')
                   else ...[
                     WorkspaceHeading(
                       switch (job.phase) {
@@ -413,32 +411,31 @@ class _EntryCardState extends State<_EntryCard>
                       final active =
                           state.player.trackId == track.id &&
                           (state.player.playing || state.player.loading);
-                      return Semantics(
-                        label: track.metadata.songTitle,
-                        child: OutlinedButton.icon(
-                          key: Key('review-play-${entry.position}'),
-                          onPressed: state.canPlaySnippets
-                              ? () => state.player.toggle(track.id)
-                              : null,
-                          icon: Icon(active ? Icons.pause : Icons.play_arrow),
-                          label: Text('${active ? 'Pause' : 'Play'} snippet'),
+                      return OutlinedButton.icon(
+                        key: Key('review-play-${entry.position}'),
+                        onPressed: state.canPlaySnippets
+                            ? () => state.player.toggle(track.id)
+                            : null,
+                        icon: Icon(active ? Icons.pause : Icons.play_arrow),
+                        label: Text(
+                          '${active ? 'Pause' : 'Play'} snippet',
+                          semanticsLabel:
+                              '${active ? 'Pause' : 'Play'} snippet for ${track.metadata.songTitle}',
                         ),
                       );
                     },
                   ),
-                  Semantics(
-                    label: track.metadata.songTitle,
-                    child: OutlinedButton.icon(
-                      key: Key('review-edit-${entry.position}'),
-                      focusNode: _editFocus,
-                      onPressed:
-                          state.exportBusy ||
-                              state.commanding ||
-                              state.cancelling
-                          ? null
-                          : () => edit(track),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit track'),
+                  OutlinedButton.icon(
+                    key: Key('review-edit-${entry.position}'),
+                    focusNode: _editFocus,
+                    onPressed:
+                        state.exportBusy || state.commanding || state.cancelling
+                        ? null
+                        : () => edit(track),
+                    icon: const Icon(Icons.edit_outlined),
+                    label: Text(
+                      'Edit track',
+                      semanticsLabel: 'Edit track ${track.metadata.songTitle}',
                     ),
                   ),
                 ],
@@ -568,7 +565,7 @@ Future<void> _options(BuildContext context, ProcessingController state) async {
   try {
     final options = await port.metadataOptions();
     if (!context.mounted) return;
-    await showDialog<void>(
+    await showWorkspaceDialog<void>(
       context: context,
       builder: (_) => _MetadataOptions(port: port, options: options),
     );
