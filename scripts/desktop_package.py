@@ -321,12 +321,20 @@ def build(bundle: Path, output: Path, target: str, runtime: Path | None = None) 
     revision = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     dirty = bool(subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip())
     output.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix='.ytpd-package-', dir=output) as temporary:
+    # Some shared output mounts synthesize ownership/mode bits and ignore chmod.
+    # Stage in private native temporary storage so those bits cannot turn every
+    # runtime module/notice into an executable in the archived inventory.
+    with tempfile.TemporaryDirectory(prefix='ytpd-package-') as temporary:
         root = Path(temporary)
+        if sys.platform == 'linux' and (
+                root.stat().st_uid != os.geteuid() or root.stat().st_mode & 0o077):
+            raise PackageError('Package staging requires owned private temporary storage.')
         copy_tree(bundle, root / 'app')
-        if target == 'windows-x64':
-            for path in files(root / 'app'):
-                path.chmod(0o644)
+        for path in files(root / 'app'):
+            # The only directly launched Flutter bundle file is its entrypoint;
+            # native libraries and assets need read permission, not exec bits.
+            path.chmod(0o755 if target == 'linux-x64' and
+                       path.relative_to(root / 'app').as_posix() == TARGETS[target] else 0o644)
         if not (root / 'app' / TARGETS[target]).is_file():
             raise PackageError('Build the target release bundle first.')
         if runtime is not None:
