@@ -1,10 +1,10 @@
 # Project status
 
-Updated: 2026-10-17.
+Updated: 2026-10-18.
 
 ## Current state
 
-**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Stage 6 Linux full MP3/ZIP publication and destination delivery are implemented; manual picker/player and other-platform device gates remain open. Stage 7 adds automated Linux lifecycle/accessibility QA and measured synthetic capacity profiles; physical/device and controlled battery/frame gates remain open. No cloud resources have been provisioned.
+**Stage 0 is in progress.** The bounded CLI, tests, dependency pins and optional container/provider probes are implemented. The Stage 1 native foundation is accepted on Linux, and Windows foundation checks now pass in GitHub CI; manual Windows QA and media execution remain unproven. Stage 2’s fictional interface journey is complete. Stage 3 real Linux acquisition/conversion/snippets and recovery and Stage 4 Linux naming/artwork/tag adapters are implemented. Live Groq naming and known public artwork/embedded-cover acceptance pass; other-platform tagging remains unverified. Stage 5 real Linux snippet playback and persistent review/editing are implemented; manual audio/chooser QA and other-platform execution remain open. Stage 6 Linux full MP3/ZIP publication and destination delivery are implemented; manual picker/player and other-platform device gates remain open. Stage 7 adds automated Linux lifecycle/accessibility QA and measured synthetic capacity profiles; physical/device and controlled battery/frame gates remain open. Stage 8 adds private evaluation packaging and a relocatable Linux runtime; clean-device, phone, signing and public-distribution gates remain open. No cloud resources have been provisioned.
 
 | Stage | Status | Evidence |
 | --- | --- | --- |
@@ -16,7 +16,7 @@ Updated: 2026-10-17.
 | 5 — Review/edit | Linux implementation/native-output acceptance verified; manual/device gates open | Durable revision-safe edits/covers/selections, one bounded native snippet, responsive review; see Stage 5 evidence below |
 | 6 — Device save | Linux implementation/native byte-transfer acceptance; full device acceptance open | Frozen full tagged MP3/ZIP publication, verified destination receipts and restart/cleanup; manual native picker/player and Windows/Android/iOS export remain unverified |
 | 7 — Device QA | Linux automated QA implemented; physical/device acceptance open | Reduced motion/action labels, keyboard/rotation/lifecycle checks, measured synthetic loads and peer-safe failure recovery; no phone or battery attribution |
-| 8 — Packaging | Not started | No installed application packages |
+| 8 — Packaging | In progress; private desktop evaluation route | Standalone Linux runtime/package tooling, integrity manifests, versioned install/rollback and component notices; public distribution, clean-device/phone and Stage 7 gates remain open |
 | 9 — Release | Not started | No release |
 
 ## Owner decisions from Stage 0
@@ -591,5 +591,92 @@ transfer tests is injected. No unavailable platform/device result is marked pass
 Next actions: execute the concrete physical/device checklist in
 [STAGE7_GUIDE.md](STAGE7_GUIDE.md), prove each missing independent media/document
 adapter and record exact devices/OS/runtime observations before full acceptance.
-Stage 8 packaging and Stage 9 release remain unstarted. GitHub publication/checks
+At that Stage 7 checkpoint, packaging and release were unstarted. Stage 8 work
+is recorded below; Stage 9 release remains unstarted. GitHub publication/checks
 are visible in [Actions](https://github.com/jatins02/YTPlaylistDownloader/actions).
+
+## Stage 8 packaging work (2026-10-17–18)
+
+Added deterministic private-evaluation desktop archives with the complete AOT
+bundle, generated Flutter notices, app/source/dirty-checkout/schema/toolchain/
+build-environment records and byte/hash/mode inventories. Unsafe paths, links,
+private configuration/signing material, literal API keys, incomplete release
+bundles and bounded file/total limits are enforced. Windows output is explicitly
+foundation-only; no media capability is enabled. CI is configured to assemble
+foundation evaluation packages after the existing native release checks;
+configuration alone is not execution evidence.
+
+Linux preparation uses a separate official standalone CPython 3.14.4+20260414
+prefix (upstream archive checksum verified), exact existing runtime dependency
+versions, offline wheels and explicit pinned FFmpeg/ffprobe/Deno inputs. Venvs,
+system prefixes, external aliases and developer configuration are rejected.
+Unneeded self-tests/terminal data are omitted; reproducible checked-hash caches
+use virtual source paths and are read without runtime writes. Required code and
+component license files are retained. Deno 2.5.4 has no `--license` command;
+its selected upstream MIT text is supplied explicitly. Public third-party source/
+notice completeness is still a gate, not inferred from collected text.
+
+The app discovers a relocatable runtime beside its executable. Explicit
+development overrides retain precedence; invalid overrides do not select another
+runtime silently. Package tool hashes/lengths are checked in an isolate before
+the existing exact version/capability checks. Supervised Python uses explicit
+`-B` because `-I` ignores the bytecode environment variable; startup/media work
+must not alter the installed runtime's inventory. No pins, schema or other-
+platform media switches change.
+
+Linux install keeps separate verified content-ID releases and atomically switches
+one `current` pointer under an install lock. Old binaries, app-private drafts/
+settings/vault and user exports are not removed. Failed copy/corruption does not
+activate a partial package. Equal-schema rollback reverifies retained files;
+schema-changing switches are refused pending a tested backup/migration route.
+Android release signing is deliberately unconfigured instead of using debug
+keys; personal debug APK instructions remain separate. No Android SDK/JDK/ADB,
+Mac/Xcode/iPhone or signing identity is available here.
+
+Executed validation:
+
+- `dart format --output=none --set-exit-if-changed lib test integration_test tool`:
+  **98 files, zero changes**; `flutter analyze --no-pub`: **no issues**.
+- `flutter test --no-pub --concurrency=1`: **225 default tests**, then **252 tests**
+  with `STAGE3_TEST_RUNTIME` pointing at the prepared standalone runtime. The
+  runtime-enabled suite includes the actual no-bytecode-write regression. Focused
+  runtime/export checks also passed; they overlap these totals.
+- `PATH="$PWD/.tools-stage0/bin:$PATH" .venv-stage0/bin/python -m unittest discover -s tests -v`:
+  **101 Python tests, zero skipped**, including **17 Stage 8 packaging/APK tests**.
+  Script byte-compilation and `git diff --check` also pass.
+- Actual Linux native foundation, pipeline, enrichment, export and review checks:
+  **five passed** using `scripts/test_linux_native.py --test ...` and the Stage 5
+  private PulseAudio helper. These use the same standalone runtime for real
+  synthetic codec/tag/ZIP/transfer/playback operations. No live provider, source,
+  normal vault, owner dotenv or normal audio service is accessed.
+- `flutter build linux --release --no-pub` and
+  `scripts/check_native_bundle.py`: **pass, 19 release files checked**. Both
+  foundation and media tar.gz/checksum outputs were assembled under ignored
+  `dist/stage8/`. The runtime contains **6,001 files / 733,166,516 logical bytes**,
+  including **2,421 prebuilt hash-validated Python caches**.
+- Media archive checksum, fresh extraction, complete inventory verification,
+  versioned installation and isolated **installed AOT release startup** pass.
+  `scripts/test_linux_package.py` verifies schema v6/SQLite integrity and bundled
+  runtime discovery with no development manifest override. A second complete
+  installed inventory verification passes after startup. This does not substitute
+  for a clean physical device or cross-version app/data/key update.
+
+The isolated release smoke initially exposed a disconnected test-only document
+portal mount during cleanup. It now shares the native test helper's exact-session
+unmount before D-Bus exits; the entire startup/cleanup/reverification command
+passes. The initial cold standalone runtime exposed an existing export test's
+30-second deadline; reproducible precompiled caches restore bounded operation
+without raising deadlines or media limits. The final 252-test/native runs above
+use that corrected runtime.
+
+Android CI now builds an arm64 personal debug APK, verifies the signature/package
+information and scans uncompressed assets with byte/path/secret limits. The
+explicit Kotlin plugin matches the existing built-in-Kotlin opt-out, and Gradle
+9.3.1 now enforces its official archive checksum. These are configured checks;
+Android execution evidence is recorded only after the workflow actually runs.
+CI keeps no binary artifacts and creates no release or storage charge.
+Full Stage 8 remains in progress: clean-device install/actual cross-version
+settings/draft/key and rollback checks, physical source/player/export acceptance,
+component-source/notice clearance, Windows media/installer proof, Android/iPhone
+and Stage 7 device gates are open. No public release, paid service or shared
+developer key is created. See [STAGE8_GUIDE.md](STAGE8_GUIDE.md).
