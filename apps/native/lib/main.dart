@@ -7,6 +7,7 @@ import 'application/drafts_controller.dart';
 import 'domain/failure.dart';
 import 'ui/foundation_app.dart';
 import 'ui/theme.dart';
+import 'ui/workspace_components.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -106,8 +107,8 @@ class _RuntimeHostState extends State<RuntimeHost> {
                           ],
                         ),
                       )
-                    : const CircularProgressIndicator(
-                        semanticsLabel: 'Opening private app storage',
+                    : const WorkspaceProgress(
+                        label: 'Opening private app storage',
                       ),
               ),
             ),
