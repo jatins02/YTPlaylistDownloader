@@ -1,7 +1,7 @@
 {
-  "source_commit": "a4989ab10a8d31a62d140042289fc5b327a88c5e",
+  "source_commit": "aab83fa7028e57a4cf059b2bd0a3a53a45a51b43",
   "source_dirty": false,
-  "package_id": "2a6b3ca39525191b",
+  "package_id": "06e9e6c35c546873",
   "package_files": 6027,
   "schema": 6,
   "checks": {
@@ -10,25 +10,28 @@
     "private_install": true,
     "installed_aot_startup": true,
     "post_startup_inventory": true,
-    "retained_equal_schema_switching": true
+    "retained_equal_schema_switching": true,
+    "normalized_modes": true,
+    "installed_runtime_export_regressions": true
   },
   "archives": [
     {
-      "file": "ytpd-0.1.0+1-linux-x64-3e2386c4f3b3b679.tar.gz",
-      "bytes": 11198582,
-      "sha256": "31b129811c18d7aeb2823d0a75d9cd4560710bd0fafded15fd62bdb9a0ca6dc6"
+      "file": "ytpd-0.1.0+1-linux-x64-b169a73c37ebf496.tar.gz",
+      "bytes": 11198846,
+      "sha256": "7b079367ccd32c785684ae863e78863e3ba37d5731e0c2251d1b709cf8f18478"
     },
     {
-      "file": "ytpd-0.1.0+1-linux-x64-2a6b3ca39525191b.tar.gz",
-      "bytes": 289484989,
-      "sha256": "43568b2b640fdcf09acae9cbbe70979ddabf742cd1fa757f8bc8d059af68e949"
+      "file": "ytpd-0.1.0+1-linux-x64-06e9e6c35c546873.tar.gz",
+      "bytes": 289485340,
+      "sha256": "0da707c580a747d036ef6346ff61abe9fe305d714361a2da21ce3618742f6910"
     }
   ],
   "limitations": [
     "Not a clean physical device",
     "Retained packages share the same app version; cross-version data/key acceptance remains pending",
     "No live source/provider or manual player/export acceptance",
-    "Private evaluation only; public license/source clearance pending"
+    "Private evaluation only; public license/source clearance pending",
+    "Focused test totals overlap the default/runtime suites; transfers use injected choosers and test-owned destinations."
   ],
   "stage": 8,
   "date": "2026-10-18",
@@ -36,13 +39,14 @@
   "local_validation": {
     "flutter_default": 225,
     "flutter_standalone_runtime": 252,
-    "python": 101,
-    "stage8_packaging_apk_subset": 17,
+    "python": 102,
+    "stage8_packaging_apk_subset": 18,
     "linux_native_integration": 5,
     "dart_format_files": 98,
     "dart_format_changes": 0,
     "analysis": "no issues",
-    "release_scan_files": 19
+    "release_scan_files": 19,
+    "installed_runtime_focused_cases": 16
   },
   "standalone_runtime": {
     "python_distribution": "CPython 3.14.4+20260414 x86_64-unknown-linux-gnu install_only_stripped",
@@ -66,6 +70,18 @@
     },
     "linux_foundation_package": "passed",
     "windows_initial_failure": "Two new test-only path comparisons assumed POSIX separators and unexpanded temporary paths; corrected and rerun in PR #5",
-    "final_checks": "https://github.com/jatins02/YTPlaylistDownloader/pull/5"
-  }
+    "final_checks": "https://github.com/jatins02/YTPlaylistDownloader/pull/5",
+    "corrected_branch_run": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/39059970436",
+    "corrected_pull_request_run": "https://github.com/jatins02/YTPlaylistDownloader/actions/runs/39059972904",
+    "corrected_checks": "All eight branch/pull-request checks passed before the final packaging-only mode correction; final checks remain linked in PR #5.",
+    "windows_foundation": {
+      "flutter_passed": 213,
+      "privilege_dependent_symlink_skips": 2,
+      "native_plugin_restart": "passed",
+      "release_bundle_scan_files": 18,
+      "portable_zip": "assembled and inventoried in CI",
+      "windows_media_acceptance": false
+    }
+  },
+  "executable_files": 119
 }

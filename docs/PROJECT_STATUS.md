@@ -631,7 +631,7 @@ activate a partial package. Equal-schema rollback reverifies retained files;
 schema-changing switches are refused pending a tested backup/migration route.
 Android release signing is deliberately unconfigured instead of using debug
 keys; personal debug APK instructions remain separate. No Android SDK/JDK/ADB,
-Mac/Xcode/iPhone or signing identity is available here.
+Mac/Xcode/iPhone or signing identity is available in the local environment.
 
 Executed validation:
 
@@ -642,7 +642,7 @@ Executed validation:
   runtime-enabled suite includes the actual no-bytecode-write regression. Focused
   runtime/export checks also passed; they overlap these totals.
 - `PATH="$PWD/.tools-stage0/bin:$PATH" .venv-stage0/bin/python -m unittest discover -s tests -v`:
-  **101 Python tests, zero skipped**, including **17 Stage 8 packaging/APK tests**.
+  **102 Python tests, zero skipped**, including **18 Stage 8 packaging/APK tests**.
   Script byte-compilation and `git diff --check` also pass.
 - Actual Linux native foundation, pipeline, enrichment, export and review checks:
   **five passed** using `scripts/test_linux_native.py --test ...` and the Stage 5
@@ -678,20 +678,41 @@ Windows run caught two new test assertions comparing mixed path separators/DOS
 short names. They now compare canonical packaged paths and native legacy paths;
 all seven focused runtime cases and analysis pass locally after correction. The
 explicit Kotlin plugin matches the existing built-in-Kotlin opt-out, and Gradle
-9.3.1 now enforces its official archive checksum. Linux CI also passed its 225 tests, native plugin/restart, release scan and
-foundation archive assembly. Final Windows packaging and all pull-request checks
-are tracked in [PR #5](https://github.com/jatins02/YTPlaylistDownloader/pull/5).
+9.3.1 now enforces its official archive checksum. Linux CI also passed its
+225 tests, native plugin/restart, release scan and
+foundation archive assembly. The corrected [branch](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/39059970436)
+and [PR](https://github.com/jatins02/YTPlaylistDownloader/actions/runs/39059972904)
+workflows passed **all eight checks**: Windows passed **213 tests** with two
+privilege-dependent symlink skips, its native plugin/restart check, release build,
+**18-file** scan and portable ZIP assembly. This does not enable Windows media.
+Final packaging-only mode correction checks are tracked in
+[PR #5](https://github.com/jatins02/YTPlaylistDownloader/pull/5).
 CI keeps no binary artifacts and creates no public release. APK build evidence
 is not physical phone media/document API acceptance.
-The clean local commit `a4989ab` produced a **289,484,989-byte** media archive
-(package ID `2a6b3ca39525191b`, **6,027 inventoried files**), which passed private
+
+The clean local commit `aab83fa` produced a **289,485,340-byte** media archive
+(package ID `06e9e6c35c546873`, **6,027 inventoried files**), which passed private
 installation, isolated installed AOT startup and post-launch inventory checks.
 Switching backward/forward between retained same-version/equal-schema evaluation
 packages passed. The shared workspace mount has synthetic ownership/world-write
 permissions, so installation correctly refuses it; the exercised prefix is in
 owned private test storage. No permission checks were bypassed. Exact archive
 hashes, source identity and scope are in [STAGE8_RESULTS.json](STAGE8_RESULTS.json).
-These same-version switches do not establish a cross-version data/key migration.
+A second shared-filesystem issue was found before handoff: staging beside the
+output inherited synthetic executable bits. Packaging now stages in owned private
+temporary storage, normalizes the Flutter bundle to one executable entrypoint and
+retains the standalone runtime's actual modes. The final archive has **119
+executable files**; `os.py`, notices and the package manager are not marked
+executable. Complete installed startup/inventory and retained-version
+switching pass for this corrected archive. These same-version switches do not
+establish a cross-version data/key migration.
+
+Finally, `flutter test --no-pub --concurrency=1 test/packaged_runtime_test.dart test/export_pipeline_integration_test.dart` passed **16 cases** with
+`STAGE3_TEST_RUNTIME` pointing at the **installed relocated package runtime**.
+Real tagged full MP3/ZIP publication, byte transfer, cancellation, corruption and
+recovery passed; complete post-test package verification confirmed no installed
+file changed. These focused cases overlap the earlier suite and are separate
+from manual/physical-player or native chooser acceptance.
 
 Full Stage 8 remains in progress: clean-device install/actual cross-version
 settings/draft/key and rollback checks, physical source/player/export acceptance,
