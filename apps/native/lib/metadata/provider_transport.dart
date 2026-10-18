@@ -112,10 +112,16 @@ final class SafeProviderTransport implements ProviderTransport {
           (b[0] == 198 && (b[1] == 18 || b[1] == 19 || b[1] == 51)) ||
           (b[0] == 203 && b[1] == 0 && b[2] == 113));
     }
-    // Only global unicast; reject IPv4-mapped, unique/local and documentation IPs.
+    // Ordinary global unicast only. Conservatively exclude IETF protocol/
+    // transition space as well as both documentation ranges; those prefixes
+    // must not turn a trusted hostname into a local/embedded-address route.
+    // https://www.iana.org/assignments/iana-ipv6-special-registry/
     return b.length == 16 &&
         (b[0] & 0xe0) == 0x20 &&
-        !(b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x0d && b[3] == 0xb8);
+        !(b[0] == 0x20 && b[1] == 0x01 && b[2] < 2) &&
+        !(b[0] == 0x20 && b[1] == 0x02) &&
+        !(b[0] == 0x20 && b[1] == 0x01 && b[2] == 0x0d && b[3] == 0xb8) &&
+        !(b[0] == 0x3f && b[1] == 0xff && (b[2] & 0xf0) == 0);
   }
 
   @override
@@ -126,7 +132,13 @@ final class SafeProviderTransport implements ProviderTransport {
     Map<String, Object?>? body,
     int maxBytes = 256 * 1024,
   }) async {
-    validate(uri, authenticated: headers.containsKey('Authorization'));
+    // HTTP header names are case-insensitive. Snapshot caller-owned headers
+    // before DNS/socket awaits so later mutation cannot bypass this boundary.
+    final requestHeaders = Map<String, String>.unmodifiable(headers);
+    final authenticated = requestHeaders.keys.any(
+      (name) => name.toLowerCase() == 'authorization',
+    );
+    validate(uri, authenticated: authenticated);
     scope.check();
     if (maxBytes < 1 || maxBytes > 5 * 1024 * 1024) {
       throw const AppFailure(
@@ -140,7 +152,7 @@ final class SafeProviderTransport implements ProviderTransport {
       ..findProxy = (_) => 'DIRECT';
     client.connectionFactory = (target, proxyHost, proxyPort) async {
       scope.check();
-      validate(target, authenticated: headers.containsKey('Authorization'));
+      validate(target, authenticated: authenticated);
       final addresses = await InternetAddress.lookup(target.host)
           .timeout(const Duration(seconds: 5));
       scope.check();
@@ -173,7 +185,7 @@ final class SafeProviderTransport implements ProviderTransport {
           uri,
         );
         request.followRedirects = false;
-        headers.forEach(request.headers.set);
+        requestHeaders.forEach(request.headers.set);
         if (body != null) {
           request.headers.contentType = ContentType.json;
           request.add(utf8.encode(jsonEncode(body)));

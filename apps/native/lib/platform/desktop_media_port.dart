@@ -653,6 +653,10 @@ final class DesktopMediaPort
         duration: verified.durationSeconds,
       );
     } on AppFailure catch (failure) {
+      if (failure.fileLimit) {
+        await store.trackPhase(token, TrackPhase.failed, failure: failure.code);
+        return;
+      }
       if ([
         FailureCode.operationCancelled,
         FailureCode.conflict,
@@ -663,6 +667,14 @@ final class DesktopMediaPort
         rethrow;
       }
       await store.trackPhase(token, TrackPhase.failed, failure: failure.code);
+    } finally {
+      // Resume boundaries reference registered assets, never disposable work.
+      // Remove failed partial files before a playable peer consumes its budget.
+      try {
+        if (await work.exists()) await work.delete(recursive: true);
+      } on FileSystemException {
+        /* The job-level/startup cleanup retries without changing the outcome. */
+      }
     }
   }
 

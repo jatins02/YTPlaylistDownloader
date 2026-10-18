@@ -11,6 +11,26 @@ void main() {
     'entries': entries,
     'playlist_count': count,
   });
+  test('duration limits remain distinct from live and unavailable sources', () {
+    final entries = parsePlaylistListing(
+      listing([
+        {'id': 'abcdefghijk', 'title': 'Long studio track', 'duration': 601},
+        {'id': '12345678901', 'title': 'Live stream', 'live_status': 'is_live'},
+        {
+          'id': '12345678902',
+          'title': 'Private source',
+          'duration': 601,
+          'availability': 'private',
+        },
+      ]),
+      const PipelineLimits(),
+    );
+    expect(entries.map((entry) => entry.failure), [
+      FailureCode.limitExceeded,
+      FailureCode.liveUnsupported,
+      FailureCode.sourceUnavailable,
+    ]);
+  });
   test('reported gaps and omitted entries stay visible instead of shrinking the playlist', () {
     final result = parsePlaylistListing(
       listing([
@@ -79,7 +99,7 @@ void main() {
       expect(result.map((e) => e.failure), [
         FailureCode.sourceUnavailable,
         FailureCode.liveUnsupported,
-        FailureCode.liveUnsupported,
+        FailureCode.limitExceeded,
       ]);
     },
   );

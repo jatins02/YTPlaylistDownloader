@@ -149,11 +149,9 @@ void main() {
           'open("large.bin","wb").write(b"a"*100000)',
         ], directory: directory),
         throwsA(
-          isA<AppFailure>().having(
-            (e) => e.code,
-            'code',
-            FailureCode.limitExceeded,
-          ),
+          isA<AppFailure>()
+              .having((e) => e.code, 'code', FailureCode.limitExceeded)
+              .having((e) => e.fileLimit, 'individual file limit', isTrue),
         ),
       );
       expect(

@@ -163,12 +163,16 @@ def verify(root: Path) -> dict:
             not re.fullmatch(r'[a-f0-9]{40}', data['revision'])):
         raise PackageError('Invalid package identity.')
     entrypoint = 'app/' + TARGETS[data['target']]
-    if data['entrypoint'] != entrypoint or not (root / entrypoint).is_file():
+    if (data['entrypoint'] != entrypoint or not (root / entrypoint).is_file() or
+            (root / entrypoint).stat().st_size == 0):
         raise PackageError('Missing application entrypoint.')
+    if data['target'] == 'linux-x64' and not (root / entrypoint).stat().st_mode & 0o111:
+        raise PackageError('Linux application entrypoint is not executable.')
     for name in (*REQUIRED[data['target']], 'data/icudtl.dat', 'data/flutter_assets/NOTICES.Z'):
-        if not (root / 'app' / name).is_file():
+        if not (root / 'app' / name).is_file() or (root / 'app' / name).stat().st_size == 0:
             raise PackageError('Incomplete AOT release bundle or component notices.')
-    if not all((root / 'notices' / name).is_file() for name in ('flutter.txt', 'dart.txt')):
+    if not all((root / 'notices' / name).is_file() and (root / 'notices' / name).stat().st_size > 0
+               for name in ('flutter.txt', 'dart.txt')):
         raise PackageError('Flutter/Dart component notices are missing.')
     recorded = data['files']
     if not isinstance(recorded, dict) or not recorded:
@@ -417,6 +421,8 @@ def activate(prefix: Path, package_id: str) -> None:
         raise PackageError('Invalid installed package ID.')
     candidate = prefix / 'releases' / package_id
     data = verify(candidate)
+    if data['package_id'] != package_id:
+        raise PackageError('Installed directory does not match its package identity.')
     if data['target'] != 'linux-x64':
         raise PackageError('Cannot activate another target platform.')
     current = prefix / 'current'
@@ -424,6 +430,8 @@ def activate(prefix: Path, package_id: str) -> None:
         if not current.is_symlink() or not re.fullmatch('releases/[a-f0-9]{16}', os.readlink(current)):
             raise PackageError('Unrecognized active installation.')
         previous = verify(prefix / os.readlink(current))
+        if previous['package_id'] != Path(os.readlink(current)).name:
+            raise PackageError('Active directory does not match its package identity.')
         if previous['schema'] != data['schema']:
             raise PackageError('Schema-changing updates/rollback need a separately tested data migration/backup route.')
     # One atomic pointer update; never modify old binaries, user data or vault.
@@ -449,7 +457,8 @@ def install(source: Path, prefix: Path) -> str:
             with tempfile.TemporaryDirectory(prefix='.incoming-', dir=prefix) as temporary:
                 staged = Path(temporary) / 'package'
                 copy_tree(source, staged, durable=True)
-                verify(staged)
+                if verify(staged) != data:
+                    raise PackageError('Package changed while creating the installation snapshot.')
                 os.rename(staged, target)
                 sync_directory(prefix / 'releases')
         activate(prefix, data['package_id'])

@@ -22,6 +22,14 @@ class CheckError(Exception):
         self.code = code
 
 
+# A verified source is one standalone local container, never a playlist that
+# substitutes other local/network bytes outside that file's checksum identity.
+LOCAL_MEDIA_INPUT_OPTIONS = (
+    '-protocol_whitelist', 'file,pipe', '-format_whitelist',
+    'aac,flac,matroska,webm,mov,mp4,m4a,3gp,3g2,mj2,mp3,ogg,wav,mpegts,mpeg',
+)
+
+
 def canonical_playlist(value: str) -> str:
     try:
         url = urlsplit(value.strip())
@@ -226,13 +234,17 @@ def command(args: list[str], *, timeout: int = 120, scratch: Path | None = None,
 
 
 def probe_and_decode(path: Path, ffmpeg: str, ffprobe: str) -> float:
-    data = json.loads(command([ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "json", str(path)], require_clean_stderr=True))
+    data = json.loads(command([ffprobe, "-v", "error", "-show_entries", "format=duration:stream=codec_type", "-of", "json", *LOCAL_MEDIA_INPUT_OPTIONS, str(path)], require_clean_stderr=True))
     duration = float(data["format"]["duration"])
     if not math.isfinite(duration) or duration <= 0 or duration > 601:
         raise CheckError("AUDIO_DURATION_INVALID", "Stage 0 accepts positive audio durations up to 10 minutes.")
+    streams = data.get('streams')
+    if (not isinstance(streams, list) or any(not isinstance(s, dict) for s in streams) or
+            sum(s.get('codec_type') == 'audio' for s in streams) != 1):
+        raise CheckError('AUDIO_STREAMS_INVALID', 'Expected exactly one decodable audio stream.')
     # FFmpeg 6.1 can report decoder-thread errors and still exit zero even with
     # -xerror. At log level error, any diagnostic means strict decoding failed.
-    command([ffmpeg, "-nostdin", "-v", "error", "-xerror", "-i", str(path), "-f", "null", "-"],
+    command([ffmpeg, "-nostdin", "-v", "error", "-xerror", *LOCAL_MEDIA_INPUT_OPTIONS, "-i", str(path), "-map", "0:a:0", "-vn", "-f", "null", "-"],
             timeout=120, require_clean_stderr=True)
     return duration
 

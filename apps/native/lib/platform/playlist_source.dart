@@ -190,9 +190,8 @@ List<SourceEntry> parsePlaylistListing(String output, PipelineLimits limits) {
             'subscriber_only',
             'needs_auth',
           ].contains(entry['availability']);
-      final unsupported =
-          ['is_live', 'is_upcoming'].contains(live) ||
-          (duration is num && duration > limits.maxSeconds);
+      final liveUnsupported = ['is_live', 'is_upcoming'].contains(live);
+      final tooLong = duration is num && duration > limits.maxSeconds;
       result.add(
         SourceEntry(
           position: position,
@@ -204,8 +203,10 @@ List<SourceEntry> parsePlaylistListing(String output, PipelineLimits limits) {
           durationSeconds: (duration as num?)?.toDouble(),
           failure: unavailable
               ? FailureCode.sourceUnavailable
-              : unsupported
+              : liveUnsupported
               ? FailureCode.liveUnsupported
+              : tooLong
+              ? FailureCode.limitExceeded
               : null,
         ),
       );

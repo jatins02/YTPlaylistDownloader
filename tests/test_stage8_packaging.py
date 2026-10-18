@@ -47,6 +47,18 @@ class AndroidPackaging(unittest.TestCase):
             with self.assertRaises(package.PackageError):
                 check_apk(self.apk)
 
+    def test_required_apk_components_must_be_nonempty_files(self):
+        required = ('AndroidManifest.xml', 'classes.dex', 'assets/flutter_assets/NOTICES.Z',
+                    'lib/arm64-v8a/libflutter.so')
+        for missing in required:
+            for replacement in ('directory', 'empty'):
+                with self.subTest(missing=missing, replacement=replacement):
+                    entries = {name: b'fictional component' for name in required if name != missing}
+                    entries[missing + '/' if replacement == 'directory' else missing] = b''
+                    self.write_apk(entries, complete=False)
+                    with self.assertRaises(package.PackageError):
+                        check_apk(self.apk)
+
     def test_unsafe_paths_links_and_expansion_caps_fail(self):
         for name in ('../escaped', '/absolute', 'assets/../escaped', 'assets\\escaped'):
             self.write_apk({name: b'fictional'})
@@ -171,6 +183,28 @@ class DesktopPackaging(unittest.TestCase):
         (self.bundle / 'lib/libapp.so').unlink()
         with self.assertRaises(package.PackageError):
             package.build(self.bundle, self.root / 'incomplete', 'linux-x64')
+
+    def test_required_desktop_components_cannot_be_empty(self):
+        for name in ('yt_playlist_downloader', 'lib/libapp.so', 'lib/libflutter_linux_gtk.so',
+                     'data/icudtl.dat', 'data/flutter_assets/NOTICES.Z'):
+            file = self.bundle / name
+            previous = file.read_bytes()
+            with self.subTest(name=name):
+                file.write_bytes(b'')
+                with self.assertRaises(package.PackageError):
+                    package.build(self.bundle, self.output, 'linux-x64')
+            file.write_bytes(previous)
+        (self.root / 'fictional-sdk-notice.txt').write_bytes(b'')
+        with self.assertRaises(package.PackageError):
+            package.build(self.bundle, self.output, 'linux-x64')
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux executable permissions')
+    def test_nonexecutable_entrypoint_cannot_be_declared_a_verified_package(self):
+        root = self.make_package()
+        (root / 'app/yt_playlist_downloader').chmod(0o644)
+        self.resign(root)
+        with self.assertRaises(package.PackageError):
+            package.verify(root)
 
     def test_media_package_checks_tool_bytes_and_component_notices(self):
         runtime = self.root / 'runtime'
@@ -320,6 +354,39 @@ class DesktopPackaging(unittest.TestCase):
         (self.bundle / 'outside').symlink_to(self.executable)
         with self.assertRaises(package.PackageError):
             package.build(self.bundle, self.output, 'linux-x64')
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux versioned installer')
+    def test_changed_valid_package_during_copy_cannot_activate_under_old_identity(self):
+        root = self.make_package()
+        prefix = self.root / 'install'
+        first = package.install(root, prefix)
+        (root / 'app/yt_playlist_downloader').write_bytes(b'intended update')
+        intended = self.resign(root)['package_id']
+        original = package.copy_tree
+
+        def replace_during_copy(source, target, **kwargs):
+            original(source, target, **kwargs)
+            (target / 'app/yt_playlist_downloader').write_bytes(b'a different valid package')
+            self.resign(target)
+
+        with patch.object(package, 'copy_tree', side_effect=replace_during_copy):
+            with self.assertRaises(package.PackageError):
+                package.install(root, prefix)
+        self.assertEqual(os.readlink(prefix / 'current'), 'releases/' + first)
+        self.assertFalse((prefix / 'releases' / intended).exists())
+        self.assertFalse(list(prefix.glob('.incoming-*')))
+
+    @unittest.skipUnless(sys.platform == 'linux', 'Linux versioned installer')
+    def test_valid_package_under_wrong_directory_identity_cannot_activate(self):
+        root = self.make_package()
+        prefix = self.root / 'install'
+        first = package.install(root, prefix)
+        wrong = '0' * 16
+        package.copy_tree(root, prefix / 'releases' / wrong)
+        with package.installation(prefix) as locked:
+            with self.assertRaises(package.PackageError):
+                package.activate(locked, wrong)
+        self.assertEqual(os.readlink(prefix / 'current'), 'releases/' + first)
 
     def test_venv_and_external_standalone_alias_are_not_packaged(self):
         source = self.root / 'python'

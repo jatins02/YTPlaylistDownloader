@@ -244,6 +244,7 @@ final class ProcessScope {
               ? 'A media file exceeded its enforced byte limit.'
               : 'The device ran out of storage.',
           retryable: true,
+          fileLimit: reason == FailureCode.limitExceeded,
         );
       }
       if (code != 0 || (requireCleanStderr && hasStderr)) {

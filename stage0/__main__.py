@@ -17,7 +17,7 @@ import threading
 import time
 import uuid
 
-from .core import (CheckError, allocate_filename, build_archive, canonical_playlist,
+from .core import (CheckError, LOCAL_MEDIA_INPUT_OPTIONS, allocate_filename, build_archive, canonical_playlist,
                    checksum, command, disk_bytes, fallback_metadata, probe_and_decode,
                    song_title, tag_and_verify, validate_metadata)
 
@@ -229,7 +229,7 @@ def export_tracks(root: Path, tracks: list[dict], files: dict[str, Path], metada
         snippet = root / "previews" / (identity + ".mp3")
         start = 30 if duration > 60 else 0
         seconds = min(duration - start, 29.9)
-        command([tool("ffmpeg"), "-nostdin", "-v", "error", "-xerror", "-ss", str(start), "-i", str(target), "-t", str(seconds), "-c:a", "libmp3lame", "-b:a", "128k", str(snippet)], scratch=root)
+        command([tool("ffmpeg"), "-nostdin", "-v", "error", "-xerror", "-ss", str(start), *LOCAL_MEDIA_INPUT_OPTIONS, "-i", str(target), "-t", str(seconds), "-c:a", "libmp3lame", "-b:a", "128k", str(snippet)], scratch=root)
         snippet_duration = probe_and_decode(snippet, tool("ffmpeg"), tool("ffprobe"))
         if snippet_duration > 30 or abs(snippet_duration - seconds) > 0.2:
             raise CheckError("PREVIEW_DURATION_INVALID", "Preview exceeds its 30-second bound.")

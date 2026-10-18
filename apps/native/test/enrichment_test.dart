@@ -53,6 +53,26 @@ Map<String, Object?> artworkEvidence(SongMetadata metadata, String hash) => {
 };
 
 void main() {
+  test('authorization headers are restricted before network work regardless of casing', () async {
+    for (final header in [
+      'Authorization',
+      'authorization',
+      'AUTHORIZATION',
+      'AuThOrIzAtIoN',
+    ]) {
+      // Cancellation guarantees the old implementation cannot contact a provider.
+      // Destination policy must reject credentials even before that scope check.
+      final scope = RequestScope()..cancel();
+      await expectLater(
+        SafeProviderTransport().request(
+          Uri.parse('https://archive.org/fictional'),
+          scope,
+          headers: {header: 'Bearer fictional-test-value'},
+        ),
+        failure(FailureCode.artworkInvalid),
+      );
+    }
+  });
   test('stable IDs map reordered multilingual replies and preserve feature formatting', () {
     final sources = [
       NamingInput(trackId: 'a', title: '夜の歌'),
@@ -212,6 +232,12 @@ void main() {
       'fc00::1',
       '::ffff:127.0.0.1',
       '2001:db8::1',
+      '2001:2::1',
+      '2001:10::1',
+      '2001:1ff:ffff::1',
+      '2002:7f00:1::',
+      '3fff::1',
+      '3fff:fff:ffff::1',
     ]) {
       expect(
         SafeProviderTransport.publicAddress(InternetAddress(ip)),
@@ -223,6 +249,18 @@ void main() {
       SafeProviderTransport.publicAddress(InternetAddress('8.8.8.8')),
       isTrue,
     );
+    for (final ip in [
+      '2001:4860:4860::8888',
+      '2606:4700:4700::1111',
+      '2001:200::1',
+      '3fff:1000::1',
+    ]) {
+      expect(
+        SafeProviderTransport.publicAddress(InternetAddress(ip)),
+        isTrue,
+        reason: ip,
+      );
+    }
     expect(
       SafeProviderTransport.publicAddress(
         InternetAddress('2606:4700:4700::1111'),

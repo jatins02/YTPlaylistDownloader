@@ -92,10 +92,11 @@ play or save real audio. It is not a device acceptance test.
 | Crash near the end of delivery | A complete external file may exist before its receipt was persisted. Inspect it and choose a new filename on retry; the app does not overwrite it or invent a receipt |
 
 The app is temporary workspace software, not a permanent music library. Private
-media normally expires after 48 hours when the app next runs its cleanup;
+media normally expires 48 hours after the draft was created when the app next runs its cleanup;
 active processing/export and open edits are protected. Metadata/committed edits
-and external saved copies survive private cleanup. Expired audio must be
-prepared again. Do not rely on previews or internal paths as backups.
+and external saved copies survive private cleanup. Edits/resume do not reset the
+retention window. Add the playlist as a new draft to prepare expired audio again.
+Do not rely on previews or internal paths as backups.
 
 For support, report app/package ID, platform/runtime versions, the failing action
 and sanitized error category. Exclude API keys, `.env`, databases, private paths,

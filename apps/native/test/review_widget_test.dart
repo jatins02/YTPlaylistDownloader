@@ -22,6 +22,69 @@ import 'package:yt_playlist_downloader/ui/theme.dart';
 import 'test_support.dart';
 
 void main() {
+  testWidgets(
+    'review recovers when local audio starts and capability checks recover',
+    (tester) async {
+      final f = (await tester.runAsync(Fixture.open))!;
+      final job = (await tester.runAsync(f.draft))!;
+      await tester.runAsync(() async {
+        await f.ready(await f.track(job));
+        await f.review(job);
+      });
+      final port = ReviewWidgetPort(f)..outputAvailable = false;
+      final state = ProcessingController(
+        jobId: job.id,
+        jobs: f.jobs,
+        media: port,
+      );
+      try {
+        await tester.runAsync(state.initialize);
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: appTheme,
+            home: ProcessingScreen(controller: state),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('review-play-1')),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        VoidCallback? playAction() => tester
+            .widget<OutlinedButton>(find.byKey(const Key('review-play-1')))
+            .onPressed;
+        expect(playAction(), isNull);
+        port.outputAvailable = true;
+        await tester.runAsync(() => state.refresh(force: true));
+        await tester.pumpAndSettle();
+        expect(playAction(), isNotNull);
+        port.capabilityError = StateError('private native diagnostic');
+        await tester.runAsync(() => state.refresh(force: true));
+        await tester.pumpAndSettle();
+        expect(playAction(), isNull);
+        expect(state.job!.id, job.id);
+        expect(
+          state.failure!.message,
+          isNot(contains('private native diagnostic')),
+        );
+        port.capabilityError = null;
+        await tester.runAsync(() => state.refresh(force: true));
+        await tester.pumpAndSettle();
+        expect(playAction(), isNotNull);
+        expect(state.failure, isNull);
+        port.outputAvailable = false;
+        await tester.runAsync(() => state.refresh(force: true));
+        await tester.pumpAndSettle();
+        expect(playAction(), isNull);
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        state.dispose();
+        await tester.runAsync(f.close);
+      }
+    },
+  );
+
   testWidgets('player controls wait for export, processing and cancellation', (
     tester,
   ) async {
@@ -611,16 +674,21 @@ void main() {
 final class ReviewWidgetPort implements MediaPort, ReviewMediaPort {
   ReviewWidgetPort(this.fixture);
   final Fixture fixture;
-  bool failSave = false;
+  bool failSave = false, outputAvailable = true;
+  Object? capabilityError;
   CoverAction? lastCover;
   Completer<void>? playback;
   @override
-  Future<MediaCapabilities> capabilities() async => const MediaCapabilities(
-    platform: DevicePlatform.linux,
-    canPlaySnippets: true,
-    canAcquire: true,
-    canImportArtwork: true,
-  );
+  Future<MediaCapabilities> capabilities() async {
+    if (capabilityError != null) throw capabilityError!;
+    return MediaCapabilities(
+      platform: DevicePlatform.linux,
+      canPlaySnippets: outputAvailable,
+      canAcquire: true,
+      canImportArtwork: true,
+    );
+  }
+
   @override
   Future<void> acquire({
     required PlaylistUrl playlist,

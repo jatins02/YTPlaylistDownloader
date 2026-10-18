@@ -16,6 +16,14 @@ final class NativeCodec {
   const NativeCodec(this.tools, this.limits);
   final DesktopTools tools;
   final PipelineLimits limits;
+  // Stored source/derivative identities cover one standalone container. Never
+  // let an implicit HLS/DASH/concat demuxer fetch other files or network bytes.
+  static const localInputOptions = [
+    '-protocol_whitelist',
+    'file,pipe',
+    '-format_whitelist',
+    'aac,flac,matroska,webm,mov,mp4,m4a,3gp,3g2,mj2,mp3,ogg,wav,mpegts,mpeg',
+  ];
   static double snippetSeconds(double duration) =>
       (duration - (duration > 60 ? 30 : 0)).clamp(0.1, 29.9);
 
@@ -38,6 +46,7 @@ final class NativeCodec {
           'format=duration:stream=codec_type,codec_name',
           '-of',
           'json',
+          ...localInputOptions,
           file.path,
         ],
         directory: work,
@@ -68,6 +77,7 @@ final class NativeCodec {
           '-loglevel',
           'error',
           '-xerror',
+          ...localInputOptions,
           '-i',
           file.path,
           '-map',
@@ -122,6 +132,7 @@ final class NativeCodec {
         'error',
         '-xerror',
         '-n',
+        ...localInputOptions,
         '-i',
         source.path,
         '-map',
@@ -165,6 +176,7 @@ final class NativeCodec {
         '-n',
         '-ss',
         '$start',
+        ...localInputOptions,
         '-i',
         audio.path,
         '-t',

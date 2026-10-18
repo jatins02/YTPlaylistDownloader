@@ -1,5 +1,8 @@
 # Stage 1 native foundation
 
+This guide records the foundation stage. For current media capabilities,
+packaging, signing and outstanding acceptance, use [Stage 9](STAGE9_GUIDE.md).
+
 ## Implemented behavior
 
 The native application saves canonical YouTube playlist links as private local drafts, lists them after restart, and provides masked settings for your own Groq key. Secure-storage errors remain visible without preventing draft use. There is no network request or media processing in this stage. The app does not load `.env`; that file belongs to the separate Stage 0 CLI.
@@ -67,7 +70,7 @@ Linux source/conversion/snippet adapter, see [Stage 3](STAGE3_GUIDE.md) and the
 | Android | Runner template, API 24 minimum (Flutter 3.47.5) and backups disabled; SDK/device checks pending | Native spike pending |
 | iOS | Runner template and Keychain entitlements authored; no Xcode/Mac/iPhone check | Native spike and distribution route unresolved |
 
-Both phones remain in scope. These templates do not establish independent phone downloading. Android release signing still uses the development template; replace it with a deliberate release-signing configuration during Stage 8. Do not publish that template as a production release. iOS entitlements/signing must be checked on Xcode and a real device before claiming support.
+Both phones remain in scope. These templates do not establish independent phone downloading. Stage 8 removed Android's release debug-signing fallback; release signing is deliberately unconfigured. CI builds a personal foundation debug APK with a development certificate. An owner-controlled release identity and same-identity update still need actual-device proof. iOS entitlements/signing must be checked on Xcode and a real device before claiming support.
 
 ## Local state and concurrency contracts
 

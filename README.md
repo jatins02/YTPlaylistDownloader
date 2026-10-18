@@ -6,10 +6,16 @@ A successor to DOT.: playlist downloads, AI song naming, automatic covers, snipp
 
 ## Confirmed direction
 
+Stage 8/9 provide private evaluation packaging, integrity-checked handoffs and
+setup/recovery/maintenance guides. The complete product is still pending actual
+Windows/Android/iPhone media execution and the release acceptance gates listed
+in [Stage 9](docs/STAGE9_GUIDE.md).
+
 Zero budget, independent Android and iPhone use, laptop support, device-only saves, and professional lavenderblush UI. No Mac/iPhone is currently available for testing. Flutter is selected for the foundation; media adapters remain provisional; the former hosted-web plan is superseded. Do not silently replace the phone requirement with a laptop companion.
 
 ## Start here
 
+- [Whole-project review, fixes and verification boundaries](docs/CODE_REVIEW_FINAL.md)
 - [Evaluation setup, own-key settings and recovery](docs/USER_GUIDE.md)
 - [Stage 9 handoff, supported scope and outstanding release acceptance](docs/STAGE9_GUIDE.md)
 - [Compatibility updates and maintenance](docs/MAINTENANCE.md)
