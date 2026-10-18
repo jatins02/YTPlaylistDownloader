@@ -1,0 +1,46 @@
+{
+  "stage": 9,
+  "date": "2026-10-18",
+  "acceptance": "Partial: private handoff implemented; no completed public release or physical acceptance",
+  "package_build_revision": "aab83fa7028e57a4cf059b2bd0a3a53a45a51b43",
+  "source_baseline": "68f0518bb409044a07df840a9bcb29aef1f73036",
+  "artifact": {
+    "build_revision": "aab83fa7028e57a4cf059b2bd0a3a53a45a51b43",
+    "bytes": 289597027,
+    "file": "ytpd-06e9e6c35c546873-stage9-handoff.zip",
+    "package_id": "06e9e6c35c546873",
+    "public_release_approved": false,
+    "scope": "linux-media",
+    "sha256": "54f6a0746f763a03b9f5c4549c38f89b924211471a37ef607ca7028d33084341"
+  },
+  "checks": {
+    "original_stage8_archive_checksum": "passed",
+    "complete_6027_file_snapshot_reverification": "passed",
+    "private_file_and_literal_key_scans": "passed",
+    "handoff_zip_crc_and_all_embedded_checksums": "passed",
+    "original_package_archive_bytes_preserved": "passed",
+    "original_build_provenance_preserved": "passed",
+    "public_release_approved": false,
+    "handoff_members": 10
+  },
+  "local_validation": {
+    "python_behavior_tests": 111,
+    "stage8_and_stage9_packaging_subset": 27,
+    "flutter_behavior_tests": 225,
+    "dart_format_files": 98,
+    "dart_format_changes": 0,
+    "flutter_analysis": "no issues",
+    "subset_overlaps_python_total": true,
+    "scope": "No app/media adapter changes. Prior actual media integration evidence remains in Stage 3\u20138 guides; no new live calls."
+  },
+  "pending_gates": [
+    "Owner completes intended workflow on every released platform",
+    "Clean Linux install, manual native picker/listening and physical-player acceptance",
+    "Cross-version draft/settings/key update and recovery",
+    "Windows media/document export execution",
+    "Independent physical Android media/document/vault/update acceptance",
+    "Actual iPhone build/install/native media/document/vault/update acceptance",
+    "Physical accessibility, controlled frame/memory/battery acceptance",
+    "Application license, bundled corresponding-source obligations and signing/distribution route"
+  ]
+}

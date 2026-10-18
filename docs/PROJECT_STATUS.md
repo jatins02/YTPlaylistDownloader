@@ -17,7 +17,7 @@ Updated: 2026-10-18.
 | 6 — Device save | Linux implementation/native byte-transfer acceptance; full device acceptance open | Frozen full tagged MP3/ZIP publication, verified destination receipts and restart/cleanup; manual native picker/player and Windows/Android/iOS export remain unverified |
 | 7 — Device QA | Linux automated QA implemented; physical/device acceptance open | Reduced motion/action labels, keyboard/rotation/lifecycle checks, measured synthetic loads and peer-safe failure recovery; no phone or battery attribution |
 | 8 — Packaging | In progress; private desktop evaluation route | Standalone Linux runtime/package tooling, integrity manifests, versioned install/rollback and component notices; public distribution, clean-device/phone and Stage 7 gates remain open |
-| 9 — Release | Not started | No release |
+| 9 — Release | In progress; private evaluation handoff implemented | Verified package handoff, user/key/recovery guide, support matrix and compatibility process; physical owner/device, cross-version and public redistribution gates remain open |
 
 ## Owner decisions from Stage 0
 
@@ -719,3 +719,29 @@ settings/draft/key and rollback checks, physical source/player/export acceptance
 component-source/notice clearance, Windows media/installer proof, Android/iPhone
 and Stage 7 device gates are open. No public release, paid service or shared
 developer key is created. See [STAGE8_GUIDE.md](STAGE8_GUIDE.md).
+
+## Stage 9 — private evaluation handoff (2026-10-18)
+
+Implemented `scripts/build_handoff.py`, `docs/USER_GUIDE.md`,
+`docs/MAINTENANCE.md` and `docs/STAGE9_GUIDE.md`. The assembler accepts an explicit
+trusted unpacked Stage 8 package, snapshots/reverifies the complete inventory,
+requires a clean original build and matching pins, scans named documents/package
+files, and creates a no-clobber handoff ZIP with provenance and checksums.
+It reads no dotenv/vault/user data, runs no binary/provider and leaves physical
+acceptance unassessed/public release unapproved. CI now assembles a handoff from
+both newly built desktop foundation packages; no binary upload/storage is added.
+
+Actual local commands/results:
+
+- `PATH="$PWD/.tools-stage0/bin:$PATH" .venv-stage0/bin/python -m unittest discover -s tests -v` — **111 passed**. The nine new handoff cases cover exact payload/provenance/checksums, Windows foundation ZIP, dirty builds/pin drift, corruption/secrets, a changed snapshot, existing-output preservation, interruption cleanup and missing/unsafe guidance. The Stage 8/9 subset is **27 passed**, overlapping the 111. Synthetic loopback tests required execution outside the socket-restricted sandbox; no live provider/source calls ran.
+- Pinned Dart `format --output=none --set-exit-if-changed` — **98 files, zero changes**; `flutter analyze --no-pub` — **no issues**; `flutter test --no-pub` — **225 passed**. App code, pins, schema and platform capability flags are unchanged.
+- Rechecked the original Stage 8 Linux media archive SHA-256, safely extracted that trusted archive, then assembled the real handoff. Reverified all **6027 package inventory files**, ZIP CRC and every embedded checksum; regenerated desktop archive bytes match the original Stage 8 archive exactly. Local artifact identity is recorded in `docs/STAGE9_RESULTS.json`; binaries remain ignored under `dist/stage9/`.
+- No new actual media integration, live Groq/artwork/source, manual listening/panel or phone test is claimed. Prior real-runtime, installed-release and equal-schema recovery evidence remains in the Stage 3–8 guides/results. Source publication/CI results will be reported after the exact uploaded source passes.
+
+Stage 9 remains **in progress**. The owner has not completed every released
+platform's intended workflow. Clean-device/manual Linux acceptance, cross-version
+user data/key update, Windows media, independent Android/iPhone native execution,
+physical accessibility/battery and public licensing/signing/distribution gates
+remain open. The standalone evaluation package records its original local
+`aab83fa` build revision, not the Stage 8 merge or Stage 9 source revision. See
+`docs/STAGE9_GUIDE.md` for the support matrix and exact remaining evidence.
