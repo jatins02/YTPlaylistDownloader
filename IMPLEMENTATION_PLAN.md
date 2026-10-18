@@ -159,6 +159,11 @@ Stage 7 gates remain unresolved. No public binary release is claimed. See
 
 **Goal:** Deliver the verified scope with user guidance and a maintainable compatibility-update process.
 
+**Current delivery:** Private evaluation handoff assembly, user/key/recovery guide,
+support matrix, maintenance process and explicit acceptance checklist are implemented;
+see [Stage 9](docs/STAGE9_GUIDE.md). Actual-device, cross-version and public
+distribution gates remain open. This does not change the completion criteria below.
+
 **Achievables:** release artifacts, key/setup guide, acceptance evidence, supported-platform/source list, limitations and maintenance instructions.
 
 **Work:** Run actual-device release/export checks, secret scanning and update/recovery exercises. Document AI quota exhaustion, uncertain names, unavailable covers and upstream changes.
