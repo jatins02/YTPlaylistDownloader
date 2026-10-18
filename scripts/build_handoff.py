@@ -22,6 +22,7 @@ if __package__ in (None, ''):
 from scripts import desktop_package as package
 
 GUIDES = ('docs/USER_GUIDE.md', 'docs/MAINTENANCE.md', 'docs/STAGE9_GUIDE.md',
+          'docs/CODE_REVIEW_FINAL.md',
           'docs/STAGE8_GUIDE.md', 'docs/STAGE8_RESULTS.json',
           'docs/PROJECT_STATUS.md', 'packaging/COMPONENT_NOTICES.md')
 

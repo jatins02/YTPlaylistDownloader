@@ -50,7 +50,9 @@ def check(apk: Path) -> str:
                         raise PackageError('APK entry length mismatch.')
         required = {'AndroidManifest.xml', 'classes.dex', 'assets/flutter_assets/NOTICES.Z',
                     'lib/arm64-v8a/libflutter.so'}
-        if not required.issubset(names):
+        if not required.issubset(names) or any(
+                not (root / name).is_file() or (root / name).stat().st_size == 0
+                for name in required):
             raise PackageError('Incomplete arm64 Flutter test APK or component notices.')
         inventory(root, windows=True)
     return digest(apk)

@@ -44,7 +44,7 @@ def main() -> int:
         )
         try:
             return subprocess.run(
-                ["xvfb-run", "-a", flutter, "test", f"integration_test/{args.test}", "-d", "linux"],
+                ["xvfb-run", "-a", flutter, "test", "--no-pub", f"integration_test/{args.test}", "-d", "linux"],
                 cwd=Path(__file__).resolve().parents[1] / "apps/native",
                 check=False,
             ).returncode
