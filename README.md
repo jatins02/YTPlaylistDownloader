@@ -10,6 +10,9 @@ Zero budget, independent Android and iPhone use, laptop support, device-only sav
 
 ## Start here
 
+- [Evaluation setup, own-key settings and recovery](docs/USER_GUIDE.md)
+- [Stage 9 handoff, supported scope and outstanding release acceptance](docs/STAGE9_GUIDE.md)
+- [Compatibility updates and maintenance](docs/MAINTENANCE.md)
 - [Stage 8 private evaluation packaging and distribution gates](docs/STAGE8_GUIDE.md)
 - [Stage 7 lifecycle, accessibility, measured loads and device gates](docs/STAGE7_GUIDE.md)
 - [Stage 6 full MP3/ZIP saving and acceptance limits](docs/STAGE6_GUIDE.md)
