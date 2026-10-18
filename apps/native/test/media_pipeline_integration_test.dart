@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uuid/uuid.dart';
 import 'package:yt_playlist_downloader/data/media_workspace.dart';
 import 'package:yt_playlist_downloader/data/pipeline_repository.dart';
+import 'package:yt_playlist_downloader/data/review_repository.dart';
 import 'package:yt_playlist_downloader/domain/failure.dart';
 import 'package:yt_playlist_downloader/domain/media_models.dart';
 import 'package:yt_playlist_downloader/domain/models.dart';
@@ -50,6 +51,31 @@ void main() {
   );
   Future<void> run(JobRecord job) =>
       media.acquire(playlist: PlaylistUrl.parse(job.sourceUrl), jobId: job.id);
+
+  test('one source exceeding its enforced file cap stays excludable without blocking playable peers', () async {
+    final job = await draft();
+    source.fileCappedVideo = '12345678901';
+    await run(job);
+    expect((await fixture.jobs.getJob(job.id)).phase, JobPhase.reviewReady);
+    final tracks = await fixture.jobs.listTracks(job.id);
+    final failed = tracks.singleWhere(
+      (track) => track.videoId == source.fileCappedVideo,
+    );
+    expect(failed.phase, TrackPhase.failed);
+    expect(failed.failure, FailureCode.limitExceeded);
+    expect(
+      tracks.where((track) => track.phase == TrackPhase.ready),
+      hasLength(2),
+    );
+    await ReviewRepository(fixture.jobs).selectTrack(failed, false);
+    expect((await fixture.jobs.getTrack(failed.id)).selected, isFalse);
+    expect(source.enumerations, 1);
+    expect(
+      await Directory('${fixture.workspace.root.path}/jobs/${job.id}/.work')
+          .exists(),
+      isFalse,
+    );
+  });
 
   test('real codecs preserve equal-title bytes, Unicode, duplicates and partial failures', () async {
     final job = await draft();
@@ -455,6 +481,7 @@ final class CountingSource implements PlaylistSource {
   final Map<String, int> downloads = {};
   String? blockVideo;
   String? throwVideo;
+  String? fileCappedVideo;
   Completer<void>? gate;
   final blocked = Completer<void>();
   @override
@@ -479,6 +506,17 @@ final class CountingSource implements PlaylistSource {
   ) async {
     downloads.update(videoId, (n) => n + 1, ifAbsent: () => 1);
     if (videoId == throwVideo) throw StateError('Private provider diagnostic');
+    if (videoId == fileCappedVideo) {
+      await scope.run(
+        base.tools.python,
+        [
+          '-c',
+          'open("oversized.bin","wb").truncate(${limits.maxFileBytes + 1})',
+        ],
+        directory: work,
+        monitor: monitor,
+      );
+    }
     if (videoId == blockVideo) {
       if (!blocked.isCompleted) blocked.complete();
       await gate!.future;
