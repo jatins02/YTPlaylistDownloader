@@ -26,7 +26,7 @@ Phones use their own network and computation; no laptop must remain online for t
 
 | Platform | Candidate | Status |
 | --- | --- | --- |
-| Laptop | yt-dlp + EJS/Deno + FFmpeg/ffprobe + ID3/ZIP adapter | Linux CLI core and Flutter foundation verified; Windows foundation debug/release builds and native restart pass in CI; Windows media and app packaging untested |
+| Laptop | yt-dlp + EJS/Deno + FFmpeg/ffprobe + ID3/ZIP adapter | Linux media/review/export and installed evaluation package have automated execution evidence; Windows foundation/restart, release build and foundation ZIP/handoff pass in CI. Windows media and clean-device/manual acceptance remain open |
 | Android | Current yt-dlp/native audio wrapper through platform channels | Candidate only; native ABI/Python/JS-runtime/SDK compatibility must be tested |
 | iPhone | iOS-compatible extraction and in-process native codec/tag/export adapters | No verified adapter/build/device; no Mac/iPhone access |
 
@@ -80,7 +80,7 @@ The Stage 0/1 review added SQLite migration v3 for original structured metadata;
 
 The production route uses ProcessingController and consistent transaction snapshots, not FixtureJourney. PipelineRepository validates every running track/conversion token inside its write transaction; schema v4 stores original source/channel evidence, durable enumeration and explicit active media. DesktopMediaPort owns one serialized Linux pipeline, while YoutubePlaylistSource, NativeCodec, ProcessScope and MediaWorkspace bound acquisition, full decoding, conversion/snippets, process groups, hashes and private publication/cleanup. The installed EJS/runtime is verified, source diagnostics are discarded and no dotenv/key enters a media process.
 
-AppRuntime selects this adapter only on Linux with a valid pinned manifest; other-platform media and final export remain unavailable; Stage 4 enables verified Linux naming/artwork/tag preparation. Source artifacts and active derivatives have immutable IDs; ready/retried peers never resolve bytes by title. A cancelled/expired job cannot silently return to processing. Expiry/discard preserves metadata and external device copies. Stage 3 setup and precise platform evidence are in STAGE3_GUIDE.md.
+AppRuntime selects this adapter only on Linux with a valid pinned manifest; other-platform media remains unavailable. Stage 4 adds verified Linux naming/artwork/tag preparation, and Stage 6 adds final publication/destination transfer as described below. Source artifacts and active derivatives have immutable IDs; ready/retried peers never resolve bytes by title. A cancelled/expired job cannot silently return to processing. Expiry/discard preserves metadata and external device copies. Stage 3 setup and precise platform evidence are in STAGE3_GUIDE.md.
 
 The Stages 0–3 review tightened shared readiness/export guards, recovery between
 phase and worker transactions, atomic derivative invalidation and shutdown/

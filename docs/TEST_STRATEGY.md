@@ -1,5 +1,12 @@
 # Verification strategy
 
+The [whole-project review](CODE_REVIEW_FINAL.md) adds adversarial regressions for
+standalone local-codec inputs (including video-only and cross-file HLS), provider
+authorization casing/special IPv6 ranges, dynamic audio availability, per-file
+versus whole-job storage failures, incomplete APK/desktop packages and immutable
+installer identities. Current full-suite and native execution results are in
+`PROJECT_STATUS.md`; historical stage totals below retain their original scope.
+
 Revised for independent native devices and zero budget. Current desktop harness tests are evidence for core contracts only; they cannot prove phone operation.
 
 ## Current checks

@@ -19,7 +19,7 @@ No hosted worker or laptop companion is required for an independent phone. No ac
 - Final save snapshots ready selected tracks and edits, embeds title/artist/features/known album/front cover, verifies files, and exposes native save/share/document actions.
 - ZIP and individual MP3 export; handle cancellation, denied permissions and low storage honestly. No automatic insertion into every native Music library is promised.
 
-Initial production capacity targets remain 100 unique tracks, 20 minutes/track and 2 GiB source/export ceilings, but are **unproven on phones** and must be reduced or confirmed from Stage 0/7 measurements. The feasibility CLI deliberately accepts only 3–10 entries, 10 minutes/track and a bounded scratch workspace. Do not silently truncate a larger playlist.
+Initial production capacity targets remain 100 unique tracks, 20 minutes/track and 2 GiB source/export ceilings; these are **future targets, not verified capacity on any platform**. The current Linux native defaults are 100 occurrences, 10 unique tracks, 10 minutes/track, 50 MiB per media file, 512 MiB per job and 1 GiB managed workspace with a 64 MiB free-space reserve. Other-platform media remains disabled. Stage 7 measures the actual tested profiles; larger targets need new execution evidence. The feasibility CLI separately accepts only 3–10 entries, 10 minutes/track and a bounded scratch workspace. Do not silently truncate a larger playlist.
 
 ## Naming and editing
 

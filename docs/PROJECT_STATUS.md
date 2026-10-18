@@ -19,6 +19,23 @@ Updated: 2026-10-18.
 | 8 — Packaging | In progress; private desktop evaluation route | Standalone Linux runtime/package tooling, integrity manifests, versioned install/rollback and component notices; public distribution, clean-device/phone and Stage 7 gates remain open |
 | 9 — Release | In progress; private evaluation handoff implemented | Verified package handoff, user/key/recovery guide, support matrix and compatibility process; physical owner/device, cross-version and public redistribution gates remain open |
 
+## Final implementation audit — 2026-10-18
+
+Reviewed the complete implementation and documentation from `16e18f6`. Reproduced and fixed codec manifest substitution, audio-less CLI inputs, provider header/IPv6 validation, stale playback availability, source-limit classification/peer recovery, incomplete package acceptance and installation/activation identity checks. Exact pins, schema v6, platform gates and intentional fixture/feasibility entry points remain unchanged. Detailed rationale and regression coverage: [CODE_REVIEW_FINAL.md](CODE_REVIEW_FINAL.md).
+
+| Check executed on the reviewed source before publication | Result |
+| --- | --- |
+| Pinned-runtime `flutter test --no-pub --concurrency=1` | **257 passed**, including real codec/process/pipeline cases |
+| `.venv-stage0/bin/python -m unittest discover -s tests -q` | **118 passed** |
+| Dart formatting of lib/test/integration_test; `flutter analyze --no-pub` | 98 files unchanged; no issues |
+| Linux native foundation, pipeline, enrichment, review/audio and export checks | Passed using disposable displays/keyring/SQLite and private PulseAudio sink; the final per-file correction also passed all 19 supervisor/pipeline tests |
+| Stage 0 synthetic CLI, three complete runs | Passed: generated audio/snippets/tags/cover readback and ZIP verification; no live provider/source calls |
+| Python compile checks and documentation relative links | Passed |
+
+Publication is tracked by the final-code-audit pull request. After its final main workflow passes, rerun the complete functionality suite, native lifecycle/audio/export checks, synthetic capacity profiles and fresh release-package/install/handoff verification; keep the resulting local evidence under ignored `dist/final-audit`. Those follow-up results must not be inferred from this pre-publication table. Historical stage counts below describe their own revisions.
+
+Fresh live provider/source checks, Windows media, independent phone execution, manual save-panel/physical-player acceptance, clean-device/cross-version owner acceptance and public signing/redistribution remain open. No developer key is shipped and no capability is enabled by the audit.
+
 ## Owner decisions from Stage 0
 
 - Zero budget and no existing host/object-storage setup.
