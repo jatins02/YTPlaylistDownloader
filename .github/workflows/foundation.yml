@@ -69,6 +69,28 @@ jobs:
       - name: Build private desktop evaluation package
         working-directory: .
         run: python scripts/desktop_package.py build --target ${{ matrix.target }}-x64 --bundle ${{ matrix.bundle }} --output dist/stage8
+      - name: Assemble private evaluation handoff from this build
+        working-directory: .
+        shell: python
+        run: |
+          from pathlib import Path
+          import sys
+          import tarfile
+          import tempfile
+          import zipfile
+          sys.path.insert(0, str(Path.cwd()))
+          from scripts.build_handoff import build
+          suffix = '*.tar.gz' if '${{ matrix.target }}' == 'linux' else '*.zip'
+          archive, = Path('dist/stage8').glob(suffix)
+          with tempfile.TemporaryDirectory(prefix='ytpd-ci-handoff-') as directory:
+              # Only unpack the package just built in this clean CI checkout.
+              if archive.name.endswith('.tar.gz'):
+                  with tarfile.open(archive) as source:
+                      source.extractall(directory, filter='data')
+              else:
+                  with zipfile.ZipFile(archive) as source:
+                      source.extractall(directory)
+              print(build(Path(directory) / 'ytpd', Path('dist/stage9/evaluation-handoff.zip')))
 
   stage0:
     name: Existing media contracts
