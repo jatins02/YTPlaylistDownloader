@@ -113,16 +113,6 @@ final class ProcessingController extends ChangeNotifier {
   Future<void> initialize() async {
     if (_initialized || _disposed) return;
     _initialized = true;
-    try {
-      capability = await media.capabilities();
-    } on AppFailure catch (error) {
-      failure = error;
-    } on Object {
-      failure = const AppFailure(
-        FailureCode.mediaUnavailable,
-        'Media capability could not be checked safely.',
-      );
-    }
     await refresh();
     if (_disposed) return;
     _polling = Timer.periodic(const Duration(milliseconds: 500), (_) {
@@ -141,6 +131,21 @@ final class ProcessingController extends ChangeNotifier {
     final done = Completer<void>();
     _readDone = done;
     try {
+      // Audio services may start/stop while this route stays open. Refresh only
+      // adapter availability here; native runtime/version verification remains
+      // the adapter's initialization boundary, never a repeated poll operation.
+      MediaCapabilities? currentCapability;
+      AppFailure? capabilityFailure;
+      try {
+        currentCapability = await media.capabilities();
+      } on AppFailure catch (error) {
+        capabilityFailure = error;
+      } on Object {
+        capabilityFailure = const AppFailure(
+          FailureCode.mediaUnavailable,
+          'Media capability could not be checked safely.',
+        );
+      }
       final snapshot = await jobs.processingSnapshot(jobId);
       final current = snapshot.$1,
           currentTracks = snapshot.$2,
@@ -165,7 +170,7 @@ final class ProcessingController extends ChangeNotifier {
         whereArgs: [jobId],
       );
       final loadedCovers = <String, Uint8List>{}, coverIds = <String, String>{};
-      if (capability?.canEnrich == true && media is EnrichingMediaPort) {
+      if (currentCapability?.canEnrich == true && media is EnrichingMediaPort) {
         for (final record in currentEnrichment.values) {
           final id = record.artworkAssetId;
           if (id == null) continue;
@@ -183,6 +188,7 @@ final class ProcessingController extends ChangeNotifier {
       // A new snapshot is read after each command too; no stale poll can publish
       // over a later completed database read.
       if (job != null && current.revision < job!.revision) return;
+      capability = currentCapability;
       job = current;
       publication = prepared;
       savedCopy = receipt;
@@ -196,7 +202,8 @@ final class ProcessingController extends ChangeNotifier {
       if (playingId != null) {
         final playing = tracks.where((t) => t.id == playingId).toList();
         final previews = await store.assets(jobId, trackId: playingId);
-        if (current.phase != JobPhase.reviewReady ||
+        if (currentCapability?.canPlaySnippets != true ||
+            current.phase != JobPhase.reviewReady ||
             playing.length != 1 ||
             playing.single.phase != TrackPhase.ready ||
             (player.assetId != null &&
@@ -208,7 +215,8 @@ final class ProcessingController extends ChangeNotifier {
       }
       if (identical(failure, _readFailure)) failure = null;
       _readFailure = null;
-      if (exportFailure != null) failure = _readFailure = exportFailure;
+      final readFailure = exportFailure ?? capabilityFailure;
+      if (readFailure != null) failure = _readFailure = readFailure;
     } on AppFailure catch (error) {
       if (!_disposed) failure = _readFailure = error;
     } on Object {
