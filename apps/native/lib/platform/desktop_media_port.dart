@@ -921,8 +921,15 @@ final class DesktopMediaPort
   Future<ExportPublication?> currentExport(String jobId) =>
       ExportRepository(jobs).current(jobId);
   @override
-  Future<ExportPublication> prepareExport(String jobId, int revision) =>
-      _exporter().prepare(jobId, revision);
+  Future<ExportPublication> prepareExport(
+    String jobId,
+    int revision, {
+    bool fillMissingMetadata = false,
+  }) => _exporter().prepare(
+    jobId,
+    revision,
+    fillMissingMetadata: fillMissingMetadata,
+  );
   @override
   Future<DeliveryReceipt?> deliverExport(
     ExportPublication publication,

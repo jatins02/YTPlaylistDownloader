@@ -273,10 +273,27 @@ class _ProcessingScreenState extends State<ProcessingScreen>
                     if (job.phase == JobPhase.reviewReady) ...[
                       const SizedBox(height: 16),
                       Text(
-                        '${state.selectedCount} selected unique tracks · ${state.excludedCount} excluded items · ${state.selectedUnavailable} selected unavailable items',
+                        '${state.selectedCount} selected unique tracks · ${state.excludedCount} excluded items · ${state.savedTrackIds.length} downloaded · ${state.selectedUnavailable} selected unavailable items',
                         key: const Key('review-selection-counts'),
                       ),
                       const SizedBox(height: 12),
+                      CheckboxListTile(
+                        key: const Key('fill-missing-metadata'),
+                        contentPadding: EdgeInsets.zero,
+                        value: state.fillMissingMetadata,
+                        onChanged:
+                            state.exportBusy ||
+                                state.commanding ||
+                                state.editing ||
+                                state.cancelling
+                            ? null
+                            : (value) =>
+                                  state.setFillMissingMetadata(value ?? true),
+                        title: const Text('Fill missing details when saving'),
+                        subtitle: const Text(
+                          "Keep source titles and existing edits; use '-' for missing artists. Album, features and covers stay optional. Uncertain names can be reviewed later.",
+                        ),
+                      ),
                       FilledButton(
                         key: const Key('prepare-device-export'),
                         onPressed: state.canPrepareExport
@@ -366,6 +383,7 @@ class _EntryCardState extends State<_EntryCard>
     final matching = state.tracks.where((t) => t.id == entry.trackId).toList();
     final track = matching.isEmpty ? null : matching.single;
     final details = track == null ? null : state.enrichment[track.id];
+    final downloaded = track != null && state.savedTrackIds.contains(track.id);
     final occurrences = state.entries
         .where((e) => e.trackId != null && e.trackId == entry.trackId)
         .length;
@@ -381,13 +399,16 @@ class _EntryCardState extends State<_EntryCard>
             CheckboxListTile(
               contentPadding: EdgeInsets.zero,
               title: Text(
-                track == null
+                downloaded
+                    ? 'Downloaded · ${track.metadata.songTitle}'
+                    : track == null
                     ? 'Include unavailable entry'
                     : 'Include ${track.metadata.songTitle}${occurrences > 1 ? ' (all occurrences)' : ''}',
               ),
-              value: track?.selected ?? entry.selected,
+              value: downloaded ? false : (track?.selected ?? entry.selected),
               onChanged:
-                  state.exportBusy ||
+                  downloaded ||
+                      state.exportBusy ||
                       state.commanding ||
                       state.editing ||
                       state.cancelling

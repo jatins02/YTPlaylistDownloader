@@ -135,6 +135,11 @@ void main() {
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();
       expect(state.capability!.canExport, isFalse);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('prepare-device-export')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(
         tester
             .widget<FilledButton>(

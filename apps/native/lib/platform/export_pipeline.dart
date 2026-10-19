@@ -41,6 +41,7 @@ final class ExportPipeline {
   late final files = ExportWorkspace(media);
   String? jobId;
   int? _requestedRevision;
+  bool? _requestedFillMissingMetadata;
   Future<ExportPublication>? _build;
   Future<DeliveryReceipt?>? _delivery;
   ProcessScope? _scope, _archiveScope;
@@ -118,8 +119,12 @@ final class ExportPipeline {
     String id,
     int revision, {
     ExportSnapshot? frozen,
+    bool fillMissingMetadata = false,
   }) {
-    if (_build != null && jobId == id && _requestedRevision == revision) {
+    if (_build != null &&
+        jobId == id &&
+        _requestedRevision == revision &&
+        _requestedFillMissingMetadata == fillMissingMetadata) {
       return _build!;
     }
     if (busy) {
@@ -132,21 +137,24 @@ final class ExportPipeline {
     }
     jobId = id;
     _requestedRevision = revision;
+    _requestedFillMissingMetadata = fillMissingMetadata;
     _stopped = Completer<void>();
-    return _build = _prepare(id, revision, frozen).whenComplete(() {
-      _scope?.cancel();
-      _archiveScope?.cancel();
-      _scope = _archiveScope = null;
-      _build = null;
-      jobId = null;
-      _stopped = null;
-    });
+    return _build = _prepare(id, revision, frozen, fillMissingMetadata)
+        .whenComplete(() {
+          _scope?.cancel();
+          _archiveScope?.cancel();
+          _scope = _archiveScope = null;
+          _build = null;
+          jobId = null;
+          _stopped = null;
+        });
   }
 
   Future<ExportPublication> _prepare(
     String id,
     int revision,
     ExportSnapshot? frozen,
+    bool fillMissingMetadata,
   ) async {
     final scope = _scope = tools.tools.scope(
       maxFileBytes: media.limits.maxFileBytes,
@@ -196,7 +204,13 @@ final class ExportPipeline {
         scope.check();
         return existing;
       }
-      final snapshot = frozen ?? await jobs.freezeExport(id, revision);
+      final snapshot =
+          frozen ??
+          await jobs.freezeExport(
+            id,
+            revision,
+            fillMissingMetadata: fillMissingMetadata,
+          );
       started = true;
       await repository.requireSnapshot(snapshot);
       scope.check();

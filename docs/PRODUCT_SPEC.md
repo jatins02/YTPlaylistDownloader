@@ -17,13 +17,16 @@ No hosted worker or laptop companion is required for an independent phone. No ac
 - AI metadata keyed by stable track ID, original data retained, uncertainty visible and human corrections authoritative.
 - Cover search through recording/release metadata; select reliable front artwork, retain provenance, show a neutral placeholder otherwise.
 - Final save snapshots ready selected tracks and edits, embeds title/artist/features/known album/front cover, verifies files, and exposes native save/share/document actions.
+- Save defaults to export-only placeholders for missing mandatory naming: retain source titles and human fields, use `-` for an unknown artist, and keep optional details absent. Users can disable this option to require review. Audio verification, pending-edit and unavailable-source gates still apply.
+- Confirmed MP3/ZIP receipts mark their included songs downloaded. Disable repeat song selection/downloads, and let users return to the same playlist to save ready remaining songs. Cancellation is not a download.
+- Draft cards show local creation/activity times and a bounded preview of original YouTube song names.
 - ZIP and individual MP3 export; handle cancellation, denied permissions and low storage honestly. No automatic insertion into every native Music library is promised.
 
 Initial production capacity targets remain 100 unique tracks, 20 minutes/track and 2 GiB source/export ceilings; these are **future targets, not verified capacity on any platform**. The current Linux native defaults are 100 occurrences, 10 unique tracks, 10 minutes/track, 50 MiB per media file, 512 MiB per job and 1 GiB managed workspace with a 64 MiB free-space reserve. Other-platform media remains disabled. Stage 7 measures the actual tested profiles; larger targets need new execution evidence. The feasibility CLI separately accepts only 3–10 entries, 10 minutes/track and a bounded scratch workspace. Do not silently truncate a larger playlist.
 
 ## Naming and editing
 
-Store title, primary artists[], featured_artists[], optional album/version and a review flag separately. Render `<song name> - <artist> - <features>.mp3`; omit the last separator when features are empty. Preserve Unicode and meaningful live/remix/slowed/verse-only markers. Unknown artist stays explicitly Unknown Artist; model confidence is not proof.
+Store title, primary artists[], featured_artists[], optional album/version and a review flag separately. Render `<song name> - <artist> - <features>.mp3`; omit the last separator when features are empty. Preserve Unicode and meaningful live/remix/slowed/verse-only markers. Unknown artists remain explicit in review (Unknown Artist); the optional export-only `-` placeholder is not an artist identification. Model confidence is not proof.
 
 Export filenames are sanitized, byte-bounded and collision-safe; semantic metadata is not truncated. Example: Moonlit Train - Mira Vale - Jun Park.mp3. Original source titles remain available during review. Editing uses visible fields, live filename preview and explicit Save/Cancel. Pending saves block finalization; errors retain user text; stale revisions do not silently overwrite.
 

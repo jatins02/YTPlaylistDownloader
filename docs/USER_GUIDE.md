@@ -26,6 +26,11 @@ drafts/settings and key vault. Close the app before switching versions. Retain
 the previous package and back up important data. Equal-schema binary rollback
 does not restore an older database. Never place packages in app-private storage.
 
+Draft cards show local **Added** and **Last activity** timestamps plus up to
+three original YouTube song names after enumeration, so repeated imports are
+recognizable. Activity reflects draft processing/review updates, not a separate
+processing-only timestamp.
+
 ## Set up your own AI key
 
 Open **AI key settings** from the drafts or playlist screen. Add your own Groq
@@ -62,8 +67,13 @@ music library or app account.
    covers. Snippets are at most 30 seconds; they start at 30 seconds for tracks
    over a minute and at zero otherwise. Explicit **Save** commits edits;
    cancellation preserves the previous values. Human choices win over later AI
-   responses. Include/exclude deliberately; resolve selected warnings before
-   final preparation. Close any open editor before exporting.
+   responses. Include/exclude deliberately; retry or exclude unavailable audio
+   before final preparation. Close any open editor before exporting. You do not need
+   to review every name to download: **Fill missing details when saving** is on
+   by default. It keeps source titles/existing edits, uses `-` for missing artists
+   in exported files and leaves optional album/features/covers empty. Stored
+   uncertainty and human edits remain unchanged. Turn it off to require naming
+   review before saving.
 5. Choose **Save to Device**, then wait for full-length tagged files and their
    ZIP manifest to be verified. This is still private preparation. Choose
    **Save ZIP** or **Save MP3** and select a local destination in the native
@@ -75,6 +85,12 @@ music library or app account.
    unsupported filesystems must be changed, not bypassed. Saving does not
    automatically import music into another application's library. Use **Return
    to review** before changing the frozen selection or metadata.
+7. After saving an MP3, that song shows **Downloaded** and its save/selection
+   controls are disabled. **Choose remaining songs** reopens review and selects
+   the ready songs without confirmed download receipts. Prepare and save those
+   as another ZIP or individual MP3s. A confirmed ZIP marks every included song
+   downloaded. Cancellation/failure does not mark anything downloaded. This
+   history survives reopening; the app does not scan or manage your saved copies.
 
 The **fictional demo** is separate: demo previews and save messages never fetch,
 play or save real audio. It is not a device acceptance test.

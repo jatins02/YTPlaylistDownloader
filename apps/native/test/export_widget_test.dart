@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -390,10 +391,25 @@ final class ExportWidgetPort implements ExportMediaPort {
   Future<ExportPublication?> currentExport(String id) =>
       ExportRepository(fixture.jobs).current(id);
   @override
-  Future<ExportPublication> prepareExport(String id, int revision) async {
+  Future<ExportPublication> prepareExport(
+    String id,
+    int revision, {
+    bool fillMissingMetadata = false,
+  }) async {
     prepareCalls++;
-    final snapshot = await fixture.jobs.freezeExport(id, revision);
-    final publication = publicationFixture(snapshot, filenames: [filename]);
+    final snapshot = await fixture.jobs.freezeExport(
+      id,
+      revision,
+      fillMissingMetadata: fillMissingMetadata,
+    );
+    final count = (jsonDecode(snapshot.json)['tracks'] as List).length;
+    final publication = publicationFixture(
+      snapshot,
+      filenames: List.generate(
+        count,
+        (i) => i == 0 ? filename : '$i $filename',
+      ),
+    );
     final token = await fixture.jobs.beginAttempt(
       jobId: id,
       stage: TaskStage.export,

@@ -199,6 +199,21 @@ class _DraftsScreenState extends State<DraftsScreen> {
                               ),
                               const SizedBox(height: 6),
                               SelectableText(job.sourceUrl),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Added ${_draftTime(job.createdAt)}',
+                                key: Key('draft-added-${job.id}'),
+                              ),
+                              Text(
+                                'Last activity ${_draftTime(job.updatedAt)}',
+                              ),
+                              if (job.sourceTitles.isNotEmpty)
+                                Text(
+                                  'YouTube songs: ${job.sourceTitles.join(' · ')}',
+                                  key: Key('draft-songs-${job.id}'),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               const SizedBox(height: 8),
                               Text(
                                 'Saved draft · ${job.phase.name}',
@@ -352,4 +367,10 @@ class _KeySettingsState extends State<_KeySettings> {
       );
     },
   );
+}
+
+String _draftTime(DateTime value) {
+  final local = value.toLocal();
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${local.year}-${two(local.month)}-${two(local.day)} ${two(local.hour)}:${two(local.minute)}:${two(local.second)}';
 }

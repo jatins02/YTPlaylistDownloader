@@ -46,7 +46,8 @@ Initial layout breakpoints: 640, 768 and 1024px; use intrinsic sizing, wrapping,
 - Edit fields: song name, artist(s), features, live filename preview. Explicit Save/Cancel. Keep user text during transient server errors.
 - Save to Device shows selected count and is disabled with a visible reason while edits are pending or selected tracks are not ready.
 - Processing uses real counts and named phases. For unknown totals use an indeterminate indicator plus the actual phase, not a fake percentage.
-- Export-ready state prioritizes Download ZIP, then individual MP3 actions, then expiry/storage help.
+- Export-ready state exposes Return to review / Choose remaining songs before the ZIP/MP3 list. Downloaded songs show disabled selection/save actions from confirmed receipts. Disable a ZIP containing already saved songs and explain preparing the remaining selection.
+- Offer Fill missing details when saving, enabled by default; explain source-title and `-` artist fallbacks without requiring per-song edits. Preserve optional missing fields and the original review warning.
 - Loading, empty, partial success, AI unavailable, no cover, expired job, lost connection, and failed export each need a designed state and a useful next action.
 
 ## Mobile/PWA boundaries

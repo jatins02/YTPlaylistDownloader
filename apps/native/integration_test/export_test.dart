@@ -73,6 +73,20 @@ void main() {
         var media = runtime.media as DesktopMediaPort;
         expect((await media.capabilities()).canExport, isTrue);
         final job = await prepareExportReview(runtime.jobs, media, image);
+        final unknown = (await runtime.jobs.listTracks(job.id))
+            .firstWhere((t) => t.selected);
+        await runtime.jobs.editMetadata(
+          trackId: unknown.id,
+          revision: unknown.revision,
+          candidate: SongMetadata(
+            title: unknown.metadata.title,
+            artists: [],
+            version: unknown.metadata.version,
+            featuredArtists: unknown.metadata.featuredArtists,
+            needsReview: true,
+          ),
+          fields: {MetadataField.artists, MetadataField.needsReview},
+        );
         var state = ProcessingController(
           jobId: job.id,
           jobs: runtime.jobs,
@@ -99,7 +113,7 @@ void main() {
         await waitFor(() => !state.exportBusy);
         expect(state.failure, isNull);
         expect(state.job!.phase, JobPhase.exportReady);
-        final publication = state.publication!;
+        var publication = state.publication!;
         expect(publication.tracks, hasLength(3));
         expect(state.savedCopy, isNull);
         final zipButton = find.byKey(const Key('save-export-zip'));
@@ -115,8 +129,35 @@ void main() {
         await waitFor(() => !state.exportBusy);
         expect(state.saveMessage, contains('cancelled'));
         expect(await runtime.jobs.db.query('export_deliveries'), isEmpty);
+        final savedMp3 = publication.tracks.firstWhere(
+          (t) => t.trackId == unknown.id,
+        );
+        destination.path = '${root.path}/Saved full track.mp3';
+        await tester.runAsync(() => state.saveExportFile(savedMp3.id));
+        await waitFor(() => !state.exportBusy);
+        expect(state.failure, isNull);
+        final mp3Path = destination.path!;
+        expect(await media.files.digest(mp3Path), savedMp3.sha256);
+        expect(state.savedTrackIds, {savedMp3.trackId});
+        expect(state.canSaveFile(savedMp3), isFalse);
+        expect(
+          (await runtime.jobs.getTrack(unknown.id)).metadata.artists,
+          isEmpty,
+        );
+        await tester.runAsync(state.returnToReview);
+        await waitFor(() => state.job?.phase == JobPhase.reviewReady);
+        expect((await runtime.jobs.getTrack(unknown.id)).selected, isFalse);
+        expect(state.selectedCount, 2);
+        await tester.runAsync(state.prepareDeviceExport);
+        await waitFor(() => !state.exportBusy);
+        expect(state.failure, isNull);
+        publication = state.publication!;
+        expect(publication.tracks, hasLength(2));
+        expect(publication.tracks.any((t) => t.trackId == unknown.id), isFalse);
         destination.path = '${root.path}/Saved playlist.zip';
-        await tester.runAsync(() => tester.tap(zipButton));
+        await tester.runAsync(
+          () => state.saveExportFile(publication.archive.id),
+        );
         await waitFor(() => !state.exportBusy);
         expect(state.failure, isNull);
         expect(state.saveMessage, contains('Saved verified copy'));
@@ -124,15 +165,8 @@ void main() {
           await media.files.digest(destination.path!),
           publication.archive.sha256,
         );
+        expect(state.remainingCount, 0);
         final zipPath = destination.path!;
-        destination.path = '${root.path}/Saved full track.mp3';
-        await state.saveExportFile(publication.tracks.first.id);
-        expect(state.failure, isNull);
-        final mp3Path = destination.path!;
-        expect(
-          await media.files.digest(mp3Path),
-          publication.tracks.first.sha256,
-        );
         final work = await media.files.work(job.id, const Uuid().v4()),
             scope = tools.scope();
         try {
@@ -145,10 +179,17 @@ void main() {
             expected: 65,
           );
           expect(verified.durationSeconds, greaterThan(64));
+          final artist = await scope.run(tools.python, [
+            '-I',
+            '-c',
+            'import sys;from mutagen.id3 import ID3;print(str(ID3(sys.argv[1])["TPE1"]))',
+            mp3Path,
+          ], directory: work);
+          expect(artist.trim(), '-');
           final result = await scope.run(tools.python, [
             '-I',
             '-c',
-            'import json,sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);m=json.loads(z.read("manifest.json"));assert len(m["files"])==3;assert len(z.namelist())==4;print("verified native ZIP")',
+            'import json,sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);m=json.loads(z.read("manifest.json"));assert len(m["files"])==2;assert len(z.namelist())==3;print("verified native ZIP")',
             zipPath,
           ], directory: work);
           expect(result, contains('verified native ZIP'));
@@ -215,7 +256,7 @@ void main() {
           (await ExportRepository(runtime.jobs)
                   .latestReceipt(restored.snapshot.id))!
               .fileId,
-          publication.tracks.first.id,
+          publication.archive.id,
         );
         final again = await media.prepareExport(
           job.id,
@@ -236,6 +277,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(state.savedCopy, isNotNull);
+        expect(state.savedTrackIds, hasLength(3));
         await tester.pumpWidget(const SizedBox.shrink());
         await media.cancel(job.id);
         expect((await runtime.jobs.getJob(job.id)).phase, JobPhase.cancelled);
@@ -243,10 +285,7 @@ void main() {
         expect(await File(zipPath).exists(), isTrue);
         expect(await File(mp3Path).exists(), isTrue);
         expect(await media.files.digest(zipPath), publication.archive.sha256);
-        expect(
-          await media.files.digest(mp3Path),
-          publication.tracks.first.sha256,
-        );
+        expect(await media.files.digest(mp3Path), savedMp3.sha256);
         expect(
           await Directory('${runtime.workspace.root.path}/jobs/${job.id}')
               .exists(),

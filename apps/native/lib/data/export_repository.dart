@@ -205,7 +205,15 @@ final class ExportRepository {
     );
     if (writing.isNotEmpty) _conflict();
     final stale = await tx.rawQuery(
-      "SELECT d.id FROM export_deliveries d JOIN exports e ON e.id=d.export_id WHERE e.job_id=? AND d.cleanup_pending=0 AND d.status!='writing' ORDER BY d.created_at DESC,d.id DESC LIMIT -1 OFFSET 99",
+      // Keep one completed receipt per published file as durable download
+      // coverage; only failed/interrupted or superseded receipts are disposable.
+      """SELECT d.id FROM export_deliveries d JOIN exports e ON e.id=d.export_id
+      WHERE e.job_id=? AND d.cleanup_pending=0 AND d.status!='writing'
+      AND (d.status!='complete' OR EXISTS (
+        SELECT 1 FROM export_deliveries n WHERE n.export_id=d.export_id
+        AND n.file_id=d.file_id AND n.status='complete'
+        AND (n.created_at>d.created_at OR (n.created_at=d.created_at AND n.id>d.id))
+      )) ORDER BY d.created_at DESC,d.id DESC LIMIT -1 OFFSET 99""",
       [publication.snapshot.jobId],
     );
     for (final row in stale) {
@@ -308,6 +316,90 @@ final class ExportRepository {
       exportId,
       row['file_id'] as String,
       row['filename'] as String,
+    );
+  });
+
+  /// Only confirmed destination receipts count, including older snapshots.
+  /// Private preparation, cancellation and interrupted transfers never count.
+  Future<Set<String>> savedTrackIds(String jobId) =>
+      _write((tx) => _savedTrackIds(tx, jobId));
+
+  Future<Set<String>> _savedTrackIds(Transaction tx, String jobId) async {
+    final rows = await tx.rawQuery(
+      '''SELECT DISTINCT e.*,p.record,p.record_hash,d.file_id
+      FROM exports e JOIN export_publications p ON p.export_id=e.id
+      JOIN export_deliveries d ON d.export_id=e.id
+      WHERE e.job_id=? AND e.status='complete' AND d.status='complete' ''',
+      [jobId],
+    );
+    final saved = <String>{};
+    for (final row in rows) {
+      final record = row['record'] as String;
+      if (sha256.convert(utf8.encode(record)).toString() !=
+          row['record_hash']) {
+        throw const AppFailure(
+          FailureCode.corruptData,
+          'Saved-song history failed verification. Your external files are unchanged.',
+        );
+      }
+      final publication = ExportPublication.fromJson(_snapshot(row), record);
+      final file = publication.files
+          .where((f) => f.id == row['file_id'])
+          .toList();
+      if (file.length != 1 || file.single.kind == ExportFileKind.manifest) {
+        throw const AppFailure(
+          FailureCode.corruptData,
+          'Saved-song history could not be read safely.',
+        );
+      }
+      if (file.single.kind == ExportFileKind.zip) {
+        saved.addAll(publication.tracks.map((f) => f.trackId!));
+      } else {
+        saved.add(file.single.trackId!);
+      }
+    }
+    return Set.unmodifiable(saved);
+  }
+
+  /// Atomically unlock the review and select ready songs without saved receipts.
+  /// Selection never changes underneath an active destination transfer.
+  Future<void> reviewRemaining(String jobId, int revision) => _write((
+    tx,
+  ) async {
+    final jobs = await tx.query(
+      'jobs',
+      where: "id=? AND revision=? AND phase='exportReady'",
+      whereArgs: [jobId, revision],
+    );
+    final writing = await tx.rawQuery(
+      '''SELECT d.id FROM export_deliveries d
+      JOIN exports e ON e.id=d.export_id WHERE e.job_id=? AND d.status='writing' LIMIT 1''',
+      [jobId],
+    );
+    if (jobs.length != 1 || writing.isNotEmpty) _conflict();
+    final saved = await _savedTrackIds(tx, jobId);
+    if (saved.isNotEmpty) {
+      final tracks = await tx.query(
+        'tracks',
+        where: 'job_id=?',
+        whereArgs: [jobId],
+      );
+      for (final track in tracks) {
+        final selected =
+            track['phase'] == 'ready' && !saved.contains(track['id']);
+        if (track['selected'] != (selected ? 1 : 0)) {
+          await tx.rawUpdate(
+            'UPDATE tracks SET selected=?,revision=revision+1 WHERE id=?',
+            [selected ? 1 : 0, track['id']],
+          );
+        }
+      }
+    }
+    await tx.update(
+      'jobs',
+      {'phase': 'reviewReady', 'revision': revision + 1, 'updated_at': _now},
+      where: 'id=?',
+      whereArgs: [jobId],
     );
   });
   Future<void> fenceDeliveries(String jobId) => _write((tx) async {

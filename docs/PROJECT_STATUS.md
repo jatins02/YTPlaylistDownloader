@@ -1,6 +1,6 @@
 # Project status
 
-Updated: 2026-10-18.
+Updated: 2026-10-19.
 
 ## Current state
 
@@ -18,6 +18,38 @@ Updated: 2026-10-18.
 | 7 — Device QA | Linux automated QA implemented; physical/device acceptance open | Reduced motion/action labels, keyboard/rotation/lifecycle checks, measured synthetic loads and peer-safe failure recovery; no phone or battery attribution |
 | 8 — Packaging | In progress; private desktop evaluation route | Standalone Linux runtime/package tooling, integrity manifests, versioned install/rollback and component notices; public distribution, clean-device/phone and Stage 7 gates remain open |
 | 9 — Release | In progress; private evaluation handoff implemented | Verified package handoff, user/key/recovery guide, support matrix and compatibility process; physical owner/device, cross-version and public redistribution gates remain open |
+
+## Save/review usability fixes — 2026-10-19
+
+Implemented the owner's requested pre-deployment changes: default-on export-only
+metadata placeholders (source titles and `-` missing artists), durable per-song
+Downloaded states/disabled repeat actions, an atomic Choose remaining songs route,
+and distinguishable draft cards with local creation/activity times and up to three
+original YouTube names. Optional album/features/covers remain absent. Draft human
+metadata and uncertainty are retained. Completed receipt evidence survives retry
+pruning; cancellation/interruption never counts. Existing v6 schema, runtime pins,
+audio verification and unavailable-platform gates remain unchanged.
+
+Actual verification: pinned `dart format --output=none --set-exit-if-changed lib
+test integration_test tool` checked 99 files unchanged; `flutter analyze --no-pub`
+reported no issues; `flutter test --no-pub --concurrency=1` with the pinned
+`STAGE3_TEST_RUNTIME` passed **263 tests**. All five Linux native integration paths
+passed: foundation, pipeline, enrichment, review/private audio output and export.
+The updated export acceptance reads `-` from destination ID3 bytes, saves one
+full MP3, returns to review, publishes a remaining-only ZIP and restores three
+downloaded IDs after native restart. The native chooser remains injected; no
+manual physical-player/device gate is inferred.
+
+`flutter build linux --release --no-pub` passed, then a clean rebuild with
+`flutter pub get --enforce-lockfile --offline` removed a stale debug native-assets
+manifest. The final bundle scan checked 18 files
+without a dotenv asset/literal key. The full Python suite passed **118 tests**.
+The 33 affected repository/widget cases include six new UX regressions; the
+existing settings/runtime test was corrected to scroll the final-save action
+into view. The final compact source-name preview also passed the six new widget/
+repository cases and analysis. These targeted cases overlap the full suite.
+Commands/logs are retained under ignored `dist/save-ux`. No live provider calls,
+deployment or remote publication ran. Other-platform/manual gates remain open.
 
 ## Final implementation audit — 2026-10-18
 

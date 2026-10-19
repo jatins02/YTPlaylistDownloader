@@ -9,8 +9,12 @@ checks do not complete the plan's actual Android/iPhone acceptance requirement.
 
 ## Save a reviewed playlist
 
-1. Prepare audio and review names/covers with the Stage 3–5 runtime. Resolve
-   selected metadata warnings and explicitly exclude unavailable items. Repeated
+1. Prepare audio with the Stage 3–5 runtime. Review names/covers if desired and
+   explicitly exclude unavailable items. **Fill missing details when saving**
+   defaults on: source titles/existing edits are retained, missing artists use
+   `-` in frozen export metadata, and optional fields/covers remain absent.
+   Draft metadata/uncertainty/overrides are not rewritten. Turn the option off
+   to require resolution of selected naming warnings. Repeated
    source occurrences remain visible but produce one MP3 per unique track.
 2. Choose **Save to Device**. Preparation freezes the current selection,
    metadata and exact audio/cover IDs. Open edits or unfinished preparation block
@@ -22,7 +26,12 @@ checks do not complete the plan's actual Android/iPhone acceptance requirement.
 4. A saved-copy message appears only after the destination confirms the complete
    verified bytes. Cancelling the panel or denying permission keeps preparation
    available for retry. Existing files are never overwritten: choose a new name.
-5. **Return to review** unlocks edits/selection. A later preparation freezes the
+5. Confirmed MP3 receipts disable only that song's download/selection controls;
+   a confirmed ZIP covers every song in its verified publication. Failed,
+   cancelled or interrupted delivery never counts. **Choose remaining songs**
+   atomically returns to review and selects ready unsaved tracks, keeping saved
+   tracks disabled across snapshots/restarts. A new ZIP excludes earlier saved
+   songs. **Return to review** remains available to unlock edits/selection. A later preparation freezes the
    changed revision. Repeated saves of an unchanged prepared review reuse its
    completed snapshot, filenames and verified private bytes.
 
@@ -60,6 +69,14 @@ job/export/file UUIDs under private `jobs/<job>/exports/<export>/` directories;
 titles never locate bytes. Files and containing directories are fsynced before
 publication. Startup removes unpublished private bundle orphans.
 Every reuse/delivery rechecks immutable file hashes and the ZIP contents.
+
+Saved-track coverage is derived from confirmed delivery journals and verified
+snapshot/publication membership, never filenames or directory scans. Receipt
+pruning retains at least one completed record per published file; disposable
+failed/interrupted and superseded receipts remain bounded. Returning to remaining
+songs checks the job revision and active delivery fence in the same transaction
+as its selection changes. Schema remains v6; no migration or media-capability
+change is needed.
 
 ## Native delivery and interruption
 

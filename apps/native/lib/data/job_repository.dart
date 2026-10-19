@@ -46,6 +46,13 @@ final class JobRepository implements DraftStore {
   }
 
   JobRecord _job(Map<String, Object?> row) => JobRecord(
+    sourceTitles: row['source_titles'] == null
+        ? const []
+        : List.unmodifiable(
+            List<String>.from(
+              jsonDecode(row['source_titles'] as String) as List,
+            ),
+          ),
     enumerated: row['enumerated'] == 1,
     failure: row['error_code'] == null
         ? null
@@ -191,10 +198,15 @@ final class JobRepository implements DraftStore {
 
   @override
   Future<List<JobRecord>> listJobs() => _guard(
-    () async => (await db.query(
-      'jobs',
-      orderBy: 'updated_at DESC, id',
-    )).map(_job).toList(growable: false),
+    () async =>
+        (await db.rawQuery("""SELECT j.*,
+      (SELECT json_group_array(source_title) FROM (
+        SELECT COALESCE(e.source_title,t.source_title,'Unavailable source') AS source_title
+        FROM playlist_entries e LEFT JOIN tracks t ON t.id=e.track_id AND t.job_id=e.job_id
+        WHERE e.job_id=j.id ORDER BY e.position LIMIT 3
+      )) AS source_titles FROM jobs j ORDER BY j.updated_at DESC,j.id"""))
+            .map(_job)
+            .toList(growable: false),
   );
   Future<JobRecord> getJob(String id) => _guard(() => _requireJob(db, id));
   Future<TrackRecord> getTrack(String id) =>
@@ -914,7 +926,11 @@ final class JobRepository implements DraftStore {
     }),
   );
 
-  Future<ExportSnapshot> freezeExport(String jobId, int revision) => _guard(
+  Future<ExportSnapshot> freezeExport(
+    String jobId,
+    int revision, {
+    bool fillMissingMetadata = false,
+  }) => _guard(
     () => db.transaction((tx) async {
       final job = await _requireJob(tx, jobId);
       if (job.phase == JobPhase.cancelled) {
@@ -973,7 +989,8 @@ final class JobRepository implements DraftStore {
       if (tracks.isEmpty ||
           tracks.any(
             (track) =>
-                track.phase != TrackPhase.ready || track.metadata.needsReview,
+                track.phase != TrackPhase.ready ||
+                (!fillMissingMetadata && track.metadata.needsReview),
           )) {
         throw const AppFailure(
           FailureCode.invalidTransition,
@@ -1045,7 +1062,11 @@ final class JobRepository implements DraftStore {
                 'track_revision': track.revision,
                 'audio_asset_id': audioByTrack[track.id]!.single['id'],
                 'artwork_asset_id': coversByTrack[track.id]?.single['id'],
-                'metadata': track.metadata.toJson(),
+                'metadata':
+                    (fillMissingMetadata
+                            ? track.metadata.withExportPlaceholders()
+                            : track.metadata)
+                        .toJson(),
               },
             )
             .toList(),

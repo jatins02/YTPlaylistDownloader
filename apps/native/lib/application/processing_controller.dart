@@ -39,6 +39,29 @@ final class ProcessingController extends ChangeNotifier {
   DeliveryReceipt? savedCopy;
   String? saveMessage;
   bool exportBusy = false;
+  bool fillMissingMetadata = true;
+  Set<String> savedTrackIds = const {};
+  int get remainingCount => tracks
+      .where(
+        (t) => t.phase == TrackPhase.ready && !savedTrackIds.contains(t.id),
+      )
+      .length;
+  bool canSaveFile(ExportFile file) =>
+      !exportBusy &&
+      capability?.canExport == true &&
+      (file.kind == ExportFileKind.zip
+          ? publication?.tracks.every(
+                  (f) => !savedTrackIds.contains(f.trackId),
+                ) ==
+                true
+          : file.kind == ExportFileKind.mp3 &&
+                !savedTrackIds.contains(file.trackId));
+  void setFillMissingMetadata(bool value) {
+    if (exportBusy || commanding || editing || cancelling) return;
+    fillMissingMetadata = value;
+    notifyListeners();
+  }
+
   bool get canPlaySnippets =>
       capability?.canPlaySnippets == true &&
       job?.phase == JobPhase.reviewReady &&
@@ -80,7 +103,7 @@ final class ProcessingController extends ChangeNotifier {
       tracks.where((t) => t.phase == TrackPhase.failed).length;
   int get selectedCount => tracks.where((t) => t.selected).length;
   int get excludedCount =>
-      tracks.where((t) => !t.selected).length +
+      tracks.where((t) => !t.selected && !savedTrackIds.contains(t.id)).length +
       entries.where((e) => e.trackId == null && !e.selected).length;
   int get selectedUnavailable =>
       tracks.where((t) => t.selected && t.phase != TrackPhase.ready).length +
@@ -96,11 +119,16 @@ final class ProcessingController extends ChangeNotifier {
     if (pendingPreparations > 0) {
       return 'Finish pending edits or retry interrupted preparation before finalizing.';
     }
-    if (selectedCount == 0) return 'Select at least one ready track.';
+    if (selectedCount == 0) {
+      return remainingCount == 0 && savedTrackIds.isNotEmpty
+          ? 'All ready songs have been downloaded.'
+          : 'Select at least one ready track.';
+    }
     if (selectedUnavailable > 0) {
       return 'Retry or explicitly exclude $selectedUnavailable unavailable items.';
     }
-    if (tracks.any((t) => t.selected && t.metadata.needsReview)) {
+    if (!fillMissingMetadata &&
+        tracks.any((t) => t.selected && t.metadata.needsReview)) {
       return 'Review the selected names before finalizing.';
     }
     return null;
@@ -162,6 +190,7 @@ final class ProcessingController extends ChangeNotifier {
       final receipt = prepared == null
           ? null
           : await ExportRepository(jobs).latestReceipt(prepared.snapshot.id);
+      final saved = await ExportRepository(jobs).savedTrackIds(jobId);
       final currentEnrichment = await EnrichmentRepository(jobs).records(jobId);
       final pending = await jobs.db.query(
         'attempts',
@@ -192,6 +221,7 @@ final class ProcessingController extends ChangeNotifier {
       job = current;
       publication = prepared;
       savedCopy = receipt;
+      savedTrackIds = saved;
       tracks = List.unmodifiable(currentTracks);
       entries = List.unmodifiable(currentEntries);
       enrichment = Map.unmodifiable(currentEnrichment);
@@ -335,6 +365,7 @@ final class ProcessingController extends ChangeNotifier {
       publication = await (media as ExportMediaPort).prepareExport(
         jobId,
         job!.revision,
+        fillMissingMetadata: fillMissingMetadata,
       );
       saveMessage =
           'Files verified. Choose a ZIP or individual MP3 to save a copy.';
@@ -359,6 +390,12 @@ final class ProcessingController extends ChangeNotifier {
 
   Future<void> saveExportFile(String fileId) async {
     final current = publication;
+    final matches = current?.files.where((f) => f.id == fileId).toList();
+    if (matches == null ||
+        matches.length != 1 ||
+        !canSaveFile(matches.single)) {
+      return;
+    }
     if (_disposed ||
         exportBusy ||
         current == null ||
@@ -419,7 +456,7 @@ final class ProcessingController extends ChangeNotifier {
       return;
     }
     try {
-      await jobs.transition(jobId, job!.revision, JobPhase.reviewReady);
+      await ExportRepository(jobs).reviewRemaining(jobId, job!.revision);
       publication = null;
       savedCopy = null;
       saveMessage = null;
@@ -538,8 +575,11 @@ final class ProcessingController extends ChangeNotifier {
     }
   }
 
-  Future<void> selectTrack(TrackRecord track, bool selected) =>
-      _select(() => review.selectTrack(track, selected));
+  Future<void> selectTrack(TrackRecord track, bool selected) async {
+    if (selected && savedTrackIds.contains(track.id)) return;
+    await _select(() => review.selectTrack(track, selected));
+  }
+
   Future<void> selectEntry(StoredEntry entry, bool selected) async {
     if (job == null) return;
     await _select(() => review.selectEntry(job!, entry.position, selected));

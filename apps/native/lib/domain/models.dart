@@ -187,6 +187,17 @@ final class SongMetadata {
     'needs_review': needsReview,
   };
 
+  /// Export-only fallback: retain review uncertainty and all existing fields.
+  /// Never persist placeholders as human edits or invent recording details.
+  SongMetadata withExportPlaceholders() => SongMetadata(
+    title: title,
+    artists: artists.isEmpty ? ['-'] : artists,
+    featuredArtists: featuredArtists,
+    album: album,
+    version: version,
+    needsReview: needsReview,
+  );
+
   SongMetadata merge(SongMetadata candidate, Set<MetadataField> fields) {
     final chosenArtists = fields.contains(MetadataField.artists)
         ? candidate.artists
@@ -220,6 +231,7 @@ final class JobRecord {
     required this.revision,
     required this.createdAt,
     required this.updatedAt,
+    this.sourceTitles = const [],
     this.enumerated = false,
     this.failure,
   });
@@ -231,6 +243,7 @@ final class JobRecord {
   final int revision;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<String> sourceTitles;
   final bool enumerated;
   final FailureCode? failure;
 }
